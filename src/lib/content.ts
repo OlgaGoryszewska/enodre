@@ -15,6 +15,8 @@ export type CaseStudy = {
   result: string;
   challenge: string;
   approach: string;
+  image?: string;
+  imageAlt?: string;
 };
 
 export const services: Service[] = [
@@ -79,6 +81,8 @@ export const caseStudies: CaseStudy[] = [
     result: "Built and pilot-ready: every fuel action verified with GPS, timestamp, and photo evidence — client-ready reports generated in seconds instead of hours.",
     challenge: "Fuel work happened across many sites, assets, and technicians, with proof scattered across photos, paper logs, spreadsheets, and messages. Missing or unclear records led to disputed fuel usage, slower invoicing, and weaker customer trust.",
     approach: "We designed a connected field-to-report flow — scan the asset, record readings, capture photo evidence, sync in real time, then review and report — so every fuel action is tied to its asset, technician, GPS location, meter reading, and evidence, with client-ready PDF reports generated in seconds.",
+    image: "/fuelflo-offline.png",
+    imageAlt: "FuelFlo mobile app showing a device field-readiness check, with local database, evidence storage, camera permission, GPS capture, and API sync all marked ready for offline use.",
   },
 ];
 

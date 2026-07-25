@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { caseStudies, getCaseStudy } from "@/lib/content";
@@ -26,6 +27,18 @@ export default async function CaseStudyPage({ params }: CaseStudyPageProps) {
       <p className="eyebrow mt-16">{study.sector}</p>
       <h1 className="page-title mt-6 max-w-5xl">{study.title}</h1>
       <p className="mt-8 max-w-3xl text-xl leading-9 text-ink-muted">{study.summary}</p>
+      {study.image && (
+        <div className="mx-auto mt-16 max-w-sm overflow-hidden rounded-2xl border border-black/10 bg-card">
+          <Image
+            src={study.image}
+            alt={study.imageAlt ?? ""}
+            width={1080}
+            height={1080}
+            sizes="(min-width: 1024px) 384px, 80vw"
+            className="h-auto w-full"
+          />
+        </div>
+      )}
       <div className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-black/10 bg-black/10 md:grid-cols-2">
         <section className="bg-card p-8 sm:p-10">
           <p className="eyebrow">The challenge</p>
