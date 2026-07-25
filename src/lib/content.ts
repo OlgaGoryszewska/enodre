@@ -71,6 +71,15 @@ export const caseStudies: CaseStudy[] = [
     challenge: "The operations team had no single view of work in progress, leading to duplicated updates and delays between departments.",
     approach: "We created a shared information model and a role-based dashboard that put exceptions, decisions, and next actions in one place.",
   },
+  {
+    slug: "fuelflo",
+    sector: "Temporary power & fuel operations",
+    title: "The proof layer behind fuel operations",
+    summary: "A field-to-report system that turns every fuel delivery into verified, timestamped, photo-backed evidence for generator and temporary power companies.",
+    result: "Built and pilot-ready: every fuel action verified with GPS, timestamp, and photo evidence — client-ready reports generated in seconds instead of hours.",
+    challenge: "Fuel work happened across many sites, assets, and technicians, with proof scattered across photos, paper logs, spreadsheets, and messages. Missing or unclear records led to disputed fuel usage, slower invoicing, and weaker customer trust.",
+    approach: "We designed a connected field-to-report flow — scan the asset, record readings, capture photo evidence, sync in real time, then review and report — so every fuel action is tied to its asset, technician, GPS location, meter reading, and evidence, with client-ready PDF reports generated in seconds.",
+  },
 ];
 
 export function getService(slug: string) {
