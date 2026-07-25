@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   },
   description:
     "We design and build digital workflows that turn paper trails and spreadsheets into clear, working systems.",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({

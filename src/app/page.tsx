@@ -47,6 +47,16 @@ export default function Home() {
           <div>
             <p className="eyebrow">What we do</p>
             <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em]">From first conversation to working software.</h2>
+            <p className="mt-6 leading-7 text-ink-muted">
+              Custom dashboards, web pages, AI connections, native apps, CMS builds — whatever the tangle looks like, we like a challenge.
+            </p>
+            <ul className="mt-6 flex flex-wrap gap-2">
+              {["Dashboards", "Web pages", "AI connections", "Native apps", "CMS"].map((item) => (
+                <li key={item} className="rounded-full border border-black/10 px-3 py-1 text-xs font-medium text-ink-muted">
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
           <div className="grid gap-px overflow-hidden rounded-2xl border border-black/10 bg-black/10 sm:grid-cols-2">
             {services.map((service) => (
