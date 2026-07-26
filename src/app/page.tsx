@@ -34,7 +34,7 @@ export default function Home() {
                 <span aria-hidden="true" className="h-2 w-2 rounded-full bg-background" />
                 <span>Explore our services</span>
               </Link>
-              <Link className="inline-flex items-center gap-2 rounded-full border border-black/20 px-6 py-3 text-sm font-semibold" href="/case-studies">
+              <Link className="inline-flex items-center gap-2 rounded-full border border-black/20 px-6 py-3 text-m font-semibold" href="/case-studies">
                 <span aria-hidden="true" className="h-2 w-2 rounded-full bg-foreground" />
                 <span>See our work</span>
               </Link>

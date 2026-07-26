@@ -12,7 +12,7 @@ const buttonVariants = cva(
           "border border-black/20 text-foreground hover:bg-foreground/5",
       },
       size: {
-        default: "px-6 py-3 text-sm",
+        default: "px-6 py-3 text-m",
         lg: "px-8 py-4 text-base",
       },
     },
