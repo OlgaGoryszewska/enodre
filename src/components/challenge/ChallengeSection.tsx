@@ -5,7 +5,7 @@ import { ChallengeForm } from "@/components/challenge/ChallengeForm";
 
 export function ChallengeSection() {
   return (
-    <section className="border-t border-black/10 bg-card py-20 sm:py-28">
+    <section id="get-in-touch" className="border-t border-black/10 bg-card py-20 sm:py-28">
       <div className="shell">
         <div className="mx-auto max-w-[720px]">
           <motion.div

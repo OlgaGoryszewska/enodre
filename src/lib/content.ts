@@ -86,6 +86,50 @@ export const caseStudies: CaseStudy[] = [
   },
 ];
 
+export type TeamMember = {
+  name: string;
+  role: string;
+};
+
+export const teamMembers: TeamMember[] = [
+  { name: "Olga", role: "Product Engineer" },
+  { name: "Edyta", role: "Customer Success" },
+  { name: "Natalia", role: "Marketing & Social Media" },
+];
+
+export type StackGroup = {
+  heading: string;
+  items: string[];
+};
+
+export const stackGroups: StackGroup[] = [
+  {
+    heading: "Tools we use",
+    items: [
+      "Visual Studio Code",
+      "Figma",
+      "Midjourney",
+      "Canva",
+      "Claude",
+      "Codex",
+      "ChatGPT",
+      "Cursor",
+    ],
+  },
+  {
+    heading: "Stack we use",
+    items: [
+      "Next.js",
+      "React",
+      "React Native",
+      "Tailwind CSS",
+      "TypeScript",
+      "SQL (backend)",
+      "Supabase",
+    ],
+  },
+];
+
 export function getService(slug: string) {
   return services.find((service) => service.slug === slug);
 }

@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { caseStudies, services } from "@/lib/content";
+import { caseStudies, services, stackGroups, teamMembers } from "@/lib/content";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
+import { TeamSection } from "@/components/TeamSection";
+import { StackSection } from "@/components/StackSection";
 
 export default function Home() {
   return (
@@ -41,6 +43,10 @@ export default function Home() {
        
         </div>
       </section>
+
+      <TeamSection members={teamMembers} ctaHref="#get-in-touch" />
+
+      <StackSection groups={stackGroups} />
 
       <section className="border-y border-black/10 bg-card py-20">
         <div className="shell grid gap-10 lg:grid-cols-[1fr_2fr]">
