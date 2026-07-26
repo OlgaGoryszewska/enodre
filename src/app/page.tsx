@@ -25,8 +25,8 @@ export default function Home() {
             preload
           />
             <p className="mt-10 max-w-2xl text-lg leading-8 text-ink-muted sm:text-xl">
-              We design and build digital workflows that turn paper trails and
-              spreadsheets into clear, working systems.
+              We design and build digital solutions, workflows that turn paper trails and
+              spreadsheets into clear, working systems, native applications tailored to your specific business needs, dashboards organizing complexity and not less webpages increasing sales and visibility. 
             </p>
             <div className="mt-10 flex flex-wrap gap-4">
               
