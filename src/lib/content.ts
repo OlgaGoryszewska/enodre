@@ -86,16 +86,27 @@ export const caseStudies: CaseStudy[] = [
   },
 ];
 
-export type TeamMember = {
+export type Founder = {
   name: string;
   role: string;
+  image: string;
+  imageAlt: string;
+  bio: string[];
 };
 
-export const teamMembers: TeamMember[] = [
-  { name: "Olga", role: "Product Engineer" },
-  { name: "Edyta", role: "Customer Success" },
-  { name: "Natalia", role: "Marketing & Social Media" },
-];
+export const founder: Founder = {
+  name: "Olga",
+  role: "Product Designer & Frontend Developer",
+  image: "/olga_goryszewska_enodre.png",
+  imageAlt: "Portrait of Olga Goryszewska",
+  bio: [
+    "Olga is a Product Designer and Frontend Developer who believes great software begins with understanding people, not just technology.",
+    "With a background spanning UX strategy, product design, and modern web development, she helps businesses untangle complex workflows and transform them into intuitive digital experiences. Her work combines user research, interface design, and engineering to create products that are both elegant and practical.",
+    "She specializes in designing dashboards, business applications, workflow automation, AI-powered solutions, and high-performance websites. Every project starts with one question: What's really slowing this business down? From there, she works closely with clients to uncover opportunities, simplify processes, and build software that delivers measurable results.",
+    "Olga's approach is collaborative, detail-oriented, and focused on long-term value. Rather than building features for the sake of technology, she creates solutions that improve efficiency, reduce friction, and help businesses grow with confidence.",
+    "Whether partnering with startups, growing companies, or enterprise teams, her goal remains the same: to design software that feels effortless to use and makes everyday work better.",
+  ],
+};
 
 export type StackGroup = {
   heading: string;

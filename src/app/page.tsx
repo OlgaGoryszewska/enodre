@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { caseStudies, services, stackGroups, teamMembers } from "@/lib/content";
+import { caseStudies, founder, services, stackGroups } from "@/lib/content";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
 import { TeamSection } from "@/components/TeamSection";
 import { StackSection } from "@/components/StackSection";
@@ -7,40 +7,40 @@ import { StackSection } from "@/components/StackSection";
 export default function Home() {
   return (
     <>
-      <section className="shell py-20 sm:py-28 lg:py-36">
-        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)] lg:gap-16">
-          <div>
-            <p className="eyebrow mb-8">Digital product studio</p>
-            <h1 className="display-title">
-              We organize what&apos;s holding your business back.
-            </h1>
-            <video
-              src="/video-hero.mp4"
-              poster="/hero-img.png"
-              aria-hidden="true"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-              className="-mx-4 h-auto w-[calc(100%+2rem)] max-w-none pt-20 sm:mx-0 sm:w-full sm:max-w-full"
-            />
-            <p className="mt-10 max-w-2xl text-lg leading-8 text-ink-muted sm:text-xl">
-              We design and build digital solutions — workflows that turn paper trails and spreadsheets into clear, working systems, native applications tailored to your business, dashboards that organize complexity, and websites that increase sales and visibility.
-            </p>
-            <div className="mt-10 flex flex-wrap gap-4">
-              
-              <Link className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-m font-semibold text-background" href="/services">
-                <span aria-hidden="true" className="h-2 w-2 rounded-full bg-background" />
-                <span>Explore our services</span>
-              </Link>
-              <Link className="inline-flex items-center gap-2 rounded-full border border-black/20 px-6 py-3 text-m font-semibold" href="/case-studies">
-                <span aria-hidden="true" className="h-2 w-2 rounded-full bg-foreground" />
-                <span>See our work</span>
-              </Link>
+      <section className="bg-[linear-gradient(to_bottom,var(--background)_0%,#C6C9CF_45%)] py-20 sm:py-28 lg:py-36">
+        <div className="shell">
+          <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)] lg:gap-16">
+            <div>
+              <p className="eyebrow mb-8">Digital product studio</p>
+              <h1 className="display-title">
+                We build the systems that help ambitious businesses work smarter and grow faster.
+              </h1>
+              <video
+                src="/video-hero.mp4"
+                poster="/hero-img.png"
+                aria-hidden="true"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                className="-mx-4 h-auto w-[calc(100%+2rem)] max-w-none pt-20 sm:mx-0 sm:w-full sm:max-w-full"
+              />
+              <p className="mt-10 max-w-2xl text-lg leading-8 text-ink-muted sm:text-xl">
+                We untangle complexity through thoughtfully designed digital solutions. From workflow automation and custom software to insightful dashboards and conversion-focused websites, we build technology that helps your business work smarter, move faster, and scale with clarity.
+              </p>
+              <div className="mt-10 flex flex-wrap gap-4">
+                <Link className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-m font-semibold text-background" href="/services">
+                  <span aria-hidden="true" className="h-2 w-2 rounded-full bg-background" />
+                  <span>Explore our services</span>
+                </Link>
+                <Link className="inline-flex items-center gap-2 rounded-full border border-black/20 px-6 py-3 text-m font-semibold" href="/case-studies">
+                  <span aria-hidden="true" className="h-2 w-2 rounded-full bg-foreground" />
+                  <span>See our work</span>
+                </Link>
+              </div>
             </div>
           </div>
-       
         </div>
       </section>
 
@@ -92,7 +92,7 @@ export default function Home() {
           ))}
         </div>
       </section>
-         <TeamSection members={teamMembers} ctaHref="#get-in-touch" />
+      <TeamSection member={founder} ctaHref="#get-in-touch" />
 
       <StackSection groups={stackGroups} />
 
