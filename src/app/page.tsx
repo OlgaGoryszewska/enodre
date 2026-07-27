@@ -12,10 +12,10 @@ export default function Home() {
           <div>
             <p className="eyebrow mb-8">Digital product studio</p>
             <h1 className="display-title">
-              We untangle what&apos;s holding your business back.
+              We organize what&apos;s holding your business back.
             </h1>
             <video
-              src="/untangle.mp4"
+              src="/video-hero.mp4"
               poster="/hero-img.png"
               aria-hidden="true"
               autoPlay
@@ -23,7 +23,7 @@ export default function Home() {
               loop
               playsInline
               preload="auto"
-              className="h-auto w-full pt-10"
+              className="-mx-4 h-auto w-[calc(100%+2rem)] max-w-none pt-20 sm:mx-0 sm:w-full sm:max-w-full"
             />
             <p className="mt-10 max-w-2xl text-lg leading-8 text-ink-muted sm:text-xl">
               We design and build digital solutions — workflows that turn paper trails and spreadsheets into clear, working systems, native applications tailored to your business, dashboards that organize complexity, and websites that increase sales and visibility.
@@ -43,10 +43,6 @@ export default function Home() {
        
         </div>
       </section>
-
-      <TeamSection members={teamMembers} ctaHref="#get-in-touch" />
-
-      <StackSection groups={stackGroups} />
 
       <section className="border-y border-black/10 bg-card py-20">
         <div className="shell grid gap-10 lg:grid-cols-[1fr_2fr]">
@@ -96,6 +92,9 @@ export default function Home() {
           ))}
         </div>
       </section>
+         <TeamSection members={teamMembers} ctaHref="#get-in-touch" />
+
+      <StackSection groups={stackGroups} />
 
       <ChallengeSection />
     </>

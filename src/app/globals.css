@@ -25,10 +25,15 @@
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: "Satoshi", Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
 }
 
 footer {
