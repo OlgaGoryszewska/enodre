@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { caseStudies, services, stackGroups, teamMembers } from "@/lib/content";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
@@ -15,18 +14,19 @@ export default function Home() {
             <h1 className="display-title">
               We untangle what&apos;s holding your business back.
             </h1>
-               <Image
-            src="/hero-img.png"
-            alt="Hands untangling interconnected strands"
-            width={1536}
-            height={1024}
-            sizes="(min-width: 1024px) 42vw, calc(100vw - 2rem)"
-            className="h-auto pt-10 w-full"
-            preload
-          />
+            <video
+              src="/untangle.mp4"
+              poster="/hero-img.png"
+              aria-hidden="true"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              className="h-auto w-full pt-10"
+            />
             <p className="mt-10 max-w-2xl text-lg leading-8 text-ink-muted sm:text-xl">
-              We design and build digital solutions, workflows that turn paper trails and
-              spreadsheets into clear, working systems, native applications tailored to your specific business needs, dashboards organizing complexity and not less webpages increasing sales and visibility. 
+              We design and build digital solutions — workflows that turn paper trails and spreadsheets into clear, working systems, native applications tailored to your business, dashboards that organize complexity, and websites that increase sales and visibility.
             </p>
             <div className="mt-10 flex flex-wrap gap-4">
               
