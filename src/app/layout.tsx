@@ -11,7 +11,12 @@ export const metadata: Metadata = {
   description:
     "We design and build digital workflows that turn paper trails and spreadsheets into clear, working systems.",
   icons: {
-    icon: "/favicon.png",
+    icon: [
+      { url: "/icon0.svg", type: "image/svg+xml" },
+      { url: "/icon1.png", type: "image/png", sizes: "96x96" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/apple-icon.png",
   },
 };
 
