@@ -38,6 +38,7 @@ export default function RootLayout({
             <nav aria-label="Primary navigation" className="flex gap-5 text-sm font-medium sm:gap-8">
               <Link className="nav-link" href="/services">Services</Link>
               <Link className="nav-link" href="/case-studies">Case studies</Link>
+              <Link className="nav-link" href="/pricing">Pricing</Link>
             </nav>
           </div>
         </header>

@@ -54,6 +54,7 @@ footer {
   color: var(--muted);
   font-family: "Manrope", "Satoshi", Arial, Helvetica, sans-serif;
   transition: color 160ms ease;
+  white-space: nowrap;
 }
 
 .nav-link:hover {

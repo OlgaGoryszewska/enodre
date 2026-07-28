@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { caseStudies, founder, services, stackGroups } from "@/lib/content";
+import { caseStudies, expertiseAreas, founder, stackGroups } from "@/lib/content";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
 import { TeamSection } from "@/components/TeamSection";
 import { StackSection } from "@/components/StackSection";
@@ -48,27 +48,23 @@ export default function Home() {
         <div className="shell grid gap-10 lg:grid-cols-[1fr_2fr]">
           <div>
             <p className="eyebrow">What we do</p>
-            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em]">From first conversation to working software.</h2>
+            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em]">
+              From the first conversation to a product your team actually loves using.
+            </h2>
             <p className="mt-6 leading-7 text-ink-muted">
-              Custom dashboards, web pages, AI connections, native apps, CMS builds — whatever the tangle looks like, we like a challenge.
+              We design, build, and launch digital solutions that solve real business problems. Whether you need to streamline operations, modernize outdated tools, or create entirely new experiences, we deliver software that&apos;s intuitive, scalable, and built around the way your business works.
             </p>
-            <ul className="mt-6 flex flex-wrap gap-2">
-              {["Dashboards", "Web pages", "AI connections", "Native apps", "CMS"].map((item) => (
-                <li key={item} className="rounded-full border border-black/10 px-3 py-1 text-xs font-medium text-ink-muted">
-                  {item}
-                </li>
-              ))}
-            </ul>
           </div>
-          <div className="grid gap-px overflow-hidden rounded-2xl border border-black/10 bg-black/10 sm:grid-cols-2">
-            {services.map((service) => (
-              <Link key={service.slug} href={`/services/${service.slug}`} className="group bg-card p-7 transition hover:bg-white">
-                <p className="font-mono text-xs text-accent">{service.number}</p>
-                <h3 className="mt-8 text-xl font-semibold tracking-tight">{service.title}</h3>
-                <p className="mt-3 leading-7 text-ink-muted">{service.summary}</p>
-                <span className="mt-7 inline-block text-sm font-semibold group-hover:underline">Learn more →</span>
-              </Link>
-            ))}
+          <div>
+            <p className="eyebrow">Our expertise</p>
+            <div className="mt-6 grid gap-6 sm:grid-cols-2">
+              {expertiseAreas.map((area) => (
+                <div key={area.title} className="rounded-2xl border border-black/10 bg-card p-7">
+                  <h3 className="text-xl font-semibold tracking-tight">{area.title}</h3>
+                  <p className="mt-3 leading-7 text-ink-muted">{area.description}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

@@ -54,6 +54,34 @@ export const services: Service[] = [
   },
 ];
 
+export type ExpertiseArea = {
+  title: string;
+  description: string;
+};
+
+export const expertiseAreas: ExpertiseArea[] = [
+  {
+    title: "Custom Dashboards",
+    description: "Transform complex data into clear insights with dashboards that help your team make faster, smarter decisions.",
+  },
+  {
+    title: "Web Applications & Websites",
+    description: "From high-converting marketing websites to powerful internal platforms, we create fast, modern experiences that drive results.",
+  },
+  {
+    title: "AI Integrations & Automation",
+    description: "Connect AI to your workflows to automate repetitive tasks, improve productivity, and unlock new capabilities.",
+  },
+  {
+    title: "Native Mobile Apps",
+    description: "Build seamless iOS and Android experiences that keep your business connected wherever work happens.",
+  },
+  {
+    title: "CMS & Content Platforms",
+    description: "Empower your team with flexible, easy-to-manage content systems tailored to your workflow.",
+  },
+];
+
 export const caseStudies: CaseStudy[] = [
   {
     slug: "field-operations",
@@ -139,6 +167,87 @@ export const stackGroups: StackGroup[] = [
       "Supabase",
     ],
   },
+];
+
+export type PricingItem = {
+  service: string;
+  price: string;
+  timeline: string;
+};
+
+export const projectPricing: PricingItem[] = [
+  { service: "Discovery Workshop", price: "$300", timeline: "1 day" },
+  { service: "UX Audit (existing site/product)", price: "$450", timeline: "2–3 days" },
+  { service: "Landing Page Design & Development", price: "$900", timeline: "1–2 weeks" },
+  { service: "Business Website (5–10 pages)", price: "$2,000", timeline: "2–3 weeks" },
+  { service: "CMS Setup (WordPress / headless)", price: "$1,500", timeline: "2–3 weeks" },
+  { service: "Custom Dashboard / Web App UI", price: "$3,200", timeline: "3–5 weeks" },
+  { service: "Backend & Database Setup (Supabase, real-time sync, RLS)", price: "$2,000", timeline: "2–4 weeks" },
+  { service: "Native Mobile App (React Native / Expo, offline-capable)", price: "$4,500", timeline: "6–10 weeks" },
+  { service: "AI Feature Integration (chat, search, content tools)", price: "$1,200", timeline: "1–2 weeks" },
+  { service: "Full Product Build (Web + Mobile + Backend)", price: "From $8,500", timeline: "8–14 weeks" },
+];
+
+export type PartnershipPlan = {
+  name: string;
+  price: string;
+  cadence: string;
+  features: string[];
+  badge?: string;
+  highlighted?: boolean;
+};
+
+export const partnershipPlans: PartnershipPlan[] = [
+  {
+    name: "Starter",
+    price: "$600",
+    cadence: "/ mo",
+    features: [
+      "Up to 8 hours",
+      "Small features & fixes",
+      "UX tweaks",
+      "Email support (48-hr response)",
+    ],
+  },
+  {
+    name: "Growth",
+    price: "$1,200",
+    cadence: "/ mo",
+    badge: "Most popular",
+    highlighted: true,
+    features: [
+      "Up to 16 hours",
+      "New features",
+      "Dashboard/UI improvements",
+      "Monthly check-in call",
+      "Priority support (24-hr response)",
+    ],
+  },
+  {
+    name: "Product Partner",
+    price: "$2,200",
+    cadence: "/ mo",
+    features: [
+      "Up to 30 hours",
+      "Ongoing design + development",
+      "Light product roadmap input",
+      "Bi-weekly meetings",
+      "Priority delivery",
+    ],
+  },
+];
+
+export type ProcessStep = {
+  title: string;
+  description: string;
+};
+
+export const howWeWork: ProcessStep[] = [
+  { title: "Discovery Call (free)", description: "15–30 min to understand the goal and rough scope." },
+  { title: "Proposal", description: "Fixed starting price, timeline, and what's included — no surprises." },
+  { title: "Design & Strategy", description: "Wireframes or UI direction signed off before development starts." },
+  { title: "Development", description: "Built, tested across devices, and shared for feedback along the way." },
+  { title: "Launch & Support", description: "Ships with a 14-day bug-fix window; ongoing support available via the plans above." },
 ];
 
 export function getService(slug: string) {
