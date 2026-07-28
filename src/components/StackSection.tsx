@@ -1,12 +1,47 @@
 "use client";
 
+import type { ComponentType } from "react";
 import { motion, type Variants } from "framer-motion";
+import { Bot, Code2, Database, Palette, Sparkles, SquareTerminal } from "lucide-react";
+import {
+  SiClaude,
+  SiCursor,
+  SiFigma,
+  SiNextdotjs,
+  SiReact,
+  SiSupabase,
+  SiTailwindcss,
+  SiTypescript,
+} from "react-icons/si";
 import type { StackGroup } from "@/lib/content";
 import { Reveal } from "@/components/motion/Reveal";
 
 interface StackSectionProps {
   groups: StackGroup[];
 }
+
+type Icon = ComponentType<{ className?: string }>;
+
+// Not every tool has an official mark in simple-icons (VS Code, Midjourney,
+// Canva, and OpenAI's products don't), so those fall back to a generic
+// Lucide icon instead.
+const STACK_ICONS: Record<string, Icon> = {
+  "Visual Studio Code": Code2,
+  Figma: SiFigma,
+  Midjourney: Sparkles,
+  Canva: Palette,
+  Claude: SiClaude,
+  Codex: SquareTerminal,
+  ChatGPT: Bot,
+  Cursor: SiCursor,
+  "Next.js": SiNextdotjs,
+  React: SiReact,
+  "React Native": SiReact,
+  "Tailwind CSS": SiTailwindcss,
+  TypeScript: SiTypescript,
+  "SQL (backend)": Database,
+  Supabase: SiSupabase,
+};
 
 const pillContainer: Variants = {
   hidden: {},
@@ -29,15 +64,19 @@ function PillGroup({ items }: { items: string[] }) {
       whileInView="show"
       viewport={{ once: true, margin: "-80px" }}
     >
-      {items.map((item) => (
-        <motion.span
-          key={item}
-          variants={pillItem}
-          className="rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-background/80 transition hover:border-white/40 hover:text-background"
-        >
-          {item}
-        </motion.span>
-      ))}
+      {items.map((item) => {
+        const Icon = STACK_ICONS[item];
+        return (
+          <motion.span
+            key={item}
+            variants={pillItem}
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-background/80 transition hover:border-white/40 hover:text-background"
+          >
+            {Icon && <Icon className="h-4 w-4" aria-hidden="true" />}
+            {item}
+          </motion.span>
+        );
+      })}
     </motion.div>
   );
 }
