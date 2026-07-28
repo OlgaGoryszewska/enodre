@@ -114,6 +114,32 @@ export const caseStudies: CaseStudy[] = [
   },
 ];
 
+export type Product = {
+  slug: string;
+  name: string;
+  tagline: string;
+  category: string;
+  description: string;
+  outcome: string;
+  stack: string[];
+  image?: string;
+  imageAlt?: string;
+};
+
+export const products: Product[] = [
+  {
+    slug: "fuelflo",
+    name: "FuelFlo",
+    tagline: "The proof layer behind fuel operations.",
+    category: "Temporary power & fuel operations",
+    description: "A field-to-report system that turns every fuel delivery into verified, timestamped, photo-backed evidence for generator and temporary power companies.",
+    outcome: "Built and pilot-ready: every fuel action verified with GPS, timestamp, and photo evidence — client-ready reports generated in seconds instead of hours.",
+    stack: ["React Native", "Supabase", "Offline-first sync", "GPS + photo capture"],
+    image: "/fuelflo-offline.png",
+    imageAlt: "FuelFlo mobile app showing a device field-readiness check, with local database, evidence storage, camera permission, GPS capture, and API sync all marked ready for offline use.",
+  },
+];
+
 export type Founder = {
   name: string;
   role: string;
