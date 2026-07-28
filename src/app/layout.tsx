@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MotionConfig } from "framer-motion";
 import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
 
@@ -28,14 +29,16 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="flex min-h-full flex-col">
-        <SiteHeader />
-        <main className="flex-1">{children}</main>
-        <footer className="border-t border-black/10 py-8">
-          <div className="shell flex flex-col gap-2 text-sm text-ink-muted sm:flex-row sm:items-center sm:justify-between">
-            <p>© {new Date().getFullYear()} Enodre</p>
-            <p>Clear systems for complex work.</p>
-          </div>
-        </footer>
+        <MotionConfig reducedMotion="user">
+          <SiteHeader />
+          <main className="flex-1">{children}</main>
+          <footer className="border-t border-black/10 py-8">
+            <div className="shell flex flex-col gap-2 text-sm text-ink-muted sm:flex-row sm:items-center sm:justify-between">
+              <p>© {new Date().getFullYear()} Enodre</p>
+              <p>Clear systems for complex work.</p>
+            </div>
+          </footer>
+        </MotionConfig>
       </body>
     </html>
   );
