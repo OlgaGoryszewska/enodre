@@ -1,20 +1,27 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useScroll, useTransform, type Variants } from "framer-motion";
+import { AnimatePresence, motion, useScroll, useTransform, type Variants } from "framer-motion";
 import {
+  Boxes,
   Camera,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
   Database,
   FileText,
   Image as ImageIcon,
   MapPin,
   MessageCircle,
+  QrCode,
   ShieldCheck,
   Sheet,
   Sparkles,
+  UserPlus,
   Wifi,
+  X,
 } from "lucide-react";
 import { products } from "@/lib/content";
 import { Reveal } from "@/components/motion/Reveal";
@@ -78,6 +85,7 @@ const outcomeChips = ["GPS-verified", "Timestamped", "Photo-backed", "Seconds, n
 
 const impactPoints = [
   "Designed, built, and shipped end to end by Enodre — from field UX to offline sync.",
+  "Two connected surfaces: an offline-first technician app and a web-based hire desk dashboard.",
   "Offline-first from day one — the app is fully usable with no signal.",
   "GPS, timestamp, and photo evidence tied to every fuel action.",
   "Client-ready PDF reporting, generated in seconds.",
@@ -88,6 +96,143 @@ const untangled = [
   "Made unreliable site connectivity a non-issue — every action is captured and stored locally, then synced the moment a connection returns.",
   "Turned raw field data into client-ready, billing-grade evidence in seconds instead of hours.",
 ];
+
+type Shot = { src: string; alt: string; caption: string; width: number; height: number; frame: "phone" | "browser" | "none" };
+
+const technicianScreens: Shot[] = [
+  {
+    src: "/IMG_4161.PNG",
+    width: 1125,
+    height: 2436,
+    frame: "phone",
+    alt: "FuelFlo technician dashboard home screen showing assigned projects, saved generators, external tanks, and open alerts.",
+    caption: "Dashboard — jobs, generators, and alerts in one offline workspace.",
+  },
+  {
+    src: "/IMG_4171.PNG",
+    width: 1125,
+    height: 2436,
+    frame: "phone",
+    alt: "FuelFlo choose project screen showing active projects and offline save mode.",
+    caption: "Choose project — pick the active job before recording a delivery or return.",
+  },
+  {
+    src: "/IMG_4163.PNG",
+    width: 1125,
+    height: 2436,
+    frame: "phone",
+    alt: "FuelFlo set up transaction screen showing delivery or return selection and generator QR scan.",
+    caption: "Set up transaction — delivery or return, then scan the generator's QR code.",
+  },
+  {
+    src: "/IMG_4164.PNG",
+    width: 1125,
+    height: 2436,
+    frame: "phone",
+    alt: "FuelFlo review transaction screen showing generator, tank, meter reading, and GPS evidence ready to save offline.",
+    caption: "Review — generator, tank, meter reading, and GPS evidence, saved locally first.",
+  },
+  {
+    src: "/IMG_4167.PNG",
+    width: 1125,
+    height: 2436,
+    frame: "phone",
+    alt: "FuelFlo evidence saved confirmation screen showing before photo and meter reading saved, after evidence required.",
+    caption: "Evidence saved — before and after tracked separately, so nothing gets skipped.",
+  },
+  {
+    src: "/IMG_4168.PNG",
+    width: 1125,
+    height: 2436,
+    frame: "phone",
+    alt: "FuelFlo fleet generators screen showing fuel level, tank links, and latest delivery for each generator.",
+    caption: "Fleet — fuel level, tank links, and latest delivery, searchable on site.",
+  },
+];
+
+const hireDeskSteps = [
+  { icon: UserPlus, title: "People", body: "Managers, technicians, suppliers, and organiser contacts are ready." },
+  { icon: Boxes, title: "Equipment", body: "Generators and tanks have records, fuel data, and QR identifiers." },
+  { icon: ClipboardList, title: "Project", body: "The job is created with contacts, dates, assets, and fuel plan attached." },
+  { icon: QrCode, title: "Field handoff", body: "QR labels and field users are ready before crews arrive on site." },
+];
+
+const galleryShots: Shot[] = [
+  { src: fuelflo.image!, alt: fuelflo.imageAlt ?? "", caption: "Device field check", width: 1080, height: 1080, frame: "none" },
+  ...technicianScreens,
+  {
+    src: "/desktop_fuelflo_1.png",
+    alt: "FuelFlo hire desk web dashboard showing the project readiness hub.",
+    width: 2678,
+    height: 1686,
+    frame: "browser",
+    caption: "Hire desk — project readiness hub",
+  },
+  {
+    src: "/fuel_transactions.png",
+    alt: "FuelFlo fuel transactions table on the web dashboard showing deliveries, returns, missing evidence, and sync status.",
+    caption: "Hire desk — fuel transactions",
+    width: 2024,
+    height: 1454,
+    frame: "browser",
+  },
+];
+
+function PhoneFrame({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`relative rounded-[2rem] bg-foreground p-[7px] shadow-lg ${className}`}>
+      <div className="relative overflow-hidden rounded-[1.55rem]">
+        {children}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-0 h-4 w-20 -translate-x-1/2 rounded-b-xl bg-foreground"
+        />
+      </div>
+    </div>
+  );
+}
+
+function BrowserFrame({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`overflow-hidden rounded-xl border border-black/10 bg-card shadow-lg ${className}`}>
+      <div className="flex items-center gap-1.5 border-b border-black/10 px-3 py-2.5">
+        <span className="h-2 w-2 rounded-full bg-black/15" aria-hidden="true" />
+        <span className="h-2 w-2 rounded-full bg-black/15" aria-hidden="true" />
+        <span className="h-2 w-2 rounded-full bg-black/15" aria-hidden="true" />
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function FramedImage({
+  shot,
+  sizes,
+  imageClassName = "h-auto w-full",
+  wrapperClassName = "",
+  priority = false,
+}: {
+  shot: Shot;
+  sizes: string;
+  imageClassName?: string;
+  wrapperClassName?: string;
+  priority?: boolean;
+}) {
+  const img = (
+    <Image
+      src={shot.src}
+      alt={shot.alt}
+      width={shot.width}
+      height={shot.height}
+      sizes={sizes}
+      priority={priority}
+      className={imageClassName}
+    />
+  );
+  if (shot.frame === "phone") return <PhoneFrame className={wrapperClassName}>{img}</PhoneFrame>;
+  if (shot.frame === "browser") return <BrowserFrame className={wrapperClassName}>{img}</BrowserFrame>;
+  return <div className={`overflow-hidden rounded-xl border border-black/10 ${wrapperClassName}`}>{img}</div>;
+}
 
 function HeroVisual() {
   const ref = useRef<HTMLDivElement>(null);
@@ -127,7 +272,74 @@ function HeroVisual() {
   );
 }
 
+function Lightbox({ shots, index, onClose, onStep }: { shots: Shot[]; index: number; onClose: () => void; onStep: (delta: number) => void }) {
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+      if (event.key === "ArrowRight") onStep(1);
+      if (event.key === "ArrowLeft") onStep(-1);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [onClose, onStep]);
+
+  const shot = shots[index];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-foreground/95 p-4 sm:p-10"
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close"
+        className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-background transition hover:bg-white/10 sm:right-8 sm:top-8"
+      >
+        <X className="h-5 w-5" aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          onStep(-1);
+        }}
+        aria-label="Previous screen"
+        className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 text-background transition hover:bg-white/10 sm:left-6"
+      >
+        <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          onStep(1);
+        }}
+        aria-label="Next screen"
+        className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 text-background transition hover:bg-white/10 sm:right-6"
+      >
+        <ChevronRight className="h-5 w-5" aria-hidden="true" />
+      </button>
+
+      <div className="max-h-[80vh] max-w-[92vw]" onClick={(event) => event.stopPropagation()}>
+        <FramedImage shot={shot} sizes="90vw" imageClassName="h-[58vh] w-auto object-contain" />
+      </div>
+      <p className="text-sm font-medium text-background/70">
+        {shot.caption} · {index + 1} / {shots.length}
+      </p>
+    </motion.div>
+  );
+}
+
 export function FuelFloShowcase() {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   return (
     <>
       {/* Hero */}
@@ -285,6 +497,115 @@ export function FuelFloShowcase() {
         </div>
       </section>
 
+      {/* The technician app */}
+      <section className="border-b border-black/10 py-20 sm:py-28">
+        <div className="shell">
+          <Reveal>
+            <p className="eyebrow">The technician app</p>
+            <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+              More than a form — a full offline workspace.
+            </h2>
+            <p className="mt-6 max-w-2xl leading-7 text-ink-muted">
+              From the home screen to the confirmation, every step below is a real screen from the app —
+              scroll to see the flow a technician actually uses.
+            </p>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <div className="mt-10 flex gap-5 overflow-x-auto pb-4 [scrollbar-width:thin] snap-x snap-mandatory">
+              {technicianScreens.map((shot, index) => {
+                const galleryIndex = galleryShots.findIndex((s) => s.src === shot.src);
+                return (
+                  <button
+                    key={shot.src}
+                    type="button"
+                    onClick={() => setLightboxIndex(galleryIndex)}
+                    className="group flex w-52 flex-none snap-start flex-col text-left sm:w-56"
+                  >
+                    <FramedImage
+                      shot={shot}
+                      sizes="14rem"
+                      wrapperClassName="transition duration-300 group-hover:-translate-y-1 group-hover:shadow-xl"
+                    />
+                    <p className="mt-3 text-sm leading-6 text-ink-muted">
+                      <span className="font-mono text-xs font-semibold text-accent">0{index + 1}</span>{" "}
+                      {shot.caption}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* The hire desk dashboard */}
+      <section className="border-b border-black/10 bg-card py-20 sm:py-28">
+        <div className="shell">
+          <Reveal>
+            <p className="eyebrow">The hire desk dashboard</p>
+            <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+              The office side of the same system.
+            </h2>
+            <p className="mt-6 max-w-2xl leading-7 text-ink-muted">
+              While technicians capture evidence in the field, the hire desk team prepares every job from a
+              connected web dashboard — before crews ever arrive on site.
+            </p>
+          </Reveal>
+
+          <div className="mt-12 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:gap-10">
+            <Reveal delay={0.1}>
+              <button
+                type="button"
+                onClick={() => setLightboxIndex(galleryShots.findIndex((s) => s.src === "/desktop_fuelflo_1.png"))}
+                className="group block w-full text-left transition hover:-translate-y-1"
+              >
+                <FramedImage
+                  shot={galleryShots.find((s) => s.src === "/desktop_fuelflo_1.png")!}
+                  sizes="(min-width: 1024px) 55vw, 92vw"
+                  imageClassName="h-auto w-full transition group-hover:scale-[1.01]"
+                />
+              </button>
+              <p className="mt-4 text-sm leading-6 text-ink-muted">
+                Project readiness hub — prepare people, equipment, projects, and field handoff before crews
+                start work.
+              </p>
+            </Reveal>
+
+            <Reveal delay={0.16}>
+              <div className="grid gap-3">
+                {hireDeskSteps.map(({ icon: Icon, title, body }) => (
+                  <div key={title} className="flex gap-4 rounded-xl border border-black/10 bg-background p-5">
+                    <Icon className="h-4 w-4 flex-none text-accent" aria-hidden="true" />
+                    <div>
+                      <p className="text-sm font-semibold">{title}</p>
+                      <p className="mt-1 text-xs leading-5 text-ink-muted">{body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          </div>
+
+          <Reveal delay={0.1} className="mt-6">
+            <button
+              type="button"
+              onClick={() => setLightboxIndex(galleryShots.findIndex((s) => s.src === "/fuel_transactions.png"))}
+              className="group block w-full text-left transition hover:-translate-y-1"
+            >
+              <FramedImage
+                shot={galleryShots.find((s) => s.src === "/fuel_transactions.png")!}
+                sizes="92vw"
+                imageClassName="h-auto w-full transition group-hover:scale-[1.01]"
+              />
+            </button>
+            <p className="mt-4 text-sm leading-6 text-ink-muted">
+              Fuel transactions — deliveries, returns, missing evidence, and sync status, filterable by
+              project.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
       {/* Outcome */}
       <section className="border-b border-black/10 py-20 sm:py-28">
         <div className="shell">
@@ -354,6 +675,40 @@ export function FuelFloShowcase() {
         </div>
       </section>
 
+      {/* Gallery */}
+      <section className="border-t border-black/10 bg-card py-20 sm:py-28">
+        <div className="shell">
+          <Reveal>
+            <p className="eyebrow">Screens</p>
+            <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+              Every surface, at a glance.
+            </h2>
+            <p className="mt-6 max-w-2xl leading-7 text-ink-muted">
+              The technician app and the hire desk dashboard, side by side. Click any screen to expand it.
+            </p>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <div className="mt-10 columns-2 gap-4 sm:columns-3 lg:columns-4 [&>*]:mb-4">
+              {galleryShots.map((shot, index) => (
+                <button
+                  key={shot.src}
+                  type="button"
+                  onClick={() => setLightboxIndex(index)}
+                  className="group block w-full break-inside-avoid text-left"
+                >
+                  <FramedImage
+                    shot={shot}
+                    sizes="(min-width: 1024px) 22vw, 45vw"
+                    imageClassName="h-auto w-full transition duration-300 group-hover:scale-[1.03]"
+                    wrapperClassName="transition duration-300 group-hover:-translate-y-1 group-hover:shadow-lg"
+                  />
+                </button>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
       {/* Discovery CTA */}
       <section className="border-t border-black/10 bg-card py-20 sm:py-28">
         <div className="shell">
@@ -373,6 +728,22 @@ export function FuelFloShowcase() {
           </Reveal>
         </div>
       </section>
+
+      <AnimatePresence>
+        {lightboxIndex !== null && (
+          <Lightbox
+            shots={galleryShots}
+            index={lightboxIndex}
+            onClose={() => setLightboxIndex(null)}
+            onStep={(delta) =>
+              setLightboxIndex((current) => {
+                if (current === null) return current;
+                return (current + delta + galleryShots.length) % galleryShots.length;
+              })
+            }
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

@@ -134,7 +134,7 @@ export const products: Product[] = [
     category: "Temporary power & fuel operations",
     description: "A field-to-report system that turns every fuel delivery into verified, timestamped, photo-backed evidence for generator and temporary power companies.",
     outcome: "Built and pilot-ready: every fuel action verified with GPS, timestamp, and photo evidence — client-ready reports generated in seconds instead of hours.",
-    stack: ["React Native", "Supabase", "Offline-first sync", "GPS + photo capture"],
+    stack: ["React Native", "Web dashboard (PWA)", "Supabase", "Offline-first sync", "GPS + photo capture"],
     image: "/fuelflo-offline.png",
     imageAlt: "FuelFlo mobile app showing a device field-readiness check, with local database, evidence storage, camera permission, GPS capture, and API sync all marked ready for offline use.",
   },
