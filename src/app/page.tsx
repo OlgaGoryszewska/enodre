@@ -97,7 +97,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="border-y border-black/10 bg-card py-20 sm:py-28">
+      <section className="py-20 sm:py-28">
         <div className="shell">
           <Reveal>
             <div className="mb-10 flex items-end justify-between gap-6">
@@ -113,10 +113,10 @@ export default function Home() {
               <Reveal key={product.slug} delay={index * 0.08}>
                 <Link
                   href={`/products/${product.slug}`}
-                  className="group grid overflow-hidden rounded-2xl border border-black/10 bg-background transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:grid-cols-[0.9fr_1.1fr]"
+                  className="group grid overflow-hidden rounded-2xl border border-black/10 bg-card transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:grid-cols-[0.9fr_1.1fr]"
                 >
                   {product.image && (
-                    <div className="flex items-center justify-center border-b border-black/10 bg-card p-8 sm:border-b-0 sm:border-r">
+                    <div className="flex items-center justify-center border-b border-black/10 bg-background p-8 sm:border-b-0 sm:border-r">
                       <Image
                         src={product.image}
                         alt={product.imageAlt ?? ""}

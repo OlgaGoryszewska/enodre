@@ -17,6 +17,6 @@ Open [http://localhost:3000](http://localhost:3000).
 - Next.js App Router
 - TypeScript
 - Tailwind CSS
-- Static generation for service and case-study detail pages
+- Static generation for service and product detail pages
 
 Content for the static routes lives in `src/lib/content.ts`.
