@@ -7,18 +7,6 @@ export type Service = {
   deliverables: string[];
 };
 
-export type CaseStudy = {
-  slug: string;
-  sector: string;
-  title: string;
-  summary: string;
-  result: string;
-  challenge: string;
-  approach: string;
-  image?: string;
-  imageAlt?: string;
-};
-
 export const services: Service[] = [
   {
     slug: "workflow-design",
@@ -79,38 +67,6 @@ export const expertiseAreas: ExpertiseArea[] = [
   {
     title: "CMS & Content Platforms",
     description: "Empower your team with flexible, easy-to-manage content systems tailored to your workflow.",
-  },
-];
-
-export const caseStudies: CaseStudy[] = [
-  {
-    slug: "field-operations",
-    sector: "Field operations",
-    title: "From paper job sheets to one shared workflow",
-    summary: "A mobile-first operations system connecting field teams, schedulers, and finance.",
-    result: "Example outcome · replace with project metrics",
-    challenge: "Critical job information lived across paper forms, spreadsheets, calls, and individual inboxes, making status difficult to see and admin costly.",
-    approach: "We mapped the end-to-end job lifecycle, designed the field and office experiences together, and shipped the workflow in stages so the team could adopt it safely.",
-  },
-  {
-    slug: "admin-control-centre",
-    sector: "Business administration",
-    title: "A clear control centre for a complex service",
-    summary: "One dashboard for requests, approvals, documents, and reporting.",
-    result: "Example outcome · replace with project metrics",
-    challenge: "The operations team had no single view of work in progress, leading to duplicated updates and delays between departments.",
-    approach: "We created a shared information model and a role-based dashboard that put exceptions, decisions, and next actions in one place.",
-  },
-  {
-    slug: "fuelflo",
-    sector: "Temporary power & fuel operations",
-    title: "The proof layer behind fuel operations",
-    summary: "A field-to-report system that turns every fuel delivery into verified, timestamped, photo-backed evidence for generator and temporary power companies.",
-    result: "Built and pilot-ready: every fuel action verified with GPS, timestamp, and photo evidence — client-ready reports generated in seconds instead of hours.",
-    challenge: "Fuel work happened across many sites, assets, and technicians, with proof scattered across photos, paper logs, spreadsheets, and messages. Missing or unclear records led to disputed fuel usage, slower invoicing, and weaker customer trust.",
-    approach: "We designed a connected field-to-report flow — scan the asset, record readings, capture photo evidence, sync in real time, then review and report — so every fuel action is tied to its asset, technician, GPS location, meter reading, and evidence, with client-ready PDF reports generated in seconds.",
-    image: "/fuelflo-offline.png",
-    imageAlt: "FuelFlo mobile app showing a device field-readiness check, with local database, evidence storage, camera permission, GPS capture, and API sync all marked ready for offline use.",
   },
 ];
 
@@ -278,8 +234,4 @@ export const howWeWork: ProcessStep[] = [
 
 export function getService(slug: string) {
   return services.find((service) => service.slug === slug);
-}
-
-export function getCaseStudy(slug: string) {
-  return caseStudies.find((study) => study.slug === slug);
 }
