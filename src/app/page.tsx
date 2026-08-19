@@ -8,6 +8,8 @@ import { ChallengeSection } from "@/components/challenge/ChallengeSection";
 import { TeamSection } from "@/components/TeamSection";
 import { StackSection } from "@/components/StackSection";
 import { Reveal } from "@/components/motion/Reveal";
+import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
+import { ScrollParallaxX } from "@/components/motion/ScrollParallaxX";
 
 const heroContainer: Variants = {
   hidden: {},
@@ -33,35 +35,29 @@ export default function Home() {
             animate="show"
           >
             <div>
-              <motion.p variants={heroItem} className="eyebrow mb-8">
+              <motion.p variants={heroItem} className="eyebrow mb-8 mt-20">
                 Digital product studio
               </motion.p>
-              <motion.h1 variants={heroItem} className="display-title">
-                We build the systems that help ambitious businesses work smarter and grow faster.
-              </motion.h1>
-              <motion.video
-                variants={heroItem}
-                src="/video-hero.mp4"
-                aria-hidden="true"
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="auto"
-                className="-mx-4 h-auto w-[calc(100%+2rem)] max-w-none pt-20 sm:mx-0 sm:w-full sm:max-w-full"
+              <ScrollRevealHeading
+                text="We build the systems that help ambitious businesses work smarter and grow faster."
+                className="display-title"
               />
               <motion.p variants={heroItem} className="mt-10 max-w-2xl text-lg leading-8 text-ink-muted sm:text-xl">
                 We untangle complexity through thoughtfully designed digital solutions. From workflow automation and custom software to insightful dashboards and conversion-focused websites, we build technology that helps your business work smarter, move faster, and scale with clarity.
               </motion.p>
               <motion.div variants={heroItem} className="mt-10 flex flex-wrap gap-4">
-                <Link className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-m font-semibold text-background transition hover:opacity-90" href="/services">
-                  <span aria-hidden="true" className="h-2 w-2 rounded-full bg-background" />
-                  <span>Explore our services</span>
-                </Link>
-                <Link className=" bg-background inline-flex items-center gap-2 rounded-full border border-black/20 px-6 py-3 text-m font-semibold transition hover:bg-foreground/5" href="/products">
-                  <span aria-hidden="true" className="h-2 w-2 rounded-full bg-foreground" />
-                  <span>See our work</span>
-                </Link>
+                <ScrollParallaxX distance={-28}>
+                  <Link className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-m font-semibold text-background transition hover:opacity-90" href="/services">
+                    <span aria-hidden="true" className="h-2 w-2 rounded-full bg-background" />
+                    <span>Explore our services</span>
+                  </Link>
+                </ScrollParallaxX>
+                <ScrollParallaxX distance={28}>
+                  <Link className=" bg-background inline-flex items-center gap-2 rounded-full border border-black/20 px-6 py-3 text-m font-semibold transition hover:bg-foreground/5" href="/products">
+                    <span aria-hidden="true" className="h-2 w-2 rounded-full bg-foreground" />
+                    <span>See our work</span>
+                  </Link>
+                </ScrollParallaxX>
               </motion.div>
             </div>
           </motion.div>
