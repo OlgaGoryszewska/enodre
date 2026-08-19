@@ -115,14 +115,13 @@ export default function Home() {
                   className="group grid overflow-hidden rounded-2xl border border-black/10 bg-card transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:grid-cols-[0.9fr_1.1fr]"
                 >
                   {product.image && (
-                    <div className="flex items-center justify-center border-b border-black/10 bg-background p-8 sm:border-b-0 sm:border-r">
+                    <div className="relative aspect-[4/3] overflow-hidden border-b border-black/10 bg-background sm:aspect-auto sm:h-full sm:border-b-0 sm:border-r">
                       <Image
                         src={product.image}
                         alt={product.imageAlt ?? ""}
-                        width={1080}
-                        height={1080}
+                        fill
                         sizes="(min-width: 1024px) 32vw, 90vw"
-                        className="h-auto w-full max-w-xs"
+                        className="object-cover"
                       />
                     </div>
                   )}

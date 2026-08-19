@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 import type { Founder } from "@/lib/content";
 import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
 
@@ -12,6 +14,9 @@ interface TeamSectionProps {
 }
 
 export function TeamSection({ member, ctaHref }: TeamSectionProps) {
+  const [expanded, setExpanded] = useState(false);
+  const [intro, ...rest] = member.bio;
+
   return (
     <section className="border-y border-black/10 bg-card py-20 sm:py-28">
       <div className="shell">
@@ -55,12 +60,39 @@ export function TeamSection({ member, ctaHref }: TeamSectionProps) {
             <p className="mt-2 text-sm font-semibold text-accent">{member.role}</p>
 
             <div className="mt-8 grid gap-5">
-              {member.bio.map((paragraph) => (
-                <p key={paragraph} className="leading-7 text-ink-muted">
-                  {paragraph}
-                </p>
-              ))}
+              <p className="leading-7 text-ink-muted">{intro}</p>
+              <AnimatePresence initial={false}>
+                {expanded && (
+                  <motion.div
+                    key="bio-rest"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                    className="grid gap-5 overflow-hidden"
+                  >
+                    {rest.map((paragraph) => (
+                      <p key={paragraph} className="leading-7 text-ink-muted">
+                        {paragraph}
+                      </p>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setExpanded((value) => !value)}
+              aria-expanded={expanded}
+              className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-accent transition hover:opacity-80"
+            >
+              <span>{expanded ? "Read less" : "Read more"}</span>
+              <ChevronDown
+                className={`h-4 w-4 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
+                aria-hidden="true"
+              />
+            </button>
 
             <div className="mt-10">
               <Link

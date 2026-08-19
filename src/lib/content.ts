@@ -159,10 +159,13 @@ export const stackGroups: StackGroup[] = [
       "Next.js",
       "React",
       "React Native",
+      "PWA",
       "Tailwind CSS",
       "TypeScript",
       "SQL (backend)",
       "Supabase",
+      "Stripe",
+      "Nodemailer",
     ],
   },
 ];
