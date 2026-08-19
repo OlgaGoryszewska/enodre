@@ -15,6 +15,7 @@ import {
 } from "react-icons/si";
 import type { StackGroup } from "@/lib/content";
 import { Reveal } from "@/components/motion/Reveal";
+import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
 
 interface StackSectionProps {
   groups: StackGroup[];
@@ -87,9 +88,10 @@ export function StackSection({ groups }: StackSectionProps) {
       <div className="shell">
         <Reveal className="text-center">
           <p className="eyebrow">Tools & stack</p>
-          <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-            {groups[0]?.heading}
-          </h2>
+          <ScrollRevealHeading
+            text={groups[0]?.heading ?? ""}
+            className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
+          />
         </Reveal>
 
         <PillGroup items={groups[0]?.items ?? []} />

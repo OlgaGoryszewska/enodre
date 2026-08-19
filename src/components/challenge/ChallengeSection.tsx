@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ChallengeForm } from "@/components/challenge/ChallengeForm";
+import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
 
 export function ChallengeSection() {
   return (
@@ -16,9 +17,10 @@ export function ChallengeSection() {
             className="mb-12 text-center sm:mb-16"
           >
             <p className="eyebrow">Untangle complexity</p>
-            <h2 className="page-title mt-4 text-4xl sm:text-5xl">
-              What would you like to untangle?
-            </h2>
+            <ScrollRevealHeading
+              text="What would you like to untangle?"
+              className="page-title mt-4 text-4xl sm:text-5xl"
+            />
             <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-ink-muted">
               Every business has bottlenecks. Whether it&apos;s repetitive
               work, disconnected systems, slow operations, or processes that

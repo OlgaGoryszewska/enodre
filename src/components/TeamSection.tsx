@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { Founder } from "@/lib/content";
+import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
 
 interface TeamSectionProps {
   member: Founder;
@@ -20,16 +21,24 @@ export function TeamSection({ member, ctaHref }: TeamSectionProps) {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="mx-auto w-full max-w-xs overflow-hidden rounded-2xl border border-black/10 lg:mx-0"
+            className="relative mx-auto aspect-square w-full max-w-xs lg:mx-0"
           >
-            <Image
-              src={member.image}
-              alt={member.imageAlt}
-              width={237}
-              height={357}
-              sizes="(min-width: 1024px) 320px, 60vw"
-              className="h-auto w-full"
+            <div
+              aria-hidden="true"
+              className="absolute -inset-6 rounded-full bg-[radial-gradient(circle,var(--accent)_0%,transparent_70%)] opacity-25 blur-2xl"
             />
+            <div className="relative h-full w-full rounded-full bg-[linear-gradient(135deg,var(--accent),#D5D7E2)] p-[3px] shadow-[0_20px_45px_-25px_rgba(23,33,27,0.35)]">
+              <div className="h-full w-full overflow-hidden rounded-full bg-card">
+                <Image
+                  src={member.image}
+                  alt={member.imageAlt}
+                  width={237}
+                  height={357}
+                  sizes="(min-width: 1024px) 320px, 60vw"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            </div>
           </motion.div>
 
           <motion.div
@@ -39,9 +48,10 @@ export function TeamSection({ member, ctaHref }: TeamSectionProps) {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
           >
             <p className="eyebrow">The team</p>
-            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-              Meet {member.name}
-            </h2>
+            <ScrollRevealHeading
+              text={`Meet ${member.name}`}
+              className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
+            />
             <p className="mt-2 text-sm font-semibold text-accent">{member.role}</p>
 
             <div className="mt-8 grid gap-5">

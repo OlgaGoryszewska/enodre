@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { products } from "@/lib/content";
 import { Reveal } from "@/components/motion/Reveal";
+import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
 
 const fuelflo = products.find((product) => product.slug === "fuelflo")!;
 
@@ -398,9 +399,10 @@ export function FuelFloShowcase() {
         <div className="shell grid gap-12 lg:grid-cols-[1fr_1fr] lg:gap-16">
           <Reveal>
             <p className="eyebrow">The challenge</p>
-            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-              Every fuel delivery told a different story.
-            </h2>
+            <ScrollRevealHeading
+              text="Every fuel delivery told a different story."
+              className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
+            />
             <p className="mt-6 max-w-xl leading-7 text-ink-muted">{fuelflo.description}</p>
             <p className="mt-4 max-w-xl leading-7 text-ink-muted">
               Missing or unclear records led to disputed fuel usage, slower invoicing, and weaker customer trust.
@@ -431,9 +433,10 @@ export function FuelFloShowcase() {
         <div className="shell">
           <Reveal>
             <p className="eyebrow">How it works</p>
-            <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-              A field-to-report flow, from asset to invoice.
-            </h2>
+            <ScrollRevealHeading
+              text="A field-to-report flow, from asset to invoice."
+              className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
+            />
           </Reveal>
           <div className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-black/10 bg-black/10 sm:grid-cols-2 lg:grid-cols-5">
             {flowSteps.map((step, index) => (
@@ -465,9 +468,10 @@ export function FuelFloShowcase() {
           <div>
             <Reveal>
               <p className="eyebrow">Built for the field</p>
-              <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-                Proof that works with no signal.
-              </h2>
+              <ScrollRevealHeading
+                text="Proof that works with no signal."
+                className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
+              />
               <p className="mt-6 max-w-lg leading-7 text-ink-muted">
                 Every field visit starts with a readiness check most users never have to think about. This is the
                 actual screen a technician sees before starting work — five things confirmed, offline, before a
@@ -502,9 +506,10 @@ export function FuelFloShowcase() {
         <div className="shell">
           <Reveal>
             <p className="eyebrow">The technician app</p>
-            <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-              More than a form — a full offline workspace.
-            </h2>
+            <ScrollRevealHeading
+              text="More than a form — a full offline workspace."
+              className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
+            />
             <p className="mt-6 max-w-2xl leading-7 text-ink-muted">
               From the home screen to the confirmation, every step below is a real screen from the app —
               scroll to see the flow a technician actually uses.
@@ -543,9 +548,10 @@ export function FuelFloShowcase() {
         <div className="shell">
           <Reveal>
             <p className="eyebrow">The hire desk dashboard</p>
-            <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-              The office side of the same system.
-            </h2>
+            <ScrollRevealHeading
+              text="The office side of the same system."
+              className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
+            />
             <p className="mt-6 max-w-2xl leading-7 text-ink-muted">
               While technicians capture evidence in the field, the hire desk team prepares every job from a
               connected web dashboard — before crews ever arrive on site.
@@ -631,7 +637,10 @@ export function FuelFloShowcase() {
         <div className="shell grid gap-12 lg:grid-cols-[1fr_1fr] lg:gap-16">
           <Reveal>
             <p className="eyebrow">Built solo, end to end</p>
-            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">One stack, offline by design.</h2>
+            <ScrollRevealHeading
+              text="One stack, offline by design."
+              className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
+            />
             <ul className="mt-6 grid gap-4">
               {impactPoints.map((point) => (
                 <li key={point} className="flex gap-3 border-t border-black/10 pt-4 leading-7 text-ink-muted first:border-t-0 first:pt-0">
@@ -658,9 +667,10 @@ export function FuelFloShowcase() {
         <div className="shell">
           <Reveal>
             <p className="eyebrow">What we untangled</p>
-            <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-              The transformation, in three moves.
-            </h2>
+            <ScrollRevealHeading
+              text="The transformation, in three moves."
+              className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
+            />
           </Reveal>
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {untangled.map((point, index) => (
@@ -680,9 +690,10 @@ export function FuelFloShowcase() {
         <div className="shell">
           <Reveal>
             <p className="eyebrow">Screens</p>
-            <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-              Every surface, at a glance.
-            </h2>
+            <ScrollRevealHeading
+              text="Every surface, at a glance."
+              className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
+            />
             <p className="mt-6 max-w-2xl leading-7 text-ink-muted">
               The technician app and the hire desk dashboard, side by side. Click any screen to expand it.
             </p>
@@ -714,9 +725,10 @@ export function FuelFloShowcase() {
         <div className="shell">
           <Reveal className="mx-auto max-w-2xl text-center">
             <p className="eyebrow">Untangle complexity</p>
-            <h2 className="page-title mt-4 text-4xl sm:text-5xl">
-              Still running critical operations through paper and spreadsheets?
-            </h2>
+            <ScrollRevealHeading
+              text="Still running critical operations through paper and spreadsheets?"
+              className="page-title mt-4 text-4xl sm:text-5xl"
+            />
             <p className="mt-6 text-lg leading-8 text-ink-muted">Let&apos;s untangle it.</p>
             <Link
               href="/#get-in-touch"

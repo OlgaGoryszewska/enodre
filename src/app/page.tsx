@@ -35,12 +35,15 @@ export default function Home() {
             animate="show"
           >
             <div>
-              <motion.p variants={heroItem} className="eyebrow mb-8 mt-20">
+              <motion.p variants={heroItem} className="eyebrow mb-8 mt-30">
                 Digital product studio
               </motion.p>
               <ScrollRevealHeading
-                text="We build the systems that help ambitious businesses work smarter and grow faster."
+                text="We build systems that help businesses work smarter and grow faster."
                 className="display-title"
+                as="h1"
+                mode="page"
+                pageScrollRange={[0, 180]}
               />
               <motion.p variants={heroItem} className="mt-10 max-w-2xl text-lg leading-8 text-ink-muted sm:text-xl">
                 We untangle complexity through thoughtfully designed digital solutions. From workflow automation and custom software to insightful dashboards and conversion-focused websites, we build technology that helps your business work smarter, move faster, and scale with clarity.
@@ -68,9 +71,10 @@ export default function Home() {
         <div className="shell grid gap-10 lg:grid-cols-[1fr_2fr]">
           <Reveal>
             <p className="eyebrow">What we do</p>
-            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em]">
-              From the first conversation to a product your team actually loves using.
-            </h2>
+            <ScrollRevealHeading
+              text="From the first conversation to a product your team actually loves using."
+              className="mt-4 text-3xl font-semibold tracking-[-0.04em]"
+            />
             <p className="mt-6 leading-7 text-ink-muted">
               We design, build, and launch digital solutions that solve real business problems. Whether you need to streamline operations, modernize outdated tools, or create entirely new experiences, we deliver software that&apos;s intuitive, scalable, and built around the way your business works.
             </p>
@@ -99,7 +103,10 @@ export default function Home() {
             <div className="mb-10 flex items-end justify-between gap-6">
               <div>
                 <p className="eyebrow">Products we delivered</p>
-                <h2 className="mt-4 text-4xl font-semibold tracking-[-0.05em]">Software we&apos;ve taken from idea to production.</h2>
+                <ScrollRevealHeading
+                  text="Software we've taken from idea to production."
+                  className="mt-4 text-4xl font-semibold tracking-[-0.05em]"
+                />
               </div>
               <Link className="hidden text-sm font-semibold sm:block" href="/products">All products →</Link>
             </div>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { howWeWork, partnershipPlans, projectPricing } from "@/lib/content";
 import { cn } from "@/lib/utils";
+import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -48,9 +49,10 @@ export default function PricingPage() {
       <section className="border-y border-black/10 bg-card py-20 sm:py-28">
         <div className="shell">
           <p className="eyebrow">Monthly partnership</p>
-          <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-            For businesses that want ongoing frontend support without hiring in-house.
-          </h2>
+          <ScrollRevealHeading
+            text="For businesses that want ongoing frontend support without hiring in-house."
+            className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
+          />
 
           <div className="mt-12 grid gap-6 lg:grid-cols-3">
             {partnershipPlans.map((plan) => (
@@ -97,9 +99,10 @@ export default function PricingPage() {
 
       <section className="shell py-20 sm:py-28">
         <p className="eyebrow">How we work</p>
-        <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-          From first call to shipped software.
-        </h2>
+        <ScrollRevealHeading
+          text="From first call to shipped software."
+          className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
+        />
 
         <div className="mt-12 border-t border-black/15">
           {howWeWork.map((step, index) => (
