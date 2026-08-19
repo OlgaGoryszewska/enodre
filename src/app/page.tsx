@@ -3,13 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
+import { MapPin } from "lucide-react";
 import { expertiseAreas, founder, products, stackGroups } from "@/lib/content";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
 import { TeamSection } from "@/components/TeamSection";
 import { StackSection } from "@/components/StackSection";
 import { Reveal } from "@/components/motion/Reveal";
 import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
-import { ScrollParallaxX } from "@/components/motion/ScrollParallaxX";
 
 const heroContainer: Variants = {
   hidden: {},
@@ -35,7 +35,7 @@ export default function Home() {
             animate="show"
           >
             <div>
-              <motion.p variants={heroItem} className="eyebrow mb-8 mt-30">
+              <motion.p variants={heroItem} className="eyebrow mb-8 mt-25">
                 Digital product studio
               </motion.p>
               <ScrollRevealHeading
@@ -49,18 +49,14 @@ export default function Home() {
                 We untangle complexity through thoughtfully designed digital solutions. From workflow automation and custom software to insightful dashboards and conversion-focused websites, we build technology that helps your business work smarter, move faster, and scale with clarity.
               </motion.p>
               <motion.div variants={heroItem} className="mt-10 flex flex-wrap gap-4">
-                <ScrollParallaxX distance={-28}>
-                  <Link className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-m font-semibold text-background transition hover:opacity-90" href="/services">
-                    <span aria-hidden="true" className="h-2 w-2 rounded-full bg-background" />
-                    <span>Explore our services</span>
-                  </Link>
-                </ScrollParallaxX>
-                <ScrollParallaxX distance={28}>
-                  <Link className=" bg-background inline-flex items-center gap-2 rounded-full border border-black/20 px-6 py-3 text-m font-semibold transition hover:bg-foreground/5" href="/products">
-                    <span aria-hidden="true" className="h-2 w-2 rounded-full bg-foreground" />
-                    <span>See our work</span>
-                  </Link>
-                </ScrollParallaxX>
+                <Link className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-m font-semibold text-background transition hover:opacity-90" href="/services">
+                  <span aria-hidden="true" className="h-2 w-2 rounded-full bg-background" />
+                  <span>Explore our services</span>
+                </Link>
+                <Link className=" bg-background inline-flex items-center gap-2 rounded-full border border-black/20 px-6 py-3 text-m font-semibold transition hover:bg-foreground/5" href="/products">
+                  <span aria-hidden="true" className="h-2 w-2 rounded-full bg-foreground" />
+                  <span>See our work</span>
+                </Link>
               </motion.div>
             </div>
           </motion.div>
@@ -131,7 +127,13 @@ export default function Home() {
                     </div>
                   )}
                   <div className="flex flex-col p-8 sm:p-10">
-                    <p className="eyebrow">{product.category}</p>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <p className="eyebrow">{product.category}</p>
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-ink-muted">
+                        <MapPin className="h-3 w-3" aria-hidden="true" />
+                        {product.location}
+                      </span>
+                    </div>
                     <h3 className="mt-4 text-3xl font-semibold tracking-[-0.04em]">{product.name}</h3>
                     <p className="mt-2 text-lg font-medium text-ink-muted">{product.tagline}</p>
                     <p className="mt-4 leading-7 text-ink-muted">{product.description}</p>

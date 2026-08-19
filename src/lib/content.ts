@@ -75,6 +75,7 @@ export type Product = {
   name: string;
   tagline: string;
   category: string;
+  location: string;
   description: string;
   outcome: string;
   stack: string[];
@@ -88,11 +89,26 @@ export const products: Product[] = [
     name: "FuelFlo",
     tagline: "The proof layer behind fuel operations.",
     category: "Temporary power & fuel operations",
-    description: "A field-to-report system that turns every fuel delivery into verified, timestamped, photo-backed evidence for generator and temporary power companies.",
+    location: "Saudi Arabia",
+    description: "A field-to-report system that turns every fuel delivery into verified, timestamped, photo-backed evidence for generator and temporary power companies in Saudi Arabia.",
     outcome: "Built and pilot-ready: every fuel action verified with GPS, timestamp, and photo evidence — client-ready reports generated in seconds instead of hours.",
     stack: ["React Native", "Web dashboard (PWA)", "Supabase", "Offline-first sync", "GPS + photo capture"],
     image: "/fuelflo-offline.png",
     imageAlt: "FuelFlo mobile app showing a device field-readiness check, with local database, evidence storage, camera permission, GPS capture, and API sync all marked ready for offline use.",
+  },
+  {
+    slug: "nick-whittaker-imagery",
+    name: "Nick Whittaker Imagery",
+    tagline: "An online gallery that shows interior designers and hospitality exactly how the art will look in the room.",
+    category: "B2B photography gallery",
+    location: "New Zealand",
+    description:
+      "A targeted online gallery for an ocean and water photographer — built for interior designers and hospitality buyers, not casual retail shoppers. Brand identity, logo, and design system designed end to end by Enodre, inspired directly by the artist's own photography, alongside dozens of custom room-context images showing each piece styled in real interior and hospitality spaces.",
+    outcome:
+      "Delivered a trade-focused gallery and store: a brand and site that feel as considered as the photography itself, dozens of custom room-context images so designers and hospitality buyers can picture the work in a space before they commit, and a checkout that's accurate for New Zealand buyers from day one.",
+    stack: ["Next.js 16", "Tailwind CSS v4", "Supabase (Postgres + Auth)", "Stripe Checkout", "Server Actions", "Nodemailer"],
+    image: "/nick/nick-front.jpg",
+    imageAlt: "A laptop displaying the Nick Whittaker Imagery site, showing the 'Smooth Lines' print framed and styled in a warm living room.",
   },
 ];
 

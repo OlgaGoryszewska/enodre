@@ -358,7 +358,7 @@ export function FuelFloShowcase() {
           >
             <div>
               <motion.p variants={heroItem} className="eyebrow">
-                Flagship product · {fuelflo.category}
+                Flagship product · {fuelflo.category} · {fuelflo.location}
               </motion.p>
               <motion.h1 variants={heroItem} className="display-title mt-6">
                 {fuelflo.name}

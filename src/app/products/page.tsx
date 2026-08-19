@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { MapPin } from "lucide-react";
 import { products } from "@/lib/content";
 import { Reveal } from "@/components/motion/Reveal";
 
@@ -38,7 +39,13 @@ export default function ProductsPage() {
                 </div>
               )}
               <div className="flex flex-1 flex-col p-8 sm:p-10">
-                <p className="eyebrow">{product.category}</p>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <p className="eyebrow">{product.category}</p>
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-ink-muted">
+                    <MapPin className="h-3 w-3" aria-hidden="true" />
+                    {product.location}
+                  </span>
+                </div>
                 <h2 className="mt-4 text-2xl font-semibold tracking-[-0.04em]">{product.name}</h2>
                 <p className="mt-2 text-lg font-medium text-ink-muted">{product.tagline}</p>
                 <p className="mt-4 leading-7 text-ink-muted">{product.description}</p>
