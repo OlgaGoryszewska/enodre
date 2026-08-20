@@ -92,12 +92,22 @@ export default function Home() {
                 const Icon = EXPERTISE_ICONS[area.title];
                 return (
                   <Reveal key={area.title} delay={index * 0.08}>
-                    <div className="rounded-2xl border border-black/10 bg-card p-7">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10">
-                        <Icon className="h-5 w-5 text-accent" aria-hidden="true" />
+                    <div className="group relative overflow-hidden rounded-2xl border border-black/10 bg-card p-7 transition duration-300 hover:-translate-y-1 hover:shadow-lg">
+                      <Icon
+                        className="pointer-events-none absolute -bottom-5 -right-5 h-28 w-28 text-accent/[0.07] transition duration-500 ease-out group-hover:-rotate-6 group-hover:scale-110 group-hover:text-accent/[0.12]"
+                        strokeWidth={1}
+                        aria-hidden="true"
+                      />
+                      <div className="relative flex items-start justify-between">
+                        <Icon
+                          className="h-7 w-7 text-ink transition duration-300 group-hover:text-accent"
+                          strokeWidth={1.25}
+                          aria-hidden="true"
+                        />
+                        <span className="font-mono text-xs text-ink-muted/50">0{index + 1}</span>
                       </div>
-                      <h3 className="mt-4 text-xl font-semibold tracking-tight">{area.title}</h3>
-                      <p className="mt-3 leading-7 text-ink-muted">{area.description}</p>
+                      <h3 className="relative mt-6 text-xl font-semibold tracking-tight">{area.title}</h3>
+                      <p className="relative mt-3 leading-7 text-ink-muted">{area.description}</p>
                     </div>
                   </Reveal>
                 );

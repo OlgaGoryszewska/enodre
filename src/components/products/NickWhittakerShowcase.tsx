@@ -459,11 +459,21 @@ export function NickWhittakerShowcase() {
           <div className="mt-10 grid gap-6 md:grid-cols-2">
             {whatWeDid.map(({ icon: Icon, text }, index) => (
               <Reveal key={text} delay={index * 0.08}>
-                <div className="flex h-full gap-4 rounded-2xl border border-black/10 p-7">
-                  <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-accent/10">
-                    <Icon className="h-5 w-5 text-accent" aria-hidden="true" />
+                <div className="group relative h-full overflow-hidden rounded-2xl border border-black/10 p-7 transition duration-300 hover:-translate-y-1 hover:shadow-lg">
+                  <Icon
+                    className="pointer-events-none absolute -bottom-5 -right-5 h-28 w-28 text-accent/[0.07] transition duration-500 ease-out group-hover:-rotate-6 group-hover:scale-110 group-hover:text-accent/[0.12]"
+                    strokeWidth={1}
+                    aria-hidden="true"
+                  />
+                  <div className="relative flex items-start justify-between">
+                    <Icon
+                      className="h-7 w-7 text-ink transition duration-300 group-hover:text-accent"
+                      strokeWidth={1.25}
+                      aria-hidden="true"
+                    />
+                    <span className="font-mono text-xs text-ink-muted/50">0{index + 1}</span>
                   </div>
-                  <p className="leading-7 text-ink-muted">{text}</p>
+                  <p className="relative mt-6 leading-7 text-ink-muted">{text}</p>
                 </div>
               </Reveal>
             ))}
