@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
-import { MapPin } from "lucide-react";
+import { Globe, Layers, LayoutDashboard, MapPin, Smartphone, Sparkles } from "lucide-react";
 import { expertiseAreas, founder, products, stackGroups } from "@/lib/content";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
 import { TeamSection } from "@/components/TeamSection";
@@ -21,6 +21,14 @@ const heroContainer: Variants = {
 const heroItem: Variants = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } },
+};
+
+const EXPERTISE_ICONS: Record<string, typeof LayoutDashboard> = {
+  "Custom Dashboards": LayoutDashboard,
+  "Web Applications & Websites": Globe,
+  "AI Integrations & Automation": Sparkles,
+  "Native Mobile Apps": Smartphone,
+  "CMS & Content Platforms": Layers,
 };
 
 export default function Home() {
@@ -80,14 +88,20 @@ export default function Home() {
               <p className="eyebrow">Our expertise</p>
             </Reveal>
             <div className="mt-6 grid gap-6 sm:grid-cols-2">
-              {expertiseAreas.map((area, index) => (
-                <Reveal key={area.title} delay={index * 0.08}>
-                  <div className="rounded-2xl border border-black/10 bg-card p-7">
-                    <h3 className="text-xl font-semibold tracking-tight">{area.title}</h3>
-                    <p className="mt-3 leading-7 text-ink-muted">{area.description}</p>
-                  </div>
-                </Reveal>
-              ))}
+              {expertiseAreas.map((area, index) => {
+                const Icon = EXPERTISE_ICONS[area.title];
+                return (
+                  <Reveal key={area.title} delay={index * 0.08}>
+                    <div className="rounded-2xl border border-black/10 bg-card p-7">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10">
+                        <Icon className="h-5 w-5 text-accent" aria-hidden="true" />
+                      </div>
+                      <h3 className="mt-4 text-xl font-semibold tracking-tight">{area.title}</h3>
+                      <p className="mt-3 leading-7 text-ink-muted">{area.description}</p>
+                    </div>
+                  </Reveal>
+                );
+              })}
             </div>
           </div>
         </div>

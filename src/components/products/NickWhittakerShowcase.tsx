@@ -4,7 +4,19 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion, useScroll, useTransform, type Variants } from "framer-motion";
-import { ChevronLeft, ChevronRight, Mail, Receipt, ShieldCheck, Sparkles, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Image as ImageIcon,
+  Mail,
+  Palette,
+  Receipt,
+  ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  Users,
+  X,
+} from "lucide-react";
 import { products } from "@/lib/content";
 import { Reveal } from "@/components/motion/Reveal";
 import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
@@ -33,12 +45,30 @@ const palette = [
 ];
 
 const whatWeDid = [
-  "Designed a full brand identity — logo, palette, and voice — inspired directly by the artist's own photography, so the site feels like a natural extension of the work, not a template.",
-  "Built a gallery-style site that speaks to interior designers and hospitality buyers — the trade audience actually commissioning large-scale photography for real spaces, not casual retail shoppers.",
-  "Built a growing library of custom room-context renders — the same piece styled across moody, eclectic, and minimalist interiors — so a buyer can picture exactly how it will look in a space like theirs before they commit.",
-  "Set up secure checkout so buyers can order with confidence, and orders are only ever marked paid once payment is genuinely confirmed.",
-  "Handled New Zealand pricing and tax correctly from day one, so what buyers see at checkout is exactly what they pay.",
-  "Delivered a system the client can run and grow on their own, without ongoing dependence on us.",
+  {
+    icon: Palette,
+    text: "Designed a full brand identity — logo, palette, and voice — inspired directly by the artist's own photography, so the site feels like a natural extension of the work, not a template.",
+  },
+  {
+    icon: Users,
+    text: "Built a gallery-style site that speaks to interior designers and hospitality buyers — the trade audience actually commissioning large-scale photography for real spaces, not casual retail shoppers.",
+  },
+  {
+    icon: ImageIcon,
+    text: "Built a growing library of custom room-context renders — the same piece styled across moody, eclectic, and minimalist interiors — so a buyer can picture exactly how it will look in a space like theirs before they commit.",
+  },
+  {
+    icon: ShieldCheck,
+    text: "Set up secure checkout so buyers can order with confidence, and orders are only ever marked paid once payment is genuinely confirmed.",
+  },
+  {
+    icon: Receipt,
+    text: "Handled New Zealand pricing and tax correctly from day one, so what buyers see at checkout is exactly what they pay.",
+  },
+  {
+    icon: TrendingUp,
+    text: "Delivered a system the client can run and grow on their own, without ongoing dependence on us.",
+  },
 ];
 
 const orderSteps = [
@@ -427,11 +457,13 @@ export function NickWhittakerShowcase() {
             />
           </Reveal>
           <div className="mt-10 grid gap-6 md:grid-cols-2">
-            {whatWeDid.map((point, index) => (
-              <Reveal key={point} delay={index * 0.08}>
+            {whatWeDid.map(({ icon: Icon, text }, index) => (
+              <Reveal key={text} delay={index * 0.08}>
                 <div className="flex h-full gap-4 rounded-2xl border border-black/10 p-7">
-                  <p className="font-mono text-xs font-semibold text-accent">0{index + 1}</p>
-                  <p className="leading-7 text-ink-muted">{point}</p>
+                  <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-accent/10">
+                    <Icon className="h-5 w-5 text-accent" aria-hidden="true" />
+                  </div>
+                  <p className="leading-7 text-ink-muted">{text}</p>
                 </div>
               </Reveal>
             ))}
