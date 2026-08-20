@@ -351,7 +351,7 @@ export function BialyLotosShowcase() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-muted transition hover:text-foreground"
               >
-                <span>Visit bialylotos.pl</span>
+                <span>Visit salonbialylotos.pl</span>
                 <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
               </a>
             )}

@@ -124,7 +124,7 @@ export const products: Product[] = [
     outcome:
       "Delivered a live, content-driven salon site: 15 dynamic treatment pages and 6 problem-led pages generated from structured data, a searchable price list spanning PMU, cosmetology, laser, and piercing, and a booking path from discovery to Booksy — designed, built, and shipped solo.",
     stack: ["Next.js", "React 18", "Tailwind CSS", "Jest", "React Testing Library", "Vercel"],
-    url: "https://bialylotos.pl/",
+    url: "https://www.salonbialylotos.pl/",
     image: "/lotos/front-sylwia.png",
     imageAlt: "A laptop displaying the Biały Lotos Zabiegi page, showing three close-up beauty portraits above the Makijaż Permanentny treatment category.",
   },
