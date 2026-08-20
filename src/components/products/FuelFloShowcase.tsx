@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion, useScroll, useTransform, type Variants } from "framer-motion";
 import {
+  ArrowUpRight,
   Boxes,
   Camera,
   ChevronLeft,
@@ -346,9 +347,22 @@ export function FuelFloShowcase() {
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-black/10 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(169,151,253,0.28),transparent_60%)] py-20 sm:py-28">
         <div className="shell">
-          <Link href="/products" className="text-sm font-semibold text-ink-muted hover:text-foreground">
-            ← All products
-          </Link>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <Link href="/products" className="text-sm font-semibold text-ink-muted hover:text-foreground">
+              ← All products
+            </Link>
+            {fuelflo.url && (
+              <a
+                href={fuelflo.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-muted transition hover:text-foreground"
+              >
+                <span>Visit fuelflo.app</span>
+                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+              </a>
+            )}
+          </div>
 
           <motion.div
             className="mt-12 grid items-center gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(20rem,0.95fr)] lg:gap-16"
