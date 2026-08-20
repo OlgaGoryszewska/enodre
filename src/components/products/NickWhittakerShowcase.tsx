@@ -35,7 +35,7 @@ const palette = [
 const whatWeDid = [
   "Designed a full brand identity — logo, palette, and voice — inspired directly by the artist's own photography, so the site feels like a natural extension of the work, not a template.",
   "Built a gallery-style site that speaks to interior designers and hospitality buyers — the trade audience actually commissioning large-scale photography for real spaces, not casual retail shoppers.",
-  "Created dozens of custom room-context images — each piece styled in real interior and hospitality spaces — so a buyer can picture exactly how it will look before they commit.",
+  "Built a growing library of custom room-context renders — the same piece styled across moody, eclectic, and minimalist interiors — so a buyer can picture exactly how it will look in a space like theirs before they commit.",
   "Set up secure checkout so buyers can order with confidence, and orders are only ever marked paid once payment is genuinely confirmed.",
   "Handled New Zealand pricing and tax correctly from day one, so what buyers see at checkout is exactly what they pay.",
   "Delivered a system the client can run and grow on their own, without ongoing dependence on us.",
@@ -52,14 +52,14 @@ const outcomeChips = ["Custom brand identity", "Room-context imagery", "Trustwor
 
 type Shot = { src: string; alt: string; caption: string; width: number; height: number; frame: "phone" | "browser" };
 
-const DESK = { width: 2894, height: 1788 } as const;
 const MOB = { width: 1125, height: 2436 } as const;
 
 const heroShot: Shot = {
   src: "/nick/Screenshot-desktop-01.png",
   alt: "Nick Whittaker Imagery homepage — 'Unique light.' headline over fine-art ocean and water photography, with a Most Popular print grid below.",
   caption: "Homepage — the collection's opening line.",
-  ...DESK,
+  width: 2482,
+  height: 1846,
   frame: "browser",
 };
 
@@ -68,21 +68,32 @@ const roomShots: Shot[] = [
     src: "/nick/Screenshot-desktop-03.png",
     alt: "'Smooth Lines' print framed and hung in a moody, dark-toned living room, shown on the product page alongside size and paper options.",
     caption: "Smooth Lines, styled in a moody, dark-toned room.",
-    ...DESK,
+    width: 2466,
+    height: 1780,
     frame: "browser",
   },
   {
     src: "/nick/Screenshot-desktop-04.png",
-    alt: "'Smooth Lines' print framed and hung in a warm, plant-filled living room, shown on the product page alongside size and paper options.",
-    caption: "Smooth Lines, styled in a warm living room.",
-    ...DESK,
+    alt: "'Pastel Horizons' print framed and hung in a bold, eclectic living room with jewel-tone velvet chairs and fresh flowers, shown on the product page alongside size and paper options.",
+    caption: "Pastel Horizons, styled in a bold, eclectic living room.",
+    width: 2466,
+    height: 1780,
+    frame: "browser",
+  },
+  {
+    src: "/nick/Screenshot-desktop-06.png",
+    alt: "'Shimmer' print framed and hung above the bed in a bright, minimalist bedroom, shown on the product page alongside size and paper options.",
+    caption: "Shimmer, styled in a bright, minimalist bedroom.",
+    width: 2466,
+    height: 1780,
     frame: "browser",
   },
   {
     src: "/nick/Screenshot-desktop-05.png",
-    alt: "Zoomed lightbox view of the 'Smooth Lines' print in the warm living room, labelled 'Warm Living Room'.",
+    alt: "Zoomed lightbox view of the 'Illuminate' print above the bed in a bright, minimalist bedroom, labelled 'Minimalistic Bedroom'.",
     caption: "A closer look — every room option is one click away.",
-    ...DESK,
+    width: 2156,
+    height: 1496,
     frame: "browser",
   },
   {
@@ -120,7 +131,8 @@ const siteShots: Shot[] = [
     src: "/nick/Screenshot-desktop-02.png",
     alt: "Explore the work gallery page, showing 37 photos across six bodies of work with filter pills for Sunsets, Wave, Abstract, and more.",
     caption: "Explore the work — 37 photos across six bodies of work, filterable by mood.",
-    ...DESK,
+    width: 2482,
+    height: 1704,
     frame: "browser",
   },
   {
@@ -206,6 +218,7 @@ function FramedImage({
       height={shot.height}
       sizes={sizes}
       priority={priority}
+      quality={90}
       className={imageClassName}
     />
   );
@@ -491,14 +504,15 @@ export function NickWhittakerShowcase() {
           <Reveal>
             <p className="eyebrow">In the room</p>
             <ScrollRevealHeading
-              text="Every piece shown exactly where it's meant to hang."
+              text="One piece, styled for every kind of space a buyer actually has."
               className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
             />
             <p className="mt-6 max-w-2xl leading-7 text-ink-muted">
               Interior designers and hospitality buyers don&apos;t picture art on a white wall — they picture it
-              in a specific lobby, lounge, or guest room. Enodre created a large library of custom room-context
-              images for Nick, styling his photography into real interior and hospitality settings, so a buyer
-              can see the actual scale, tone, and mood before they commit.
+              in a specific lobby, lounge, or guest room. Enodre built a growing library of custom room-context
+              renders for Nick — the same photography styled into a moody dark lounge, a bold eclectic living
+              room, and a bright minimalist bedroom — so a buyer sees exactly how a piece will read in a space
+              like theirs, not just a generic mockup.
             </p>
           </Reveal>
           <Reveal delay={0.1}>
