@@ -367,7 +367,7 @@ export function NickWhittakerShowcase() {
         <div className="shell">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <Link href="/products" className="text-sm font-semibold text-ink-muted hover:text-foreground">
-              ← All products
+              ← All case studies
             </Link>
             {nick.url && (
               <a

@@ -128,6 +128,19 @@ export const products: Product[] = [
     image: "/lotos/front-sylwia.png",
     imageAlt: "A laptop displaying the Biały Lotos Zabiegi page, showing three close-up beauty portraits above the Makijaż Permanentny treatment category.",
   },
+  {
+    slug: "ceylons-house",
+    name: "Ceylon's House",
+    tagline: "A tropical luxury brand identity and website for a boutique hotel and rooftop restaurant in Sri Lanka.",
+    category: "Hospitality brand & website",
+    location: "Hikkaduwa, Sri Lanka",
+    description:
+      "A boutique hotel and rooftop restaurant in Hikkaduwa, Sri Lanka, built into a full brand and digital experience from scratch. A tropical luxury identity — palms, peacocks, jungle textures, and warm natural light — carried through a lightweight HTML, CSS, and JavaScript website designed around how travelers actually browse: a quick sense of place, proof of quality, and a clear path to booking.",
+    outcome:
+      "Delivered a complete brand-to-launch project: a tropical luxury identity translated into a live, production-ready website, from first logo concept through to deployment — the full lifecycle of identity design, website execution, and a real public launch.",
+    stack: ["Brand identity design", "HTML", "CSS", "JavaScript", "Netlify"],
+    url: "http://ceylonshouse.com/",
+  },
 ];
 
 export type Founder = {

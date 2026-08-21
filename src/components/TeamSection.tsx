@@ -28,22 +28,26 @@ export function TeamSection({ member, ctaHref }: TeamSectionProps) {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="relative mx-auto aspect-square w-full max-w-xs lg:mx-0"
           >
-            <div
+            <motion.div
               aria-hidden="true"
-              className="absolute -inset-6 rounded-full bg-[radial-gradient(circle,var(--accent)_0%,transparent_70%)] opacity-25 blur-2xl"
+              animate={{ scaleX: [1, 0.82, 1], opacity: [0.28, 0.14, 0.28] }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute bottom-2 left-1/2 h-8 w-2/3 -translate-x-1/2 rounded-full bg-foreground/25 blur-xl"
             />
-            <div className="relative h-full w-full rounded-full bg-[linear-gradient(135deg,var(--accent),#D5D7E2)] p-[3px] shadow-[0_20px_45px_-25px_rgba(23,33,27,0.35)]">
-              <div className="h-full w-full overflow-hidden rounded-full bg-card">
-                <Image
-                  src={member.image}
-                  alt={member.imageAlt}
-                  width={237}
-                  height={357}
-                  sizes="(min-width: 1024px) 320px, 60vw"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            </div>
+            <motion.div
+              animate={{ y: [0, -14, 0] }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+              className="relative h-full w-full overflow-hidden rounded-full border border-black/10 bg-card shadow-[0_20px_45px_-25px_rgba(23,33,27,0.35)]"
+            >
+              <Image
+                src={member.image}
+                alt={member.imageAlt}
+                width={237}
+                height={357}
+                sizes="(min-width: 1024px) 320px, 60vw"
+                className="h-full w-full object-cover"
+              />
+            </motion.div>
           </motion.div>
 
           <motion.div
