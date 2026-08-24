@@ -14,6 +14,7 @@ import {
   SiSupabase,
   SiTailwindcss,
   SiTypescript,
+  SiVercel,
 } from "react-icons/si";
 import type { StackGroup } from "@/lib/content";
 import { Reveal } from "@/components/motion/Reveal";
@@ -47,6 +48,7 @@ const STACK_ICONS: Record<string, Icon> = {
   Supabase: SiSupabase,
   Stripe: SiStripe,
   Nodemailer: Mail,
+  Vercel: SiVercel,
 };
 
 const pillContainer: Variants = {

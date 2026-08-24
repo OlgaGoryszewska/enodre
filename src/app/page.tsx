@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
@@ -9,6 +9,7 @@ import { expertiseAreas, founder, products, stackGroups } from "@/lib/content";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
 import { TeamSection } from "@/components/TeamSection";
 import { StackSection } from "@/components/StackSection";
+import { ParallaxImage } from "@/components/motion/ParallaxImage";
 import { Reveal } from "@/components/motion/Reveal";
 import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
 
@@ -95,6 +96,24 @@ function TrustedByAvatars() {
 }
 
 export default function Home() {
+  const testimonialsRef = useRef<HTMLDivElement>(null);
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
+
+  const handleTestimonialsScroll = () => {
+    const el = testimonialsRef.current;
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    const ratio = maxScroll > 0 ? el.scrollLeft / maxScroll : 0;
+    setActiveTestimonial(Math.round(ratio * (testimonials.length - 1)));
+  };
+
+  const scrollToTestimonial = (index: number) => {
+    const el = testimonialsRef.current;
+    const card = el?.children[index] as HTMLElement | undefined;
+    if (!el || !card) return;
+    el.scrollTo({ left: card.offsetLeft - (el.clientWidth - card.clientWidth) / 2, behavior: "smooth" });
+  };
+
   return (
     <>
       <section className="bg-[linear-gradient(to_bottom,var(--background)_0%,#D5D7E2_45%)] py-20 sm:py-28 lg:py-36">
@@ -131,7 +150,7 @@ export default function Home() {
               </motion.div>
               <motion.div variants={heroItem} className="mt-10 flex items-center gap-4">
                 <TrustedByAvatars />
-                <p className="text-sm text-ink-muted">Trusted by the founders and teams we build with.</p>
+                <p className="text-sm text-ink-muted">Trusted by the founders and teams.</p>
               </motion.div>
             </div>
           </motion.div>
@@ -212,7 +231,7 @@ export default function Home() {
                   className="group grid overflow-hidden rounded-2xl border border-black/10 bg-card transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:grid-cols-[0.9fr_1.1fr]"
                 >
                   {product.image && (
-                    <div className="relative aspect-[4/3] overflow-hidden border-b border-black/10 bg-background sm:aspect-auto sm:h-full sm:border-b-0 sm:border-r">
+                    <ParallaxImage className="aspect-[4/3] border-b border-black/10 bg-background sm:aspect-auto sm:h-full sm:border-b-0 sm:border-r">
                       <Image
                         src={product.image}
                         alt={product.imageAlt ?? ""}
@@ -220,7 +239,7 @@ export default function Home() {
                         sizes="(min-width: 1024px) 32vw, 90vw"
                         className="object-cover"
                       />
-                    </div>
+                    </ParallaxImage>
                   )}
                   <div className="flex flex-col p-8 sm:p-10">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -262,7 +281,11 @@ export default function Home() {
               What the founders and investors we&apos;ve built for have to say.
             </p>
           </Reveal>
-          <div className="mt-10 flex gap-6 overflow-x-auto pb-4 [scrollbar-width:thin] snap-x snap-mandatory">
+          <div
+            ref={testimonialsRef}
+            onScroll={handleTestimonialsScroll}
+            className="mt-10 flex gap-6 overflow-x-auto pb-4 [scrollbar-width:thin] snap-x snap-mandatory"
+          >
             {testimonials.map((testimonial, index) => {
               const card = (
                 <div
@@ -294,11 +317,25 @@ export default function Home() {
                 </div>
               );
               return (
-                <Reveal key={testimonial.name} delay={index * 0.08} className="flex-none snap-start">
+                <Reveal key={testimonial.name} delay={index * 0.08} className="flex-none snap-center">
                   {testimonial.slug ? <Link href={`/products/${testimonial.slug}`}>{card}</Link> : card}
                 </Reveal>
               );
             })}
+          </div>
+          <div className="mt-6 flex items-center justify-center gap-2">
+            {testimonials.map((testimonial, index) => (
+              <button
+                key={testimonial.name}
+                type="button"
+                onClick={() => scrollToTestimonial(index)}
+                aria-label={`Go to ${testimonial.name}'s testimonial`}
+                aria-current={activeTestimonial === index}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  activeTestimonial === index ? "w-6 bg-accent" : "w-2 bg-black/15 hover:bg-black/30"
+                }`}
+              />
+            ))}
           </div>
         </div>
       </section>

@@ -37,16 +37,18 @@ export function TeamSection({ member, ctaHref }: TeamSectionProps) {
             <motion.div
               animate={{ y: [0, -14, 0] }}
               transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-              className="relative h-full w-full overflow-hidden rounded-full border border-black/10 bg-card shadow-[0_20px_45px_-25px_rgba(23,33,27,0.35)]"
+              className="relative h-full w-full rounded-full bg-[linear-gradient(135deg,var(--accent),rgba(169,151,253,0.15))] p-[3px] shadow-[0_20px_45px_-25px_rgba(23,33,27,0.35)]"
             >
-              <Image
-                src={member.image}
-                alt={member.imageAlt}
-                width={237}
-                height={357}
-                sizes="(min-width: 1024px) 320px, 60vw"
-                className="h-full w-full object-cover"
-              />
+              <div className="h-full w-full overflow-hidden rounded-full bg-card">
+                <Image
+                  src={member.image}
+                  alt={member.imageAlt}
+                  width={237}
+                  height={357}
+                  sizes="(min-width: 1024px) 320px, 60vw"
+                  className="h-full w-full scale-[1.25] object-cover object-[center_20%]"
+                />
+              </div>
             </motion.div>
           </motion.div>
 
