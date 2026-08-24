@@ -2,13 +2,15 @@
 
 import type { ComponentType } from "react";
 import { motion, type Variants } from "framer-motion";
-import { Bot, Code2, Database, Palette, Sparkles, SquareTerminal } from "lucide-react";
+import { Bot, Code2, Database, Mail, Palette, Sparkles, SquareTerminal } from "lucide-react";
 import {
   SiClaude,
   SiCursor,
   SiFigma,
   SiNextdotjs,
+  SiPwa,
   SiReact,
+  SiStripe,
   SiSupabase,
   SiTailwindcss,
   SiTypescript,
@@ -38,10 +40,13 @@ const STACK_ICONS: Record<string, Icon> = {
   "Next.js": SiNextdotjs,
   React: SiReact,
   "React Native": SiReact,
+  PWA: SiPwa,
   "Tailwind CSS": SiTailwindcss,
   TypeScript: SiTypescript,
   "SQL (backend)": Database,
   Supabase: SiSupabase,
+  Stripe: SiStripe,
+  Nodemailer: Mail,
 };
 
 const pillContainer: Variants = {

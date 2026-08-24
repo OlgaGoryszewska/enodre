@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 import type { Founder } from "@/lib/content";
 import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
 
@@ -12,6 +14,9 @@ interface TeamSectionProps {
 }
 
 export function TeamSection({ member, ctaHref }: TeamSectionProps) {
+  const [expanded, setExpanded] = useState(false);
+  const [intro, ...rest] = member.bio;
+
   return (
     <section className="border-y border-black/10 bg-card py-20 sm:py-28">
       <div className="shell">
@@ -23,22 +28,26 @@ export function TeamSection({ member, ctaHref }: TeamSectionProps) {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="relative mx-auto aspect-square w-full max-w-xs lg:mx-0"
           >
-            <div
+            <motion.div
               aria-hidden="true"
-              className="absolute -inset-6 rounded-full bg-[radial-gradient(circle,var(--accent)_0%,transparent_70%)] opacity-25 blur-2xl"
+              animate={{ scaleX: [1, 0.82, 1], opacity: [0.28, 0.14, 0.28] }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute bottom-2 left-1/2 h-8 w-2/3 -translate-x-1/2 rounded-full bg-foreground/25 blur-xl"
             />
-            <div className="relative h-full w-full rounded-full bg-[linear-gradient(135deg,var(--accent),#D5D7E2)] p-[3px] shadow-[0_20px_45px_-25px_rgba(23,33,27,0.35)]">
-              <div className="h-full w-full overflow-hidden rounded-full bg-card">
-                <Image
-                  src={member.image}
-                  alt={member.imageAlt}
-                  width={237}
-                  height={357}
-                  sizes="(min-width: 1024px) 320px, 60vw"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            </div>
+            <motion.div
+              animate={{ y: [0, -14, 0] }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+              className="relative h-full w-full overflow-hidden rounded-full border border-black/10 bg-card shadow-[0_20px_45px_-25px_rgba(23,33,27,0.35)]"
+            >
+              <Image
+                src={member.image}
+                alt={member.imageAlt}
+                width={237}
+                height={357}
+                sizes="(min-width: 1024px) 320px, 60vw"
+                className="h-full w-full object-cover"
+              />
+            </motion.div>
           </motion.div>
 
           <motion.div
@@ -55,12 +64,39 @@ export function TeamSection({ member, ctaHref }: TeamSectionProps) {
             <p className="mt-2 text-sm font-semibold text-accent">{member.role}</p>
 
             <div className="mt-8 grid gap-5">
-              {member.bio.map((paragraph) => (
-                <p key={paragraph} className="leading-7 text-ink-muted">
-                  {paragraph}
-                </p>
-              ))}
+              <p className="leading-7 text-ink-muted">{intro}</p>
+              <AnimatePresence initial={false}>
+                {expanded && (
+                  <motion.div
+                    key="bio-rest"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                    className="grid gap-5 overflow-hidden"
+                  >
+                    {rest.map((paragraph) => (
+                      <p key={paragraph} className="leading-7 text-ink-muted">
+                        {paragraph}
+                      </p>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setExpanded((value) => !value)}
+              aria-expanded={expanded}
+              className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-accent transition hover:opacity-80"
+            >
+              <span>{expanded ? "Read less" : "Read more"}</span>
+              <ChevronDown
+                className={`h-4 w-4 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
+                aria-hidden="true"
+              />
+            </button>
 
             <div className="mt-10">
               <Link

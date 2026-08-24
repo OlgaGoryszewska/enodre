@@ -81,6 +81,7 @@ export type Product = {
   stack: string[];
   image?: string;
   imageAlt?: string;
+  url?: string;
 };
 
 export const products: Product[] = [
@@ -93,6 +94,7 @@ export const products: Product[] = [
     description: "A field-to-report system that turns every fuel delivery into verified, timestamped, photo-backed evidence for generator and temporary power companies in Saudi Arabia.",
     outcome: "Built and pilot-ready: every fuel action verified with GPS, timestamp, and photo evidence — client-ready reports generated in seconds instead of hours.",
     stack: ["React Native", "Web dashboard (PWA)", "Supabase", "Offline-first sync", "GPS + photo capture"],
+    url: "https://fuelflo.app",
     image: "/fuelflo-offline.png",
     imageAlt: "FuelFlo mobile app showing a device field-readiness check, with local database, evidence storage, camera permission, GPS capture, and API sync all marked ready for offline use.",
   },
@@ -107,8 +109,37 @@ export const products: Product[] = [
     outcome:
       "Delivered a trade-focused gallery and store: a brand and site that feel as considered as the photography itself, dozens of custom room-context images so designers and hospitality buyers can picture the work in a space before they commit, and a checkout that's accurate for New Zealand buyers from day one.",
     stack: ["Next.js 16", "Tailwind CSS v4", "Supabase (Postgres + Auth)", "Stripe Checkout", "Server Actions", "Nodemailer"],
+    url: "https://www.nickwhittakerimagery.com/",
     image: "/nick/nick-front.jpg",
     imageAlt: "A laptop displaying the Nick Whittaker Imagery site, showing the 'Smooth Lines' print framed and styled in a warm living room.",
+  },
+  {
+    slug: "bialy-lotos",
+    name: "Biały Lotos",
+    tagline: "A content-driven salon site that turns a client's concern into the right treatment, price, and booking link.",
+    category: "Beauty & cosmetology website",
+    location: "Poland",
+    description:
+      "A five-treatment beauty and cosmetology salon in Ciechanów, Poland — permanent makeup, laser hair removal, brow and lash styling, and piercing, all under one roof. A gold lotus brand identity and a content system generated from six structured data modules, designed and built solo by Enodre, with every booking routed straight to the salon's existing Booksy profile.",
+    outcome:
+      "Delivered a live, content-driven salon site: 15 dynamic treatment pages and 6 problem-led pages generated from structured data, a searchable price list spanning PMU, cosmetology, laser, and piercing, and a booking path from discovery to Booksy — designed, built, and shipped solo.",
+    stack: ["Next.js", "React 18", "Tailwind CSS", "Jest", "React Testing Library", "Vercel"],
+    url: "https://www.salonbialylotos.pl/",
+    image: "/lotos/front-sylwia.png",
+    imageAlt: "A laptop displaying the Biały Lotos Zabiegi page, showing three close-up beauty portraits above the Makijaż Permanentny treatment category.",
+  },
+  {
+    slug: "ceylons-house",
+    name: "Ceylon's House",
+    tagline: "A tropical luxury brand identity and website for a boutique hotel and rooftop restaurant in Sri Lanka.",
+    category: "Hospitality brand & website",
+    location: "Hikkaduwa, Sri Lanka",
+    description:
+      "A boutique hotel and rooftop restaurant in Hikkaduwa, Sri Lanka, built into a full brand and digital experience from scratch. A tropical luxury identity — palms, peacocks, jungle textures, and warm natural light — carried through a lightweight HTML, CSS, and JavaScript website designed around how travelers actually browse: a quick sense of place, proof of quality, and a clear path to booking.",
+    outcome:
+      "Delivered a complete brand-to-launch project: a tropical luxury identity translated into a live, production-ready website, from first logo concept through to deployment — the full lifecycle of identity design, website execution, and a real public launch.",
+    stack: ["Brand identity design", "HTML", "CSS", "JavaScript", "Netlify"],
+    url: "http://ceylonshouse.com/",
   },
 ];
 
@@ -159,10 +190,13 @@ export const stackGroups: StackGroup[] = [
       "Next.js",
       "React",
       "React Native",
+      "PWA",
       "Tailwind CSS",
       "TypeScript",
       "SQL (backend)",
       "Supabase",
+      "Stripe",
+      "Nodemailer",
     ],
   },
 ];

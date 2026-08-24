@@ -4,7 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion, useScroll, useTransform, type Variants } from "framer-motion";
-import { ChevronLeft, ChevronRight, Mail, Receipt, ShieldCheck, Sparkles, X } from "lucide-react";
+import {
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  Image as ImageIcon,
+  Mail,
+  Palette,
+  Receipt,
+  ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  Users,
+  X,
+} from "lucide-react";
 import { products } from "@/lib/content";
 import { Reveal } from "@/components/motion/Reveal";
 import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
@@ -33,12 +46,30 @@ const palette = [
 ];
 
 const whatWeDid = [
-  "Designed a full brand identity — logo, palette, and voice — inspired directly by the artist's own photography, so the site feels like a natural extension of the work, not a template.",
-  "Built a gallery-style site that speaks to interior designers and hospitality buyers — the trade audience actually commissioning large-scale photography for real spaces, not casual retail shoppers.",
-  "Created dozens of custom room-context images — each piece styled in real interior and hospitality spaces — so a buyer can picture exactly how it will look before they commit.",
-  "Set up secure checkout so buyers can order with confidence, and orders are only ever marked paid once payment is genuinely confirmed.",
-  "Handled New Zealand pricing and tax correctly from day one, so what buyers see at checkout is exactly what they pay.",
-  "Delivered a system the client can run and grow on their own, without ongoing dependence on us.",
+  {
+    icon: Palette,
+    text: "Designed a full brand identity — logo, palette, and voice — inspired directly by the artist's own photography, so the site feels like a natural extension of the work, not a template.",
+  },
+  {
+    icon: Users,
+    text: "Built a gallery-style site that speaks to interior designers and hospitality buyers — the trade audience actually commissioning large-scale photography for real spaces, not casual retail shoppers.",
+  },
+  {
+    icon: ImageIcon,
+    text: "Built a growing library of custom room-context renders — the same piece styled across moody, eclectic, and minimalist interiors — so a buyer can picture exactly how it will look in a space like theirs before they commit.",
+  },
+  {
+    icon: ShieldCheck,
+    text: "Set up secure checkout so buyers can order with confidence, and orders are only ever marked paid once payment is genuinely confirmed.",
+  },
+  {
+    icon: Receipt,
+    text: "Handled New Zealand pricing and tax correctly from day one, so what buyers see at checkout is exactly what they pay.",
+  },
+  {
+    icon: TrendingUp,
+    text: "Delivered a system the client can run and grow on their own, without ongoing dependence on us.",
+  },
 ];
 
 const orderSteps = [
@@ -52,14 +83,14 @@ const outcomeChips = ["Custom brand identity", "Room-context imagery", "Trustwor
 
 type Shot = { src: string; alt: string; caption: string; width: number; height: number; frame: "phone" | "browser" };
 
-const DESK = { width: 2894, height: 1788 } as const;
 const MOB = { width: 1125, height: 2436 } as const;
 
 const heroShot: Shot = {
   src: "/nick/Screenshot-desktop-01.png",
   alt: "Nick Whittaker Imagery homepage — 'Unique light.' headline over fine-art ocean and water photography, with a Most Popular print grid below.",
   caption: "Homepage — the collection's opening line.",
-  ...DESK,
+  width: 2482,
+  height: 1846,
   frame: "browser",
 };
 
@@ -68,21 +99,32 @@ const roomShots: Shot[] = [
     src: "/nick/Screenshot-desktop-03.png",
     alt: "'Smooth Lines' print framed and hung in a moody, dark-toned living room, shown on the product page alongside size and paper options.",
     caption: "Smooth Lines, styled in a moody, dark-toned room.",
-    ...DESK,
+    width: 2466,
+    height: 1780,
     frame: "browser",
   },
   {
     src: "/nick/Screenshot-desktop-04.png",
-    alt: "'Smooth Lines' print framed and hung in a warm, plant-filled living room, shown on the product page alongside size and paper options.",
-    caption: "Smooth Lines, styled in a warm living room.",
-    ...DESK,
+    alt: "'Pastel Horizons' print framed and hung in a bold, eclectic living room with jewel-tone velvet chairs and fresh flowers, shown on the product page alongside size and paper options.",
+    caption: "Pastel Horizons, styled in a bold, eclectic living room.",
+    width: 2466,
+    height: 1780,
+    frame: "browser",
+  },
+  {
+    src: "/nick/Screenshot-desktop-06.png",
+    alt: "'Shimmer' print framed and hung above the bed in a bright, minimalist bedroom, shown on the product page alongside size and paper options.",
+    caption: "Shimmer, styled in a bright, minimalist bedroom.",
+    width: 2466,
+    height: 1780,
     frame: "browser",
   },
   {
     src: "/nick/Screenshot-desktop-05.png",
-    alt: "Zoomed lightbox view of the 'Smooth Lines' print in the warm living room, labelled 'Warm Living Room'.",
+    alt: "Zoomed lightbox view of the 'Illuminate' print above the bed in a bright, minimalist bedroom, labelled 'Minimalistic Bedroom'.",
     caption: "A closer look — every room option is one click away.",
-    ...DESK,
+    width: 2156,
+    height: 1496,
     frame: "browser",
   },
   {
@@ -120,7 +162,8 @@ const siteShots: Shot[] = [
     src: "/nick/Screenshot-desktop-02.png",
     alt: "Explore the work gallery page, showing 37 photos across six bodies of work with filter pills for Sunsets, Wave, Abstract, and more.",
     caption: "Explore the work — 37 photos across six bodies of work, filterable by mood.",
-    ...DESK,
+    width: 2482,
+    height: 1704,
     frame: "browser",
   },
   {
@@ -206,6 +249,7 @@ function FramedImage({
       height={shot.height}
       sizes={sizes}
       priority={priority}
+      quality={90}
       className={imageClassName}
     />
   );
@@ -321,9 +365,22 @@ export function NickWhittakerShowcase() {
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-black/10 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(169,151,253,0.28),transparent_60%)] py-20 sm:py-28">
         <div className="shell">
-          <Link href="/products" className="text-sm font-semibold text-ink-muted hover:text-foreground">
-            ← All products
-          </Link>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <Link href="/products" className="text-sm font-semibold text-ink-muted hover:text-foreground">
+              ← All case studies
+            </Link>
+            {nick.url && (
+              <a
+                href={nick.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-muted transition hover:text-foreground"
+              >
+                <span>Visit nickwhittakerimagery.com</span>
+                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+              </a>
+            )}
+          </div>
 
           <motion.div
             className="mt-12 grid items-center gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(20rem,0.95fr)] lg:gap-16"
@@ -414,11 +471,23 @@ export function NickWhittakerShowcase() {
             />
           </Reveal>
           <div className="mt-10 grid gap-6 md:grid-cols-2">
-            {whatWeDid.map((point, index) => (
-              <Reveal key={point} delay={index * 0.08}>
-                <div className="flex h-full gap-4 rounded-2xl border border-black/10 p-7">
-                  <p className="font-mono text-xs font-semibold text-accent">0{index + 1}</p>
-                  <p className="leading-7 text-ink-muted">{point}</p>
+            {whatWeDid.map(({ icon: Icon, text }, index) => (
+              <Reveal key={text} delay={index * 0.08}>
+                <div className="group relative h-full overflow-hidden rounded-2xl border border-black/10 p-7 transition duration-300 hover:-translate-y-1 hover:shadow-lg">
+                  <Icon
+                    className="pointer-events-none absolute -bottom-5 -right-5 h-28 w-28 text-accent/[0.07] transition duration-500 ease-out group-hover:-rotate-6 group-hover:scale-110 group-hover:text-accent/[0.12]"
+                    strokeWidth={1}
+                    aria-hidden="true"
+                  />
+                  <div className="relative flex items-start justify-between">
+                    <Icon
+                      className="h-7 w-7 text-ink transition duration-300 group-hover:text-accent"
+                      strokeWidth={1.25}
+                      aria-hidden="true"
+                    />
+                    <span className="font-mono text-xs text-ink-muted/50">0{index + 1}</span>
+                  </div>
+                  <p className="relative mt-6 leading-7 text-ink-muted">{text}</p>
                 </div>
               </Reveal>
             ))}
@@ -491,14 +560,15 @@ export function NickWhittakerShowcase() {
           <Reveal>
             <p className="eyebrow">In the room</p>
             <ScrollRevealHeading
-              text="Every piece shown exactly where it's meant to hang."
+              text="One piece, styled for every kind of space a buyer actually has."
               className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
             />
             <p className="mt-6 max-w-2xl leading-7 text-ink-muted">
               Interior designers and hospitality buyers don&apos;t picture art on a white wall — they picture it
-              in a specific lobby, lounge, or guest room. Enodre created a large library of custom room-context
-              images for Nick, styling his photography into real interior and hospitality settings, so a buyer
-              can see the actual scale, tone, and mood before they commit.
+              in a specific lobby, lounge, or guest room. Enodre built a growing library of custom room-context
+              renders for Nick — the same photography styled into a moody dark lounge, a bold eclectic living
+              room, and a bright minimalist bedroom — so a buyer sees exactly how a piece will read in a space
+              like theirs, not just a generic mockup.
             </p>
           </Reveal>
           <Reveal delay={0.1}>

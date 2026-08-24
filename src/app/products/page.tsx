@@ -6,14 +6,14 @@ import { products } from "@/lib/content";
 import { Reveal } from "@/components/motion/Reveal";
 
 export const metadata: Metadata = {
-  title: "Products we delivered",
+  title: "Case studies",
   description: "Software we've taken from idea to production for our clients.",
 };
 
 export default function ProductsPage() {
   return (
     <section className="shell py-20 sm:py-28">
-      <p className="eyebrow">Products we delivered</p>
+      <p className="eyebrow">Case studies</p>
       <h1 className="page-title mt-6 max-w-4xl">Software we&apos;ve taken from idea to production.</h1>
       <p className="mt-6 max-w-2xl text-lg leading-8 text-ink-muted">
         A look at what we&apos;ve actually shipped — not mockups, working products in the hands of real teams.
