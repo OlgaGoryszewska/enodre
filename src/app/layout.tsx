@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { DoorOpen } from "lucide-react";
 import { MotionConfig } from "framer-motion";
 import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
@@ -38,8 +39,12 @@ export default function RootLayout({
               <p>© {new Date().getFullYear()} Enodre</p>
               <div className="flex items-center gap-4">
                 <p>Clear systems for complex work.</p>
-                <Link href="/login" className="transition hover:text-foreground">
-                  Admin
+                <Link
+                  href="/login"
+                  aria-label="Admin"
+                  className="ml-auto text-accent transition hover:opacity-70 sm:ml-0"
+                >
+                  <DoorOpen className="h-5 w-5" aria-hidden="true" />
                 </Link>
               </div>
             </div>

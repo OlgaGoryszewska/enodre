@@ -5,7 +5,7 @@ import { MoodTracker } from "@/components/admin/MoodTracker";
 import { LatestPodcast } from "@/components/admin/LatestPodcast";
 import { SignOutButton } from "@/components/admin/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
-import { getLatestOnPurposeEpisode } from "@/lib/youtube";
+import { getOnPurposeEpisodes } from "@/lib/youtube";
 import type { Task } from "@/lib/task";
 import type { MoodEntry } from "@/lib/mood";
 
@@ -20,11 +20,11 @@ export default async function AdminDashboardPage() {
   const [
     { data: tasksData, error: tasksError },
     { data: moodData, error: moodError },
-    latestEpisode,
+    episodes,
   ] = await Promise.all([
     supabase.from("tasks").select("*").order("position", { ascending: true }),
     supabase.from("mood_entries").select("*").order("entry_date", { ascending: false }).limit(7),
-    getLatestOnPurposeEpisode(),
+    getOnPurposeEpisodes(),
   ]);
 
   if (tasksError) {
@@ -47,7 +47,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="mt-10">
-        <LatestPodcast episode={latestEpisode} />
+        <LatestPodcast episodes={episodes} />
       </div>
 
       <div className="mt-10">
