@@ -4,11 +4,13 @@ import { AdminNav } from "@/components/admin/AdminNav";
 import { KanbanBoard } from "@/components/admin/KanbanBoard";
 import { MoodTracker } from "@/components/admin/MoodTracker";
 import { LatestPodcast } from "@/components/admin/LatestPodcast";
+import { AiJobMatches } from "@/components/admin/AiJobMatches";
 import { JobLeadsCard } from "@/components/admin/JobLeadsCard";
 import { UpworkAutoSync } from "@/components/admin/UpworkAutoSync";
 import { SignOutButton } from "@/components/admin/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
 import { getOnPurposeEpisodes } from "@/lib/youtube";
+import { getTodaysAiJobMatches } from "@/lib/ai-job-matches";
 import { isUpworkConnected } from "@/lib/upwork-auth";
 import {
   addLinkedInJob,
@@ -46,6 +48,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
     { data: upworkJobsData, error: upworkJobsError },
     episodes,
     upworkConnected,
+    aiJobMatches,
   ] = await Promise.all([
     supabase.from("tasks").select("*").order("position", { ascending: true }),
     supabase.from("mood_entries").select("*").order("entry_date", { ascending: false }).limit(7),
@@ -53,6 +56,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
     supabase.from("upwork_jobs").select("*").order("created_at", { ascending: false }),
     getOnPurposeEpisodes(),
     isUpworkConnected(),
+    getTodaysAiJobMatches(),
   ]);
 
   if (tasksError) {
@@ -84,6 +88,10 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
 
       <div className="mt-10">
         <LatestPodcast episodes={episodes} />
+      </div>
+
+      <div className="mt-10">
+        <AiJobMatches matches={aiJobMatches} />
       </div>
 
       <div className="mt-10">
