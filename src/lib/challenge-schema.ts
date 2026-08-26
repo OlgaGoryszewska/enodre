@@ -11,6 +11,10 @@ export const urgencyOptions: { value: UrgencyValue; label: string }[] = [
   { value: "now", label: "We need help now" },
 ];
 
+export function urgencyLabel(value: string) {
+  return urgencyOptions.find((option) => option.value === value)?.label ?? value;
+}
+
 export const challengeFormSchema = z.object({
   fullName: z
     .string()
@@ -30,6 +34,11 @@ export const challengeFormSchema = z.object({
     error: "Choose the option that fits best.",
   }),
   anythingElse: z.string().max(4000).optional(),
+  // Honeypot — real visitors never see or fill this field. Left as a plain
+  // optional string (no validation constraints) so a bot filling it doesn't
+  // trip a validation error that would reveal the mechanism; the submit
+  // route checks it manually and silently no-ops if it's non-empty.
+  website: z.string().optional(),
 });
 
 export type ChallengeFormValues = z.infer<typeof challengeFormSchema>;

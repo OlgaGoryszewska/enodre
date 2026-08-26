@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { MotionConfig } from "framer-motion";
 import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
@@ -35,7 +36,12 @@ export default function RootLayout({
           <footer className="border-t border-black/10 py-8">
             <div className="shell flex flex-col gap-2 text-sm text-ink-muted sm:flex-row sm:items-center sm:justify-between">
               <p>© {new Date().getFullYear()} Enodre</p>
-              <p>Clear systems for complex work.</p>
+              <div className="flex items-center gap-4">
+                <p>Clear systems for complex work.</p>
+                <Link href="/login" className="transition hover:text-foreground">
+                  Admin
+                </Link>
+              </div>
             </div>
           </footer>
         </MotionConfig>

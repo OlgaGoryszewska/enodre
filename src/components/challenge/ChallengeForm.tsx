@@ -41,6 +41,7 @@ export function ChallengeForm() {
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<ChallengeFormValues>({
     resolver: zodResolver(challengeFormSchema),
@@ -52,8 +53,12 @@ export function ChallengeForm() {
       challenge: "",
       successLooksLike: "",
       anythingElse: "",
+      website: "",
     },
   });
+
+  const [fullNameValue, emailValue] = watch(["fullName", "email"]);
+  const showMoreFields = fullNameValue.trim().length > 0 && emailValue.trim().length > 0;
 
   async function onSubmit(values: ChallengeFormValues) {
     try {
@@ -120,7 +125,26 @@ export function ChallengeForm() {
             animate="show"
             className="grid gap-7"
           >
-            <motion.div variants={itemVariants}>
+            {/* Honeypot — hidden from real visitors, left off-screen rather
+                than display:none since some bots skip that. */}
+            <div
+              aria-hidden="true"
+              className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden"
+            >
+              <label htmlFor="website">Website</label>
+              <input
+                id="website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                {...register("website")}
+              />
+            </div>
+
+            <motion.div
+              variants={itemVariants}
+              className="grid gap-7 sm:grid-cols-2"
+            >
               <FormField
                 id="fullName"
                 label="Full Name"
@@ -134,20 +158,6 @@ export function ChallengeForm() {
                   aria-invalid={!!errors.fullName}
                   aria-describedby={errors.fullName ? "fullName-error" : undefined}
                   {...register("fullName")}
-                />
-              </FormField>
-            </motion.div>
-
-            <motion.div
-              variants={itemVariants}
-              className="grid gap-7 sm:grid-cols-2"
-            >
-              <FormField id="company" label="Company" error={errors.company?.message}>
-                <Input
-                  id="company"
-                  placeholder="Acme Logistics"
-                  autoComplete="organization"
-                  {...register("company")}
                 />
               </FormField>
 
@@ -169,158 +179,198 @@ export function ChallengeForm() {
               </FormField>
             </motion.div>
 
-            <motion.div variants={itemVariants}>
-              <FormField
-                id="challenge"
-                label="What challenge are you facing?"
-                required
-                error={errors.challenge?.message}
+            {!showMoreFields && (
+              <motion.p
+                variants={itemVariants}
+                className="text-sm text-ink-muted"
               >
-                <Textarea
-                  id="challenge"
-                  rows={5}
-                  placeholder="What's happening today? What keeps taking more time, money, or effort than it should? Describe the situation in your own words."
-                  aria-invalid={!!errors.challenge}
-                  aria-describedby={errors.challenge ? "challenge-error" : undefined}
-                  {...register("challenge")}
-                />
-              </FormField>
-            </motion.div>
+                Tell us who you are, and the rest of the form will follow.
+              </motion.p>
+            )}
 
-            <motion.div variants={itemVariants}>
-              <FormField
-                id="successLooksLike"
-                label="What would success look like?"
-                error={errors.successLooksLike?.message}
-              >
-                <Textarea
-                  id="successLooksLike"
-                  rows={4}
-                  placeholder="Imagine this problem disappeared tomorrow. What would be different for your team or your business?"
-                  {...register("successLooksLike")}
-                />
-              </FormField>
-            </motion.div>
-
-            <motion.div variants={itemVariants}>
-              <Controller
-                control={control}
-                name="urgency"
-                render={({ field }) => (
-                  <FormField
-                    id="urgency"
-                    as="fieldset"
-                    label="How urgent is this?"
-                    required
-                    error={errors.urgency?.message}
-                  >
-                    <RadioGroup
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      className="grid gap-3 sm:grid-cols-2"
-                    >
-                      {urgencyOptions.map((option) => {
-                        const isSelected = field.value === option.value;
-                        return (
-                          <label
-                            key={option.value}
-                            htmlFor={`urgency-${option.value}`}
-                            className={cn(
-                              "flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3.5 text-sm font-medium transition-colors duration-150",
-                              isSelected
-                                ? "border-accent bg-accent/10 text-foreground"
-                                : "border-black/10 text-ink-muted hover:border-black/25 hover:text-foreground"
-                            )}
-                          >
-                            <RadioGroupItem
-                              id={`urgency-${option.value}`}
-                              value={option.value}
-                            />
-                            {option.label}
-                          </label>
-                        );
-                      })}
-                    </RadioGroup>
-                  </FormField>
-                )}
-              />
-            </motion.div>
-
-            <motion.div variants={itemVariants}>
-              <FormField
-                id="anythingElse"
-                label="Anything else you'd like us to know?"
-                error={errors.anythingElse?.message}
-              >
-                <Textarea
-                  id="anythingElse"
-                  rows={3}
-                  placeholder="Anything that helps us better understand your situation."
-                  {...register("anythingElse")}
-                />
-              </FormField>
-            </motion.div>
-
-            <AnimatePresence>
-              {submitState === "error" && (
+            <AnimatePresence initial={false}>
+              {showMoreFields && (
                 <motion.div
-                  initial={{ opacity: 0, y: -4, height: 0 }}
-                  animate={{ opacity: 1, y: 0, height: "auto" }}
-                  exit={{ opacity: 0, y: -4, height: 0 }}
-                  transition={{ duration: 0.2 }}
-                  role="alert"
-                  className="flex items-center gap-2 overflow-hidden rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger"
+                  key="rest-of-form"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="overflow-hidden"
                 >
-                  <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span>
-                    Something went wrong sending your message. Please try
-                    again, or email us directly.
-                  </span>
+                  <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                    className="grid gap-7 pt-7"
+                  >
+                    <motion.div variants={itemVariants}>
+                      <FormField id="company" label="Company" error={errors.company?.message}>
+                        <Input
+                          id="company"
+                          placeholder="Acme Logistics"
+                          autoComplete="organization"
+                          {...register("company")}
+                        />
+                      </FormField>
+                    </motion.div>
+
+                    <motion.div variants={itemVariants}>
+                      <FormField
+                        id="challenge"
+                        label="What challenge are you facing?"
+                        required
+                        error={errors.challenge?.message}
+                      >
+                        <Textarea
+                          id="challenge"
+                          rows={5}
+                          placeholder="What's happening today? What keeps taking more time, money, or effort than it should? Describe the situation in your own words."
+                          aria-invalid={!!errors.challenge}
+                          aria-describedby={errors.challenge ? "challenge-error" : undefined}
+                          {...register("challenge")}
+                        />
+                      </FormField>
+                    </motion.div>
+
+                    <motion.div variants={itemVariants}>
+                      <FormField
+                        id="successLooksLike"
+                        label="What would success look like?"
+                        error={errors.successLooksLike?.message}
+                      >
+                        <Textarea
+                          id="successLooksLike"
+                          rows={4}
+                          placeholder="Imagine this problem disappeared tomorrow. What would be different for your team or your business?"
+                          {...register("successLooksLike")}
+                        />
+                      </FormField>
+                    </motion.div>
+
+                    <motion.div variants={itemVariants}>
+                      <Controller
+                        control={control}
+                        name="urgency"
+                        render={({ field }) => (
+                          <FormField
+                            id="urgency"
+                            as="fieldset"
+                            label="How urgent is this?"
+                            required
+                            error={errors.urgency?.message}
+                          >
+                            <RadioGroup
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              className="grid gap-3 sm:grid-cols-2"
+                            >
+                              {urgencyOptions.map((option) => {
+                                const isSelected = field.value === option.value;
+                                return (
+                                  <label
+                                    key={option.value}
+                                    htmlFor={`urgency-${option.value}`}
+                                    className={cn(
+                                      "flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3.5 text-sm font-medium transition-colors duration-150",
+                                      isSelected
+                                        ? "border-accent bg-accent/10 text-foreground"
+                                        : "border-black/10 text-ink-muted hover:border-black/25 hover:text-foreground"
+                                    )}
+                                  >
+                                    <RadioGroupItem
+                                      id={`urgency-${option.value}`}
+                                      value={option.value}
+                                    />
+                                    {option.label}
+                                  </label>
+                                );
+                              })}
+                            </RadioGroup>
+                          </FormField>
+                        )}
+                      />
+                    </motion.div>
+
+                    <motion.div variants={itemVariants}>
+                      <FormField
+                        id="anythingElse"
+                        label="Anything else you'd like us to know?"
+                        error={errors.anythingElse?.message}
+                      >
+                        <Textarea
+                          id="anythingElse"
+                          rows={3}
+                          placeholder="Anything that helps us better understand your situation."
+                          {...register("anythingElse")}
+                        />
+                      </FormField>
+                    </motion.div>
+
+                    <AnimatePresence>
+                      {submitState === "error" && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -4, height: 0 }}
+                          animate={{ opacity: 1, y: 0, height: "auto" }}
+                          exit={{ opacity: 0, y: -4, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          role="alert"
+                          className="flex items-center gap-2 overflow-hidden rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger"
+                        >
+                          <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                          <span>
+                            Something went wrong sending your message. Please try
+                            again, or email us directly.
+                          </span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <motion.div
+                      variants={itemVariants}
+                      className="mt-2 flex flex-col items-center gap-6"
+                    >
+                      <motion.button
+                        type="submit"
+                        disabled={isSubmitting}
+                        initial="rest"
+                        whileHover="hover"
+                        whileTap={{ scale: 0.98 }}
+                        className={cn(buttonVariants({ size: "lg" }), "w-full sm:w-auto")}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                            <span>Sending...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Untangle My Challenge</span>
+                            <motion.span
+                              variants={{ rest: { x: 0 }, hover: { x: 4 } }}
+                              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                              className="inline-flex"
+                            >
+                              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                            </motion.span>
+                          </>
+                        )}
+                      </motion.button>
+
+                      <p className="mx-auto max-w-md text-center text-sm leading-6 text-ink-muted">
+                        Every submission is reviewed by a real person. If we believe
+                        we can genuinely help, we&apos;ll invite you to a free
+                        discovery session to understand your business and explore
+                        possible solutions together.
+                        <br className="hidden sm:block" />
+                        No pressure. No generic sales pitch. Just an honest
+                        conversation.
+                      </p>
+                    </motion.div>
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
-
-            <motion.div
-              variants={itemVariants}
-              className="mt-2 flex flex-col items-center gap-6"
-            >
-              <motion.button
-                type="submit"
-                disabled={isSubmitting}
-                initial="rest"
-                whileHover="hover"
-                whileTap={{ scale: 0.98 }}
-                className={cn(buttonVariants({ size: "lg" }), "w-full sm:w-auto")}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                    <span>Sending...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Untangle My Challenge</span>
-                    <motion.span
-                      variants={{ rest: { x: 0 }, hover: { x: 4 } }}
-                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                      className="inline-flex"
-                    >
-                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                    </motion.span>
-                  </>
-                )}
-              </motion.button>
-
-              <p className="mx-auto max-w-md text-center text-sm leading-6 text-ink-muted">
-                Every submission is reviewed by a real person. If we believe
-                we can genuinely help, we&apos;ll invite you to a free
-                discovery session to understand your business and explore
-                possible solutions together.
-                <br className="hidden sm:block" />
-                No pressure. No generic sales pitch. Just an honest
-                conversation.
-              </p>
-            </motion.div>
           </motion.form>
         )}
       </AnimatePresence>

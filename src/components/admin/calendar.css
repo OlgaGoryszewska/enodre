@@ -1,0 +1,180 @@
+.admin-calendar {
+  --fc-border-color: rgba(0, 0, 0, 0.1);
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: rgba(0, 0, 0, 0.03);
+  --fc-list-event-hover-bg-color: rgba(0, 0, 0, 0.03);
+  --fc-today-bg-color: rgba(169, 151, 253, 0.08);
+  --fc-event-bg-color: var(--accent);
+  --fc-event-border-color: var(--accent);
+  --fc-event-text-color: var(--background);
+  --fc-now-indicator-color: var(--accent);
+  font-family: var(--font-sans, "Satoshi", Arial, Helvetica, sans-serif);
+}
+
+.admin-calendar .fc {
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+.admin-calendar .fc-header-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  row-gap: 0.75rem;
+  column-gap: 1rem;
+}
+
+.admin-calendar .fc-toolbar-chunk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.admin-calendar .fc-toolbar-title {
+  font-family: var(--font-display, "Cabinet Grotesk", sans-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.admin-calendar .fc-button {
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  color: var(--foreground);
+  box-shadow: none;
+  text-transform: capitalize;
+  border-radius: 9999px;
+  padding: 0.4rem 0.9rem;
+  font-weight: 600;
+  transition: background-color 150ms ease;
+}
+
+.admin-calendar .fc-button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--foreground);
+}
+
+.admin-calendar .fc-button:focus {
+  box-shadow: 0 0 0 3px rgba(169, 151, 253, 0.3);
+}
+
+.admin-calendar .fc-button-primary:not(:disabled).fc-button-active,
+.admin-calendar .fc-button-primary:not(:disabled):active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--background);
+}
+
+.admin-calendar .fc-button:disabled {
+  opacity: 0.4;
+}
+
+.admin-calendar .fc-col-header-cell {
+  background: transparent;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted, #647068);
+  padding: 0.6rem 0;
+}
+
+.admin-calendar .fc-daygrid-day-number,
+.admin-calendar .fc-timegrid-slot-label-cushion {
+  color: var(--foreground);
+  font-size: 0.8rem;
+}
+
+.admin-calendar .fc-day-today .fc-daygrid-day-number {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.admin-calendar .fc-event {
+  border-radius: 8px;
+  padding: 1px 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.admin-calendar .fc-daygrid-event-dot {
+  border-color: var(--background);
+}
+
+/* Task-derived calendar entries — read-only, colored to match their kanban
+   column (see columnStyles in KanbanBoard.tsx). Not draggable, so the
+   cursor and lack of hover-lift signal that intentionally. */
+.admin-calendar .fc-task-event {
+  cursor: default;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.admin-calendar .fc-task-todo {
+  background: rgba(0, 0, 0, 0.06) !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  color: var(--foreground) !important;
+}
+
+.admin-calendar .fc-task-in_progress {
+  background: #fff6c9 !important;
+  border-color: #f0e29c !important;
+  color: var(--foreground) !important;
+}
+
+.admin-calendar .fc-task-done {
+  background: #ede7fe !important;
+  border-color: #d6cbfb !important;
+  color: var(--foreground) !important;
+}
+
+.admin-calendar .fc-scrollgrid {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.admin-calendar .fc-timegrid-slot {
+  height: 2.5rem;
+}
+
+@media (max-width: 640px) {
+  .admin-calendar .fc-header-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-calendar .fc-toolbar-title {
+    order: -1;
+    width: 100%;
+    text-align: center;
+    font-size: 1.05rem;
+    white-space: normal;
+  }
+
+  .admin-calendar .fc-toolbar-chunk {
+    width: 100%;
+  }
+
+  .admin-calendar .fc-button {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.75rem;
+  }
+
+  .admin-calendar .fc-col-header-cell {
+    font-size: 0.6rem;
+    padding: 0.4rem 0;
+  }
+
+  .admin-calendar .fc-timegrid-slot {
+    height: 2rem;
+  }
+
+  .admin-calendar .fc-timegrid-slot-label-cushion {
+    font-size: 0.7rem;
+  }
+}
