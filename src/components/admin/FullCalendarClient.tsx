@@ -95,6 +95,7 @@ export default function FullCalendarClient({
         right: "dayGridMonth,timeGridWeek,timeGridDay",
       }}
       height="auto"
+      slotMinTime="05:00:00"
       selectable
       editable
       events={[

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { Calendar } from "@/components/admin/Calendar";
+import { SignOutButton } from "@/components/admin/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
-import { signOutAction } from "@/app/admin/actions";
 import type { CalendarEvent } from "@/lib/calendar";
 import type { Task } from "@/lib/task";
 
@@ -36,17 +36,7 @@ export default async function AdminCalendarPage() {
 
   return (
     <section className="shell py-20 sm:py-28">
-      <div className="flex flex-wrap items-center justify-between gap-6">
-        <AdminNav />
-        <form action={signOutAction}>
-          <button
-            type="submit"
-            className="text-sm font-semibold text-ink-muted transition hover:text-foreground"
-          >
-            Sign out
-          </button>
-        </form>
-      </div>
+      <AdminNav />
 
       <div className="mt-10">
         <p className="eyebrow">Admin</p>
@@ -55,6 +45,10 @@ export default async function AdminCalendarPage() {
 
       <div className="mt-10">
         <Calendar initialEvents={events} tasks={tasks} />
+      </div>
+
+      <div className="mt-16">
+        <SignOutButton />
       </div>
     </section>
   );
