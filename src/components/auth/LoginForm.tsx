@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertCircle, ArrowRight, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { FormField } from "@/components/challenge/FormField";
 import { Input } from "@/components/ui/input";
 import { buttonVariants } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/client";
 export function LoginForm() {
   const router = useRouter();
   const [authError, setAuthError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -48,7 +49,7 @@ export function LoginForm() {
           <Input
             id="email"
             type="email"
-            autoComplete="email"
+            autoComplete="username"
             aria-invalid={!!errors.email}
             aria-describedby={errors.email ? "email-error" : undefined}
             {...register("email")}
@@ -56,14 +57,30 @@ export function LoginForm() {
         </FormField>
 
         <FormField id="password" label="Password" required error={errors.password?.message}>
-          <Input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            aria-invalid={!!errors.password}
-            aria-describedby={errors.password ? "password-error" : undefined}
-            {...register("password")}
-          />
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? "password-error" : undefined}
+              className="pr-11"
+              {...register("password")}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((value) => !value)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-pressed={showPassword}
+              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-ink-muted transition hover:text-foreground"
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Eye className="h-4 w-4" aria-hidden="true" />
+              )}
+            </button>
+          </div>
         </FormField>
 
         <AnimatePresence>
