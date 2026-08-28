@@ -10,24 +10,24 @@ export async function GET(request: Request) {
   const state = url.searchParams.get("state");
   const expectedState = (await cookies()).get(STATE_COOKIE)?.value;
 
-  const dashboardUrl = new URL("/admin/dashboard", request.url);
+  const redirectUrl = new URL("/admin/upwork", request.url);
 
   if (!code || !state || !expectedState || state !== expectedState) {
-    dashboardUrl.searchParams.set("upwork_error", "state_mismatch");
-    const response = NextResponse.redirect(dashboardUrl);
+    redirectUrl.searchParams.set("upwork_error", "state_mismatch");
+    const response = NextResponse.redirect(redirectUrl);
     response.cookies.delete(STATE_COOKIE);
     return response;
   }
 
   try {
     await exchangeCodeForToken(code);
-    dashboardUrl.searchParams.set("upwork_connected", "1");
+    redirectUrl.searchParams.set("upwork_connected", "1");
   } catch (error) {
     console.error("Failed to exchange Upwork authorization code:", error);
-    dashboardUrl.searchParams.set("upwork_error", "exchange_failed");
+    redirectUrl.searchParams.set("upwork_error", "exchange_failed");
   }
 
-  const response = NextResponse.redirect(dashboardUrl);
+  const response = NextResponse.redirect(redirectUrl);
   response.cookies.delete(STATE_COOKIE);
   return response;
 }

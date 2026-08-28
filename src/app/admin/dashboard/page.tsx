@@ -1,62 +1,41 @@
 import type { Metadata } from "next";
-import { Briefcase, Handshake } from "lucide-react";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { KanbanBoard } from "@/components/admin/KanbanBoard";
 import { MoodTracker } from "@/components/admin/MoodTracker";
+import { CalorieTracker } from "@/components/admin/CalorieTracker";
+import { WorkoutTracker } from "@/components/admin/WorkoutTracker";
 import { LatestPodcast } from "@/components/admin/LatestPodcast";
-import { AiJobMatches } from "@/components/admin/AiJobMatches";
-import { JobLeadsCard } from "@/components/admin/JobLeadsCard";
-import { UpworkAutoSync } from "@/components/admin/UpworkAutoSync";
 import { SignOutButton } from "@/components/admin/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
-import { getOnPurposeEpisodes } from "@/lib/youtube";
-import { getTodaysAiJobMatches } from "@/lib/ai-job-matches";
-import { isUpworkConnected } from "@/lib/upwork-auth";
-import {
-  addLinkedInJob,
-  deleteLinkedInJob,
-  setLinkedInJobProposalSent,
-  updateLinkedInJobNote,
-} from "@/app/admin/dashboard/linkedin-actions";
-import {
-  addUpworkJob,
-  deleteUpworkJob,
-  setUpworkJobProposalSent,
-  updateUpworkJobNote,
-} from "@/app/admin/dashboard/upwork-actions";
+import { getLatestOnPurposeEpisode } from "@/lib/youtube";
 import type { Task } from "@/lib/task";
 import type { MoodEntry } from "@/lib/mood";
-import type { JobLead } from "@/lib/job-lead";
+import type { JournalEntry } from "@/lib/journal";
+import type { CalorieEntry } from "@/lib/calorie";
+import type { WorkoutEntry } from "@/lib/workout";
 
 export const metadata: Metadata = {
   title: "Dashboard",
   description: "Admin dashboard.",
 };
 
-interface AdminDashboardPageProps {
-  searchParams: Promise<{ upwork_error?: string }>;
-}
-
-export default async function AdminDashboardPage({ searchParams }: AdminDashboardPageProps) {
-  const { upwork_error: upworkError } = await searchParams;
+export default async function AdminDashboardPage() {
   const supabase = await createClient();
 
   const [
     { data: tasksData, error: tasksError },
     { data: moodData, error: moodError },
-    { data: linkedInJobsData, error: linkedInJobsError },
-    { data: upworkJobsData, error: upworkJobsError },
-    episodes,
-    upworkConnected,
-    aiJobMatches,
+    { data: journalData, error: journalError },
+    { data: calorieData, error: calorieError },
+    { data: workoutData, error: workoutError },
+    episode,
   ] = await Promise.all([
     supabase.from("tasks").select("*").order("position", { ascending: true }),
     supabase.from("mood_entries").select("*").order("entry_date", { ascending: false }).limit(7),
-    supabase.from("linkedin_jobs").select("*").order("created_at", { ascending: false }),
-    supabase.from("upwork_jobs").select("*").order("created_at", { ascending: false }),
-    getOnPurposeEpisodes(),
-    isUpworkConnected(),
-    getTodaysAiJobMatches(),
+    supabase.from("journal_entries").select("*").order("entry_date", { ascending: false }).limit(7),
+    supabase.from("calorie_entries").select("*").order("entry_date", { ascending: false }).limit(7),
+    supabase.from("workout_entries").select("*").order("entry_date", { ascending: false }).limit(7),
+    getLatestOnPurposeEpisode(),
   ]);
 
   if (tasksError) {
@@ -65,17 +44,21 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
   if (moodError) {
     console.error("Failed to load mood entries:", moodError);
   }
-  if (linkedInJobsError) {
-    console.error("Failed to load LinkedIn jobs:", linkedInJobsError);
+  if (journalError) {
+    console.error("Failed to load journal entries:", journalError);
   }
-  if (upworkJobsError) {
-    console.error("Failed to load Upwork jobs:", upworkJobsError);
+  if (calorieError) {
+    console.error("Failed to load calorie entries:", calorieError);
+  }
+  if (workoutError) {
+    console.error("Failed to load workout entries:", workoutError);
   }
 
   const tasks = (tasksData ?? []) as Task[];
   const moodEntries = (moodData ?? []) as MoodEntry[];
-  const linkedInJobs = (linkedInJobsData ?? []) as JobLead[];
-  const upworkJobs = (upworkJobsData ?? []) as JobLead[];
+  const journalEntries = (journalData ?? []) as JournalEntry[];
+  const calorieEntries = (calorieData ?? []) as CalorieEntry[];
+  const workoutEntries = (workoutData ?? []) as WorkoutEntry[];
 
   return (
     <section className="shell py-20 sm:py-28">
@@ -87,46 +70,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
       </div>
 
       <div className="mt-10">
-        <LatestPodcast episodes={episodes} />
-      </div>
-
-      <div className="mt-10">
-        <AiJobMatches matches={aiJobMatches} />
-      </div>
-
-      <div className="mt-10">
-        <JobLeadsCard
-          icon={<Briefcase className="h-4 w-4 text-accent" aria-hidden="true" />}
-          heading="LinkedIn jobs"
-          subtitle="Paste in matches you find worth tracking"
-          companyLabel="Company"
-          jobs={linkedInJobs}
-          onAdd={addLinkedInJob}
-          onDelete={deleteLinkedInJob}
-          onSetProposalSent={setLinkedInJobProposalSent}
-          onUpdateNote={updateLinkedInJobNote}
-        />
-      </div>
-
-      <div className="mt-10">
-        <JobLeadsCard
-          icon={<Handshake className="h-4 w-4 text-accent" aria-hidden="true" />}
-          heading="Upwork jobs"
-          subtitle="Paste in matches you find worth tracking"
-          companyLabel="Client"
-          jobs={upworkJobs}
-          onAdd={addUpworkJob}
-          onDelete={deleteUpworkJob}
-          onSetProposalSent={setUpworkJobProposalSent}
-          onUpdateNote={updateUpworkJobNote}
-        />
-      </div>
-
-      <div className="mt-10">
-        <UpworkAutoSync
-          connected={upworkConnected}
-          error={upworkError as "config" | "state_mismatch" | "exchange_failed" | undefined}
-        />
+        <LatestPodcast episode={episode} />
       </div>
 
       <div className="mt-10">
@@ -134,7 +78,15 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
       </div>
 
       <div className="mt-10">
-        <MoodTracker entries={moodEntries} />
+        <MoodTracker entries={moodEntries} journalEntries={journalEntries} />
+      </div>
+
+      <div className="mt-10">
+        <CalorieTracker entries={calorieEntries} />
+      </div>
+
+      <div className="mt-10">
+        <WorkoutTracker entries={workoutEntries} />
       </div>
 
       <div className="mt-16">

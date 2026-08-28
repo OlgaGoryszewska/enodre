@@ -1,13 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import type FullCalendar from "@fullcalendar/react";
 import { EventDialog } from "@/components/admin/EventDialog";
 import { TaskDialog } from "@/components/admin/TaskDialog";
-import { DayDialog } from "@/components/admin/DayDialog";
+import { DayDashboard } from "@/components/admin/DayDashboard";
 import { createClient } from "@/lib/supabase/client";
 import type { CalendarEvent } from "@/lib/calendar";
 import type { Task } from "@/lib/task";
+import type { WellnessMarker } from "@/lib/wellness-markers";
+import type { MoodEntry } from "@/lib/mood";
+import type { JournalEntry } from "@/lib/journal";
+import type { CalorieEntry } from "@/lib/calorie";
+import type { WorkoutEntry } from "@/lib/workout";
 import "@/components/admin/calendar.css";
 
 const FullCalendarClient = dynamic(() => import("@/components/admin/FullCalendarClient"), {
@@ -22,6 +28,11 @@ const FullCalendarClient = dynamic(() => import("@/components/admin/FullCalendar
 interface CalendarProps {
   initialEvents: CalendarEvent[];
   tasks: Task[];
+  wellnessMarkers: WellnessMarker[];
+  moodEntries: MoodEntry[];
+  journalEntries: JournalEntry[];
+  calorieEntries: CalorieEntry[];
+  workoutEntries: WorkoutEntry[];
 }
 
 function isSameDay(a: Date, b: Date) {
@@ -33,7 +44,15 @@ function toDateKey(date: Date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
-export function Calendar({ initialEvents, tasks }: CalendarProps) {
+export function Calendar({
+  initialEvents,
+  tasks,
+  wellnessMarkers,
+  moodEntries,
+  journalEntries,
+  calorieEntries,
+  workoutEntries,
+}: CalendarProps) {
   const [events, setEvents] = useState(initialEvents);
 
   // Server Actions (create/edit/delete) revalidate this route, which sends
@@ -48,8 +67,8 @@ export function Calendar({ initialEvents, tasks }: CalendarProps) {
     setEvents(initialEvents);
   }
 
-  const [dayDialogOpen, setDayDialogOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const calendarRef = useRef<FullCalendar>(null);
+  const [dayViewDate, setDayViewDate] = useState<Date | null>(null);
 
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -93,8 +112,11 @@ export function Calendar({ initialEvents, tasks }: CalendarProps) {
   }
 
   function handleDateClick(date: Date) {
-    setSelectedDate(date);
-    setDayDialogOpen(true);
+    calendarRef.current?.getApi().changeView("timeGridDay", date);
+  }
+
+  function handleDatesSet(viewType: string, start: Date) {
+    setDayViewDate(viewType === "timeGridDay" ? start : null);
   }
 
   function handleEventClick(event: CalendarEvent) {
@@ -111,59 +133,79 @@ export function Calendar({ initialEvents, tasks }: CalendarProps) {
   }
 
   function handleAddEventFromDay() {
-    setDayDialogOpen(false);
     setSelectedEvent(null);
-    setEventInitialDate(selectedDate);
+    setEventInitialDate(dayViewDate);
     setEventDialogOpen(true);
   }
 
   function handleEditEventFromDay(event: CalendarEvent) {
-    setDayDialogOpen(false);
     setSelectedEvent(event);
     setEventInitialDate(null);
     setEventDialogOpen(true);
   }
 
   function handleEditTaskFromDay(task: Task) {
-    setDayDialogOpen(false);
     setSelectedTask(task);
     setTaskDialogOpen(true);
   }
 
-  const dayEvents = selectedDate
-    ? events.filter((event) => isSameDay(new Date(event.start_time), selectedDate))
+  const dayEvents = dayViewDate
+    ? events.filter((event) => isSameDay(new Date(event.start_time), dayViewDate))
     : [];
-  const dayTasks = selectedDate
+  const dayTasks = dayViewDate
     ? tasks.filter((task) => {
         if (!task.start_date || !task.end_date) return false;
-        const dateKey = toDateKey(selectedDate);
+        const dateKey = toDateKey(dayViewDate);
         return dateKey >= task.start_date && dateKey <= task.end_date;
       })
     : [];
+  const dayViewDateKey = dayViewDate ? toDateKey(dayViewDate) : null;
+  const dayMood = dayViewDateKey
+    ? (moodEntries.find((entry) => entry.entry_date === dayViewDateKey) ?? null)
+    : null;
+  const dayJournal = dayViewDateKey
+    ? (journalEntries.find((entry) => entry.entry_date === dayViewDateKey) ?? null)
+    : null;
+  const dayCalories = dayViewDateKey
+    ? (calorieEntries.find((entry) => entry.entry_date === dayViewDateKey) ?? null)
+    : null;
+  const dayWorkout = dayViewDateKey
+    ? (workoutEntries.find((entry) => entry.entry_date === dayViewDateKey) ?? null)
+    : null;
 
   return (
     <>
-      <div className="admin-calendar rounded-2xl border border-black/10 bg-card p-4 sm:p-6">
+      <div
+        className="admin-calendar rounded-2xl border border-black/10 bg-card p-4 sm:p-6"
+        data-day-view={dayViewDate ? "true" : undefined}
+      >
         <FullCalendarClient
+          ref={calendarRef}
           events={events}
           taskEvents={tasks}
+          wellnessMarkers={wellnessMarkers}
           onDateClick={handleDateClick}
           onEventClick={handleEventClick}
           onTaskClick={handleTaskClick}
           onEventDrop={handleEventDrop}
+          onDatesSet={handleDatesSet}
         />
-      </div>
 
-      <DayDialog
-        open={dayDialogOpen}
-        onOpenChange={setDayDialogOpen}
-        date={selectedDate}
-        events={dayEvents}
-        tasks={dayTasks}
-        onAddEvent={handleAddEventFromDay}
-        onEditEvent={handleEditEventFromDay}
-        onEditTask={handleEditTaskFromDay}
-      />
+        {dayViewDate && (
+          <DayDashboard
+            key={dayViewDate.toISOString()}
+            events={dayEvents}
+            tasks={dayTasks}
+            mood={dayMood}
+            journal={dayJournal}
+            calories={dayCalories}
+            workout={dayWorkout}
+            onAddEvent={handleAddEventFromDay}
+            onEditEvent={handleEditEventFromDay}
+            onEditTask={handleEditTaskFromDay}
+          />
+        )}
+      </div>
 
       <EventDialog
         open={eventDialogOpen}

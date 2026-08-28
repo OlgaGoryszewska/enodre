@@ -133,6 +133,16 @@
   color: var(--foreground) !important;
 }
 
+/* Wellness markers — read-only emoji badges showing which daily trackers
+   (journal, calorie count, workout) have an entry that day. */
+.admin-calendar .fc-wellness-marker {
+  cursor: default;
+  background: transparent !important;
+  border: none !important;
+  color: var(--foreground) !important;
+  font-size: 0.85em;
+}
+
 .admin-calendar .fc-scrollgrid {
   border-radius: 12px;
   overflow: hidden;
@@ -140,6 +150,13 @@
 
 .admin-calendar .fc-timegrid-slot {
   height: 2.5rem;
+}
+
+/* Day view swaps FullCalendar's own grid body for the inline DayDashboard —
+   keep the header toolbar (title, Today/prev/next, view switcher) visible
+   and functional, just hide the redundant single-day grid underneath it. */
+.admin-calendar[data-day-view="true"] .fc-view-harness {
+  display: none;
 }
 
 @media (max-width: 640px) {

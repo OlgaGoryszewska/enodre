@@ -3,27 +3,36 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { MOOD_OPTIONS, moodEmoji, moodLabel, type MoodEntry } from "@/lib/mood";
+import type { JournalEntry } from "@/lib/journal";
 import { saveMoodEntry } from "@/app/admin/dashboard/mood-actions";
+import { saveJournalEntry } from "@/app/admin/dashboard/journal-actions";
 import { buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 interface MoodTrackerProps {
   entries: MoodEntry[];
+  journalEntries: JournalEntry[];
 }
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function MoodTracker({ entries }: MoodTrackerProps) {
+export function MoodTracker({ entries, journalEntries }: MoodTrackerProps) {
   const todayEntry = entries.find((entry) => entry.entry_date === todayKey()) ?? null;
+  const todayJournalEntry = journalEntries.find((entry) => entry.entry_date === todayKey()) ?? null;
+
   const [selectedMood, setSelectedMood] = useState<number | null>(todayEntry?.mood ?? null);
   const [note, setNote] = useState(todayEntry?.note ?? "");
   const [savingMood, setSavingMood] = useState(false);
   const [savingNote, setSavingNote] = useState(false);
 
-  async function persist(mood: number, noteValue: string) {
+  const [journal, setJournal] = useState(todayJournalEntry?.entry ?? "");
+  const [savingJournal, setSavingJournal] = useState(false);
+  const journalDirty = journal !== (todayJournalEntry?.entry ?? "");
+
+  async function persistMood(mood: number, noteValue: string) {
     const formData = new FormData();
     formData.set("mood", String(mood));
     formData.set("note", noteValue);
@@ -35,7 +44,7 @@ export function MoodTracker({ entries }: MoodTrackerProps) {
     setSelectedMood(mood);
     setSavingMood(true);
     try {
-      await persist(mood, note);
+      await persistMood(mood, note);
     } catch (error) {
       console.error("Failed to save mood:", error);
       setSelectedMood(previousMood);
@@ -48,11 +57,24 @@ export function MoodTracker({ entries }: MoodTrackerProps) {
     if (!selectedMood) return;
     setSavingNote(true);
     try {
-      await persist(selectedMood, note);
+      await persistMood(selectedMood, note);
     } catch (error) {
       console.error("Failed to save note:", error);
     } finally {
       setSavingNote(false);
+    }
+  }
+
+  async function handleSaveJournal() {
+    setSavingJournal(true);
+    try {
+      const formData = new FormData();
+      formData.set("entry", journal);
+      await saveJournalEntry(formData);
+    } catch (error) {
+      console.error("Failed to save journal entry:", error);
+    } finally {
+      setSavingJournal(false);
     }
   }
 
@@ -110,6 +132,37 @@ export function MoodTracker({ entries }: MoodTrackerProps) {
           </button>
         </div>
       )}
+
+      <div className="mt-6 border-t border-black/10 pt-6">
+        <label htmlFor="journal" className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
+          Journal
+        </label>
+        <Textarea
+          id="journal"
+          rows={5}
+          value={journal}
+          onChange={(event) => setJournal(event.target.value)}
+          placeholder="Write today's entry..."
+          className="mt-2"
+        />
+        {journalDirty && (
+          <button
+            type="button"
+            onClick={handleSaveJournal}
+            disabled={savingJournal}
+            className={cn(buttonVariants({ variant: "outline" }), "mt-3")}
+          >
+            {savingJournal ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              "Save journal entry"
+            )}
+          </button>
+        )}
+        <p className="mt-2 text-xs text-ink-muted">
+          Saved entries show up as a marker on today&apos;s date in the calendar.
+        </p>
+      </div>
 
       {history.length > 0 && (
         <div className="mt-6 border-t border-black/10 pt-6">

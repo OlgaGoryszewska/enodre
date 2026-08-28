@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Nested duplicate repo (github.com/OlgaGoryszewska/enodre) — a
+    // separate project living inside this one, not part of this app.
+    "enodre/**",
   ]),
 ]);
 
