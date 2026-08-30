@@ -3,7 +3,7 @@
   --fc-page-bg-color: transparent;
   --fc-neutral-bg-color: rgba(0, 0, 0, 0.03);
   --fc-list-event-hover-bg-color: rgba(0, 0, 0, 0.03);
-  --fc-today-bg-color: rgba(169, 151, 253, 0.08);
+  --fc-today-bg-color: rgba(169, 151, 253, 0.12);
   --fc-event-bg-color: var(--accent);
   --fc-event-border-color: var(--accent);
   --fc-event-text-color: var(--background);
@@ -108,7 +108,8 @@
 
 /* Task-derived calendar entries — read-only, colored to match their kanban
    column (see columnStyles in KanbanBoard.tsx). Not draggable, so the
-   cursor and lack of hover-lift signal that intentionally. */
+   cursor and lack of hover-lift signal that intentionally. Full colors
+   still apply in week/day view, where tasks render as bars, not dots. */
 .admin-calendar .fc-task-event {
   cursor: default;
   border-width: 1px;
@@ -165,16 +166,48 @@
     align-items: stretch;
   }
 
+  .admin-calendar .fc-toolbar-chunk {
+    width: 100%;
+  }
+
+  /* Row 1: prev/next arrows on the left, Today on the right — white
+     buttons with the site's accent violet border and icon/text. */
+  .admin-calendar .fc-header-toolbar > .fc-toolbar-chunk:nth-child(1) {
+    order: 0;
+    justify-content: space-between;
+  }
+
+  .admin-calendar .fc-prev-button,
+  .admin-calendar .fc-next-button,
+  .admin-calendar .fc-today-button {
+    background: var(--background);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .admin-calendar .fc-prev-button:hover,
+  .admin-calendar .fc-next-button:hover,
+  .admin-calendar .fc-today-button:hover {
+    background: rgba(169, 151, 253, 0.1);
+    color: var(--accent);
+  }
+
+  /* Row 2: the date title, under the button row, smaller and violet. */
+  .admin-calendar .fc-header-toolbar > .fc-toolbar-chunk:nth-child(2) {
+    order: 1;
+  }
+
   .admin-calendar .fc-toolbar-title {
-    order: -1;
     width: 100%;
     text-align: center;
-    font-size: 1.05rem;
+    font-size: 0.85rem;
+    color: var(--accent);
     white-space: normal;
   }
 
-  .admin-calendar .fc-toolbar-chunk {
-    width: 100%;
+  /* Row 3: month/week/day switcher — left as is. */
+  .admin-calendar .fc-header-toolbar > .fc-toolbar-chunk:nth-child(3) {
+    order: 2;
   }
 
   .admin-calendar .fc-button {

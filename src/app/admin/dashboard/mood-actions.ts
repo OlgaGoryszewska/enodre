@@ -26,4 +26,30 @@ export async function saveMoodEntry(formData: FormData) {
   if (error) throw error;
 
   revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/calendar");
+}
+
+export async function updateMoodNote(id: string, note: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("mood_entries")
+    .update({ note: note.trim() || null, updated_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) throw error;
+
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/calendar");
+}
+
+export async function deleteMoodEntry(id: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("mood_entries").delete().eq("id", id);
+
+  if (error) throw error;
+
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/calendar");
 }

@@ -28,3 +28,28 @@ export async function saveCalorieEntry(formData: FormData) {
   revalidatePath("/admin/dashboard");
   revalidatePath("/admin/calendar");
 }
+
+export async function updateCalorieNote(id: string, note: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("calorie_entries")
+    .update({ note: note.trim() || null, updated_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) throw error;
+
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/calendar");
+}
+
+export async function deleteCalorieEntry(id: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("calorie_entries").delete().eq("id", id);
+
+  if (error) throw error;
+
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/calendar");
+}

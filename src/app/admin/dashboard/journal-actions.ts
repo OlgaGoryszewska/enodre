@@ -26,3 +26,29 @@ export async function saveJournalEntry(formData: FormData) {
   revalidatePath("/admin/dashboard");
   revalidatePath("/admin/calendar");
 }
+
+export async function updateJournalEntry(id: string, entry: string) {
+  const values = journalFormSchema.parse({ entry });
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("journal_entries")
+    .update({ entry: values.entry, updated_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) throw error;
+
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/calendar");
+}
+
+export async function deleteJournalEntry(id: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("journal_entries").delete().eq("id", id);
+
+  if (error) throw error;
+
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/calendar");
+}

@@ -5,7 +5,12 @@ import dynamic from "next/dynamic";
 import type FullCalendar from "@fullcalendar/react";
 import { EventDialog } from "@/components/admin/EventDialog";
 import { TaskDialog } from "@/components/admin/TaskDialog";
-import { DayDashboard } from "@/components/admin/DayDashboard";
+import { DayDashboard, type WellnessKind } from "@/components/admin/DayDashboard";
+import { createEvent, updateEvent, deleteEvent } from "@/app/admin/calendar/actions";
+import { updateMoodNote, deleteMoodEntry } from "@/app/admin/dashboard/mood-actions";
+import { updateJournalEntry, deleteJournalEntry } from "@/app/admin/dashboard/journal-actions";
+import { updateCalorieNote, deleteCalorieEntry } from "@/app/admin/dashboard/calorie-actions";
+import { updateWorkoutEntry, deleteWorkoutEntry } from "@/app/admin/dashboard/workout-actions";
 import { createClient } from "@/lib/supabase/client";
 import type { CalendarEvent } from "@/lib/calendar";
 import type { Task } from "@/lib/task";
@@ -115,8 +120,8 @@ export function Calendar({
     calendarRef.current?.getApi().changeView("timeGridDay", date);
   }
 
-  function handleDatesSet(viewType: string, start: Date) {
-    setDayViewDate(viewType === "timeGridDay" ? start : null);
+  function handleDatesSet(newViewType: string, start: Date) {
+    setDayViewDate(newViewType === "timeGridDay" ? start : null);
   }
 
   function handleEventClick(event: CalendarEvent) {
@@ -136,6 +141,51 @@ export function Calendar({
     setSelectedEvent(null);
     setEventInitialDate(dayViewDate);
     setEventDialogOpen(true);
+  }
+
+  async function handleQuickAddNote(hour: number, text: string) {
+    if (!dayViewDate) return;
+    const start = new Date(dayViewDate);
+    start.setHours(hour, 0, 0, 0);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+
+    const formData = new FormData();
+    formData.set("title", text);
+    formData.set("startTime", start.toISOString());
+    formData.set("endTime", end.toISOString());
+
+    await createEvent(formData);
+  }
+
+  async function handleSaveNote(id: string, text: string) {
+    const existing = events.find((event) => event.id === id);
+    if (!existing) return;
+
+    const formData = new FormData();
+    formData.set("title", text);
+    formData.set("startTime", existing.start_time);
+    formData.set("endTime", existing.end_time);
+    if (existing.all_day) formData.set("allDay", "on");
+
+    await updateEvent(id, formData);
+  }
+
+  async function handleRemoveNote(id: string) {
+    await deleteEvent(id);
+  }
+
+  async function handleSaveWellnessEntry(kind: WellnessKind, id: string, text: string) {
+    if (kind === "mood") await updateMoodNote(id, text);
+    if (kind === "journal") await updateJournalEntry(id, text);
+    if (kind === "calories") await updateCalorieNote(id, text);
+    if (kind === "workout") await updateWorkoutEntry(id, text);
+  }
+
+  async function handleRemoveWellnessEntry(kind: WellnessKind, id: string) {
+    if (kind === "mood") await deleteMoodEntry(id);
+    if (kind === "journal") await deleteJournalEntry(id);
+    if (kind === "calories") await deleteCalorieEntry(id);
+    if (kind === "workout") await deleteWorkoutEntry(id);
   }
 
   function handleEditEventFromDay(event: CalendarEvent) {
@@ -203,6 +253,11 @@ export function Calendar({
             onAddEvent={handleAddEventFromDay}
             onEditEvent={handleEditEventFromDay}
             onEditTask={handleEditTaskFromDay}
+            onQuickAddNote={handleQuickAddNote}
+            onSaveNote={handleSaveNote}
+            onRemoveNote={handleRemoveNote}
+            onSaveWellnessEntry={handleSaveWellnessEntry}
+            onRemoveWellnessEntry={handleRemoveWellnessEntry}
           />
         )}
       </div>

@@ -7,6 +7,8 @@ import { saveWorkoutEntry } from "@/app/admin/dashboard/workout-actions";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { buttonVariants } from "@/components/ui/button";
+import { Accordion } from "@/components/admin/Accordion";
+import { useAffirmation } from "@/components/admin/AffirmationToast";
 import { cn } from "@/lib/utils";
 
 interface WorkoutTrackerProps {
@@ -18,6 +20,7 @@ function todayKey() {
 }
 
 export function WorkoutTracker({ entries }: WorkoutTrackerProps) {
+  const showAffirmation = useAffirmation();
   const todayEntry = entries.find((entry) => entry.entry_date === todayKey()) ?? null;
 
   const [workout, setWorkout] = useState(todayEntry?.workout ?? "");
@@ -36,6 +39,7 @@ export function WorkoutTracker({ entries }: WorkoutTrackerProps) {
       formData.set("workout", workout);
       formData.set("durationMinutes", duration);
       await saveWorkoutEntry(formData);
+      showAffirmation();
     } catch (error) {
       console.error("Failed to save workout entry:", error);
     } finally {
@@ -46,14 +50,12 @@ export function WorkoutTracker({ entries }: WorkoutTrackerProps) {
   const history = entries.filter((entry) => entry.entry_date !== todayKey()).slice(0, 6);
 
   return (
-    <div className="rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
-      <div className="flex items-center gap-2">
-        <Dumbbell className="h-4 w-4 text-accent" aria-hidden="true" />
-        <h2 className="text-lg font-semibold tracking-tight">Workout of the day</h2>
-      </div>
-      <p className="mt-1 text-sm text-ink-muted">What did you train today?</p>
-
-      <div className="mt-5 grid gap-3">
+    <Accordion
+      icon={<Dumbbell className="h-4 w-4" aria-hidden="true" />}
+      title="Workout of the day"
+      subtitle="What did you train today?"
+    >
+      <div className="grid gap-3">
         <div>
           <label htmlFor="workout" className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
             Workout
@@ -119,6 +121,6 @@ export function WorkoutTracker({ entries }: WorkoutTrackerProps) {
           </ul>
         </div>
       )}
-    </div>
+    </Accordion>
   );
 }

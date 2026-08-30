@@ -30,3 +30,29 @@ export async function saveWorkoutEntry(formData: FormData) {
   revalidatePath("/admin/dashboard");
   revalidatePath("/admin/calendar");
 }
+
+export async function updateWorkoutEntry(id: string, workout: string) {
+  const values = workoutFormSchema.parse({ workout });
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("workout_entries")
+    .update({ workout: values.workout, updated_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) throw error;
+
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/calendar");
+}
+
+export async function deleteWorkoutEntry(id: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("workout_entries").delete().eq("id", id);
+
+  if (error) throw error;
+
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/calendar");
+}

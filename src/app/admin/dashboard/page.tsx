@@ -6,6 +6,7 @@ import { CalorieTracker } from "@/components/admin/CalorieTracker";
 import { WorkoutTracker } from "@/components/admin/WorkoutTracker";
 import { LatestPodcast } from "@/components/admin/LatestPodcast";
 import { SignOutButton } from "@/components/admin/SignOutButton";
+import { AffirmationProvider } from "@/components/admin/AffirmationToast";
 import { createClient } from "@/lib/supabase/server";
 import { getLatestOnPurposeEpisode } from "@/lib/youtube";
 import type { Task } from "@/lib/task";
@@ -61,37 +62,39 @@ export default async function AdminDashboardPage() {
   const workoutEntries = (workoutData ?? []) as WorkoutEntry[];
 
   return (
-    <section className="shell py-20 sm:py-28">
-      <AdminNav />
+    <AffirmationProvider>
+      <section className="shell py-20 sm:py-28">
+        <AdminNav />
 
-      <div className="mt-10">
-        <p className="eyebrow">Admin</p>
-        <h1 className="page-title mt-4 text-4xl">Dashboard</h1>
-      </div>
+        <div className="mt-10">
+          <p className="eyebrow">Admin</p>
+          <h1 className="page-title mt-4 text-4xl">Dashboard</h1>
+        </div>
 
-      <div className="mt-10">
-        <LatestPodcast episode={episode} />
-      </div>
+        <div className="mt-10">
+          <LatestPodcast episode={episode} />
+        </div>
 
-      <div className="mt-10">
-        <KanbanBoard initialTasks={tasks} />
-      </div>
+        <div className="mt-10">
+          <KanbanBoard initialTasks={tasks} />
+        </div>
 
-      <div className="mt-10">
-        <MoodTracker entries={moodEntries} journalEntries={journalEntries} />
-      </div>
+        <div className="mt-10">
+          <MoodTracker entries={moodEntries} journalEntries={journalEntries} />
+        </div>
 
-      <div className="mt-10">
-        <CalorieTracker entries={calorieEntries} />
-      </div>
+        <div className="mt-10">
+          <CalorieTracker entries={calorieEntries} />
+        </div>
 
-      <div className="mt-10">
-        <WorkoutTracker entries={workoutEntries} />
-      </div>
+        <div className="mt-10">
+          <WorkoutTracker entries={workoutEntries} />
+        </div>
 
-      <div className="mt-16">
-        <SignOutButton />
-      </div>
-    </section>
+        <div className="mt-16">
+          <SignOutButton />
+        </div>
+      </section>
+    </AffirmationProvider>
   );
 }

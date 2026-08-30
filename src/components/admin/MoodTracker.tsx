@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Brain, Loader2 } from "lucide-react";
 import { MOOD_OPTIONS, moodEmoji, moodLabel, type MoodEntry } from "@/lib/mood";
 import type { JournalEntry } from "@/lib/journal";
 import { saveMoodEntry } from "@/app/admin/dashboard/mood-actions";
 import { saveJournalEntry } from "@/app/admin/dashboard/journal-actions";
 import { buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Accordion } from "@/components/admin/Accordion";
+import { useAffirmation } from "@/components/admin/AffirmationToast";
 import { cn } from "@/lib/utils";
 
 interface MoodTrackerProps {
@@ -20,48 +22,31 @@ function todayKey() {
 }
 
 export function MoodTracker({ entries, journalEntries }: MoodTrackerProps) {
+  const showAffirmation = useAffirmation();
   const todayEntry = entries.find((entry) => entry.entry_date === todayKey()) ?? null;
   const todayJournalEntry = journalEntries.find((entry) => entry.entry_date === todayKey()) ?? null;
 
   const [selectedMood, setSelectedMood] = useState<number | null>(todayEntry?.mood ?? null);
-  const [note, setNote] = useState(todayEntry?.note ?? "");
   const [savingMood, setSavingMood] = useState(false);
-  const [savingNote, setSavingNote] = useState(false);
 
   const [journal, setJournal] = useState(todayJournalEntry?.entry ?? "");
   const [savingJournal, setSavingJournal] = useState(false);
   const journalDirty = journal !== (todayJournalEntry?.entry ?? "");
-
-  async function persistMood(mood: number, noteValue: string) {
-    const formData = new FormData();
-    formData.set("mood", String(mood));
-    formData.set("note", noteValue);
-    await saveMoodEntry(formData);
-  }
 
   async function handleSelectMood(mood: number) {
     const previousMood = selectedMood;
     setSelectedMood(mood);
     setSavingMood(true);
     try {
-      await persistMood(mood, note);
+      const formData = new FormData();
+      formData.set("mood", String(mood));
+      await saveMoodEntry(formData);
+      showAffirmation();
     } catch (error) {
       console.error("Failed to save mood:", error);
       setSelectedMood(previousMood);
     } finally {
       setSavingMood(false);
-    }
-  }
-
-  async function handleSaveNote() {
-    if (!selectedMood) return;
-    setSavingNote(true);
-    try {
-      await persistMood(selectedMood, note);
-    } catch (error) {
-      console.error("Failed to save note:", error);
-    } finally {
-      setSavingNote(false);
     }
   }
 
@@ -71,6 +56,7 @@ export function MoodTracker({ entries, journalEntries }: MoodTrackerProps) {
       const formData = new FormData();
       formData.set("entry", journal);
       await saveJournalEntry(formData);
+      showAffirmation();
     } catch (error) {
       console.error("Failed to save journal entry:", error);
     } finally {
@@ -81,11 +67,8 @@ export function MoodTracker({ entries, journalEntries }: MoodTrackerProps) {
   const history = entries.filter((entry) => entry.entry_date !== todayKey()).slice(0, 6);
 
   return (
-    <div className="rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
-      <h2 className="text-lg font-semibold tracking-tight">Mental health</h2>
-      <p className="mt-1 text-sm text-ink-muted">How are you feeling today?</p>
-
-      <div className="mt-5 flex flex-wrap gap-2">
+    <Accordion icon={<Brain className="h-4 w-4" aria-hidden="true" />} title="Mental health" subtitle="How are you feeling today?">
+      <div className="flex flex-wrap gap-2">
         {MOOD_OPTIONS.map((option) => (
           <button
             key={option.value}
@@ -105,33 +88,6 @@ export function MoodTracker({ entries, journalEntries }: MoodTrackerProps) {
           </button>
         ))}
       </div>
-
-      {selectedMood && (
-        <div className="mt-5">
-          <label
-            htmlFor="mood-note"
-            className="text-xs font-semibold uppercase tracking-widest text-ink-muted"
-          >
-            Note (optional)
-          </label>
-          <Textarea
-            id="mood-note"
-            rows={2}
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            placeholder="What's on your mind?"
-            className="mt-2"
-          />
-          <button
-            type="button"
-            onClick={handleSaveNote}
-            disabled={savingNote}
-            className={cn(buttonVariants({ variant: "outline" }), "mt-3")}
-          >
-            {savingNote ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : "Save note"}
-          </button>
-        </div>
-      )}
 
       <div className="mt-6 border-t border-black/10 pt-6">
         <label htmlFor="journal" className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
@@ -171,7 +127,7 @@ export function MoodTracker({ entries, journalEntries }: MoodTrackerProps) {
             {history.map((entry) => (
               <div
                 key={entry.id}
-                title={entry.note ?? moodLabel(entry.mood)}
+                title={moodLabel(entry.mood)}
                 className="flex flex-col items-center gap-1 text-center"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-background text-xl">
@@ -187,6 +143,6 @@ export function MoodTracker({ entries, journalEntries }: MoodTrackerProps) {
           </div>
         </div>
       )}
-    </div>
+    </Accordion>
   );
 }
