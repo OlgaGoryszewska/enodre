@@ -18,3 +18,8 @@ alter table public.workout_entries enable row level security;
 drop policy if exists "authenticated can manage workout entries" on public.workout_entries;
 create policy "authenticated can manage workout entries" on public.workout_entries
   for all to authenticated using (true) with check (true);
+
+-- Migration for a table created before Run got its own numeric fields —
+-- idempotent, no-ops if the table was just created fresh above.
+alter table public.workout_entries add column if not exists distance_km numeric check (distance_km >= 0);
+alter table public.workout_entries add column if not exists calories_burned integer check (calories_burned >= 0);

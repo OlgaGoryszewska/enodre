@@ -18,3 +18,8 @@ alter table public.calorie_entries enable row level security;
 drop policy if exists "authenticated can manage calorie entries" on public.calorie_entries;
 create policy "authenticated can manage calorie entries" on public.calorie_entries
   for all to authenticated using (true) with check (true);
+
+-- Migration for a table created before calories burned was tracked —
+-- idempotent, no-ops if the table was just created fresh above. Manual entry
+-- for now; a Garmin auto-sync would populate this same column later.
+alter table public.calorie_entries add column if not exists calories_burned integer check (calories_burned >= 0);

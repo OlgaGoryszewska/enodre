@@ -5,6 +5,7 @@ import { KanbanBoard } from "@/components/admin/KanbanBoard";
 import { MoodTracker } from "@/components/admin/MoodTracker";
 import { CalorieTracker } from "@/components/admin/CalorieTracker";
 import { WorkoutTracker } from "@/components/admin/WorkoutTracker";
+import { WeeklySummaryCard } from "@/components/admin/WeeklySummaryCard";
 import { MediaListCard } from "@/components/admin/MediaListCard";
 import { InspiringPeopleCard } from "@/components/admin/InspiringPeopleCard";
 import { LatestPodcast } from "@/components/admin/LatestPodcast";
@@ -157,6 +158,15 @@ export default async function AdminDashboardPage() {
 
         <div className="mt-10">
           <WorkoutTracker entries={workoutEntries} />
+        </div>
+
+        <div className="mt-10">
+          <WeeklySummaryCard
+            moodEntries={moodEntries}
+            calorieEntries={calorieEntries}
+            workoutEntries={workoutEntries}
+            tasks={tasks}
+          />
         </div>
 
         <div className="mt-10">

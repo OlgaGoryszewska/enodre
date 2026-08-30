@@ -5,4 +5,6 @@ export type WorkoutEntry = {
   entry_date: string;
   workout: string;
   duration_minutes: number | null;
+  distance_km: number | null;
+  calories_burned: number | null;
 };

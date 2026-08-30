@@ -4,12 +4,16 @@ import { revalidatePath } from "next/cache";
 import { workoutFormSchema } from "@/lib/workout-schema";
 import { createClient } from "@/lib/supabase/server";
 
+function numberOrUndefined(raw: FormDataEntryValue | null) {
+  return raw && String(raw).trim() !== "" ? Number(raw) : undefined;
+}
+
 export async function saveWorkoutEntry(formData: FormData) {
-  const durationRaw = formData.get("durationMinutes");
   const values = workoutFormSchema.parse({
     workout: formData.get("workout"),
-    durationMinutes:
-      durationRaw && String(durationRaw).trim() !== "" ? Number(durationRaw) : undefined,
+    durationMinutes: numberOrUndefined(formData.get("durationMinutes")),
+    distanceKm: numberOrUndefined(formData.get("distanceKm")),
+    caloriesBurned: numberOrUndefined(formData.get("caloriesBurned")),
   });
 
   const supabase = await createClient();
@@ -20,6 +24,8 @@ export async function saveWorkoutEntry(formData: FormData) {
       entry_date: today,
       workout: values.workout,
       duration_minutes: values.durationMinutes ?? null,
+      distance_km: values.distanceKm ?? null,
+      calories_burned: values.caloriesBurned ?? null,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "entry_date" }

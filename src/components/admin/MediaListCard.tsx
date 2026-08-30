@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowUpRight, Check, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowUpRight, Check, Loader2, MoreVertical, Plus } from "lucide-react";
 import { FormField } from "@/components/challenge/FormField";
 import { Input } from "@/components/ui/input";
 import { buttonVariants } from "@/components/ui/button";
@@ -14,7 +14,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Accordion } from "@/components/admin/Accordion";
 import { cn } from "@/lib/utils";
 import { mediaItemFormSchema, type MediaItemFormValues } from "@/lib/media-item-schema";
 import type { MediaItem } from "@/lib/media-item";
@@ -33,6 +32,10 @@ interface MediaListCardProps {
   onUpdateNote: (id: string, note: string) => Promise<void>;
 }
 
+// Deliberately not an Accordion, and not a bordered-box-per-item list like
+// the daily trackers (Mental health/Calorie/Workout) — this is a running
+// list you add to occasionally, not something you fill in every day, so it
+// reads as a plain numbered list instead.
 export function MediaListCard({
   icon,
   title,
@@ -109,13 +112,26 @@ export function MediaListCard({
   }
 
   return (
-    <Accordion icon={icon} title={title} subtitle={subtitle}>
-      <div className="flex items-center justify-end">
+    <div className="rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent" aria-hidden="true">
+            {icon}
+          </span>
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+            <p className="text-sm text-ink-muted">{subtitle}</p>
+          </div>
+        </div>
+
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
-            <button type="button" className={cn(buttonVariants({ variant: "outline" }))}>
+            <button
+              type="button"
+              aria-label={`Add to ${title.toLowerCase()}`}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/20 text-foreground transition hover:bg-foreground/5"
+            >
               <Plus className="h-4 w-4" aria-hidden="true" />
-              Add
             </button>
           </DialogTrigger>
           <DialogContent open={addOpen}>
@@ -147,12 +163,13 @@ export function MediaListCard({
       </div>
 
       {items.length === 0 ? (
-        <p className="mt-4 text-sm text-ink-muted">Nothing here yet.</p>
+        <p className="mt-5 text-sm text-ink-muted">Nothing here yet.</p>
       ) : (
-        <div className="mt-4 grid gap-2">
-          {items.map((item) => (
+        <ol className="mt-5 grid gap-0.5">
+          {items.map((item, index) => (
             <MediaItemRow
               key={item.id}
+              number={index + 1}
               item={item}
               doneLabel={doneLabel}
               notDoneLabel={notDoneLabel}
@@ -162,13 +179,14 @@ export function MediaListCard({
               onUpdateNote={(note) => onUpdateNote(item.id, note)}
             />
           ))}
-        </div>
+        </ol>
       )}
-    </Accordion>
+    </div>
   );
 }
 
 interface MediaItemRowProps {
+  number: number;
   item: MediaItem;
   doneLabel: string;
   notDoneLabel: string;
@@ -178,15 +196,38 @@ interface MediaItemRowProps {
   onUpdateNote: (note: string) => Promise<void>;
 }
 
-function MediaItemRow({ item, doneLabel, notDoneLabel, deleting, onDelete, onToggleDone, onUpdateNote }: MediaItemRowProps) {
+function MediaItemRow({
+  number,
+  item,
+  doneLabel,
+  notDoneLabel,
+  deleting,
+  onDelete,
+  onToggleDone,
+  onUpdateNote,
+}: MediaItemRowProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState(false);
   const [note, setNote] = useState(item.note ?? "");
   const [savingNote, setSavingNote] = useState(false);
-  const noteDirty = note !== (item.note ?? "");
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
 
   async function handleSaveNote() {
     setSavingNote(true);
     try {
       await onUpdateNote(note);
+      setEditingNote(false);
     } catch (error) {
       console.error("Failed to save note:", error);
     } finally {
@@ -195,63 +236,103 @@ function MediaItemRow({ item, doneLabel, notDoneLabel, deleting, onDelete, onTog
   }
 
   return (
-    <div className="rounded-xl border border-black/10 bg-background p-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
-          {item.url ? (
-            <a
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group inline-flex items-center gap-1.5"
-            >
-              <span className="font-medium transition group-hover:text-accent">{item.title}</span>
-              <ArrowUpRight
-                className="h-3.5 w-3.5 shrink-0 text-ink-muted transition group-hover:text-accent"
-                aria-hidden="true"
-              />
-            </a>
-          ) : (
-            <span className="font-medium">{item.title}</span>
-          )}
-          {item.category && <p className="mt-0.5 text-xs text-ink-muted">{item.category}</p>}
+    <li className="border-b border-black/5 py-2 last:border-b-0">
+      <div className="flex items-center gap-3">
+        <span className="w-5 shrink-0 text-right text-xs text-ink-muted">{number}.</span>
+
+        <div className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-baseline gap-x-2">
+            {item.url ? (
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex items-center gap-1 text-sm font-medium"
+              >
+                <span className={cn("transition group-hover:text-accent", item.done && "text-ink-muted line-through")}>
+                  {item.title}
+                </span>
+                <ArrowUpRight
+                  className="h-3 w-3 shrink-0 text-ink-muted transition group-hover:text-accent"
+                  aria-hidden="true"
+                />
+              </a>
+            ) : (
+              <span className={cn("text-sm font-medium", item.done && "text-ink-muted line-through")}>
+                {item.title}
+              </span>
+            )}
+            {item.category && <span className="text-xs text-ink-muted">{item.category}</span>}
+          </span>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onToggleDone(!item.done)}
+          aria-pressed={item.done}
+          title={item.done ? doneLabel : notDoneLabel}
+          className={cn(
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition",
+            item.done ? "border-accent bg-accent/10 text-accent" : "border-black/15 text-ink-muted hover:border-black/25"
+          )}
+        >
+          <Check className="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+
+        <div ref={menuRef} className="relative shrink-0">
           <button
             type="button"
-            onClick={() => onToggleDone(!item.done)}
-            aria-pressed={item.done}
-            className={cn(
-              "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-semibold transition",
-              item.done
-                ? "border-accent bg-accent/10 text-accent"
-                : "border-black/10 text-ink-muted hover:border-black/25"
+            onClick={() => setMenuOpen((current) => !current)}
+            aria-label="Options"
+            className="flex h-6 w-6 items-center justify-center rounded-full text-ink-muted transition hover:bg-black/5"
+          >
+            {deleting ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+            ) : (
+              <MoreVertical className="h-3.5 w-3.5" aria-hidden="true" />
             )}
-          >
-            <Check className="h-3.5 w-3.5" aria-hidden="true" />
-            {item.done ? doneLabel : notDoneLabel}
           </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={deleting}
-            aria-label={`Remove ${item.title}`}
-            className="text-ink-muted transition hover:text-danger disabled:opacity-60"
-          >
-            <Trash2 className="h-4 w-4" aria-hidden="true" />
-          </button>
+
+          {menuOpen && (
+            <div className="absolute right-0 top-7 z-10 w-32 overflow-hidden rounded-xl border border-black/10 bg-card shadow-lg">
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setEditingNote(true);
+                }}
+                className="block w-full px-3 py-2 text-left text-xs font-medium transition hover:bg-background"
+              >
+                {item.note ? "Edit note" : "Add note"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onDelete();
+                }}
+                className="block w-full px-3 py-2 text-left text-xs font-medium text-danger transition hover:bg-background"
+              >
+                Delete
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="mt-2 flex items-center gap-2">
-        <Input
-          value={note}
-          onChange={(event) => setNote(event.target.value)}
-          placeholder="Note..."
-          className="text-sm"
-        />
-        {noteDirty && (
+      {item.note && !editingNote && (
+        <p className="mt-1 pl-8 text-xs text-ink-muted">{item.note}</p>
+      )}
+
+      {editingNote && (
+        <div className="mt-1 flex items-center gap-2 pl-8">
+          <Input
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder="Note..."
+            autoFocus
+            className="text-sm"
+          />
           <button
             type="button"
             onClick={handleSaveNote}
@@ -260,8 +341,8 @@ function MediaItemRow({ item, doneLabel, notDoneLabel, deleting, onDelete, onTog
           >
             {savingNote ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : "Save"}
           </button>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </li>
   );
 }

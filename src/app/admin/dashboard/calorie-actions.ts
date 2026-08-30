@@ -5,8 +5,11 @@ import { calorieFormSchema } from "@/lib/calorie-schema";
 import { createClient } from "@/lib/supabase/server";
 
 export async function saveCalorieEntry(formData: FormData) {
+  const caloriesBurnedRaw = formData.get("caloriesBurned");
   const values = calorieFormSchema.parse({
     calories: Number(formData.get("calories")),
+    caloriesBurned:
+      caloriesBurnedRaw && String(caloriesBurnedRaw).trim() !== "" ? Number(caloriesBurnedRaw) : undefined,
     note: formData.get("note") || undefined,
   });
 
@@ -17,6 +20,7 @@ export async function saveCalorieEntry(formData: FormData) {
     {
       entry_date: today,
       calories: values.calories,
+      calories_burned: values.caloriesBurned ?? null,
       note: values.note || null,
       updated_at: new Date().toISOString(),
     },
