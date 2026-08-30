@@ -12,7 +12,7 @@ import { updateJournalEntry, deleteJournalEntry } from "@/app/admin/dashboard/jo
 import { updateCalorieNote, deleteCalorieEntry } from "@/app/admin/dashboard/calorie-actions";
 import { updateWorkoutEntry, deleteWorkoutEntry } from "@/app/admin/dashboard/workout-actions";
 import { createClient } from "@/lib/supabase/client";
-import type { CalendarEvent } from "@/lib/calendar";
+import { isSameDay, toDateKey, type CalendarEvent } from "@/lib/calendar";
 import type { Task } from "@/lib/task";
 import type { WellnessMarker } from "@/lib/wellness-markers";
 import type { MoodEntry } from "@/lib/mood";
@@ -38,15 +38,6 @@ interface CalendarProps {
   journalEntries: JournalEntry[];
   calorieEntries: CalorieEntry[];
   workoutEntries: WorkoutEntry[];
-}
-
-function isSameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
-
-function toDateKey(date: Date) {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 export function Calendar({

@@ -29,6 +29,7 @@ export async function createEvent(formData: FormData) {
   if (error) throw error;
 
   revalidatePath("/admin/calendar");
+  revalidatePath("/admin/dashboard");
 }
 
 export async function updateEvent(id: string, formData: FormData) {
@@ -50,6 +51,7 @@ export async function updateEvent(id: string, formData: FormData) {
   if (error) throw error;
 
   revalidatePath("/admin/calendar");
+  revalidatePath("/admin/dashboard");
 }
 
 export async function deleteEvent(id: string) {
@@ -59,4 +61,5 @@ export async function deleteEvent(id: string) {
   if (error) throw error;
 
   revalidatePath("/admin/calendar");
+  revalidatePath("/admin/dashboard");
 }
