@@ -2,10 +2,8 @@
 
 import { useRef, useState } from "react";
 import { FileText, Loader2, Paperclip, Trash2, Upload } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { addCustomerFileRecord, deleteCustomerFile } from "@/app/admin/customers/actions";
+import { addCustomerFileRecord, deleteCustomerFile, updateCustomerFileNote } from "@/app/admin/customers/actions";
 import type { CustomerFileWithUrl } from "@/lib/customer-file";
 
 const BUCKET = "customer-files";
@@ -25,6 +23,53 @@ function formatSize(bytes: number | null) {
 
 function sanitizeFilename(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "-");
+}
+
+// Self-contained — saves straight to the server action on blur, no need to
+// lift state up since nothing else on the page depends on a file's note.
+function FileNoteInput({
+  customerId,
+  fileId,
+  initialNote,
+}: {
+  customerId: string;
+  fileId: string;
+  initialNote: string | null;
+}) {
+  const [value, setValue] = useState(initialNote ?? "");
+  const [saving, setSaving] = useState(false);
+
+  async function handleBlur() {
+    if (value === (initialNote ?? "")) return;
+    setSaving(true);
+    try {
+      await updateCustomerFileNote(customerId, fileId, value);
+    } catch (error) {
+      console.error("Failed to save file note:", error);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="relative">
+      <input
+        type="text"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        onBlur={handleBlur}
+        disabled={saving}
+        placeholder="What is this file?"
+        className="w-full rounded-lg border border-transparent bg-transparent px-1.5 py-1 text-xs text-ink-muted transition placeholder:text-ink-muted/60 hover:border-black/10 focus:border-black/15 focus:bg-background focus:outline-none disabled:opacity-60"
+      />
+      {saving && (
+        <Loader2
+          className="absolute right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 animate-spin text-ink-muted"
+          aria-hidden="true"
+        />
+      )}
+    </div>
+  );
 }
 
 export function CustomerFilesSection({ customerId, initialFiles }: CustomerFilesSectionProps) {
@@ -90,6 +135,9 @@ export function CustomerFilesSection({ customerId, initialFiles }: CustomerFiles
     }
   }
 
+  const imageFiles = files.filter((file) => file.mime_type?.startsWith("image/"));
+  const otherFiles = files.filter((file) => !file.mime_type?.startsWith("image/"));
+
   return (
     <div className="mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
       <div className="flex items-center justify-between gap-4">
@@ -101,14 +149,14 @@ export function CustomerFilesSection({ customerId, initialFiles }: CustomerFiles
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className={cn(buttonVariants({ variant: "outline" }), "shrink-0")}
+          aria-label="Upload files"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/20 text-foreground transition hover:bg-foreground/5 disabled:opacity-50"
         >
           {uploading ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
           ) : (
             <Upload className="h-4 w-4" aria-hidden="true" />
           )}
-          Upload
         </button>
         <input
           ref={inputRef}
@@ -124,55 +172,104 @@ export function CustomerFilesSection({ customerId, initialFiles }: CustomerFiles
       {files.length === 0 ? (
         <p className="mt-6 text-sm text-ink-muted">No files yet.</p>
       ) : (
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-          {files.map((file) => {
-            const isImage = file.mime_type?.startsWith("image/");
-            return (
-              <div
-                key={file.id}
-                className="group relative overflow-hidden rounded-xl border border-black/10 bg-background"
-              >
-                {isImage && file.signedUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={file.signedUrl} alt={file.original_filename} className="h-28 w-full object-cover" />
-                ) : (
-                  <div className="flex h-28 flex-col items-center justify-center gap-2 px-2 text-center">
-                    {isImage ? (
+        <>
+          {imageFiles.length > 0 && (
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              {imageFiles.map((file) => (
+                <div
+                  key={file.id}
+                  className="group relative overflow-hidden rounded-xl border border-black/10 bg-background"
+                >
+                  {file.signedUrl ? (
+                    <a href={file.signedUrl} target="_blank" rel="noopener noreferrer" title="Open image">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={file.signedUrl} alt={file.original_filename} className="h-28 w-full object-cover" />
+                    </a>
+                  ) : (
+                    <div className="flex h-28 flex-col items-center justify-center gap-2 px-2 text-center">
                       <Paperclip className="h-5 w-5 text-ink-muted" aria-hidden="true" />
-                    ) : (
-                      <FileText className="h-5 w-5 text-ink-muted" aria-hidden="true" />
-                    )}
-                    <span className="line-clamp-2 text-xs text-ink-muted">{file.original_filename}</span>
-                  </div>
-                )}
+                      <span className="line-clamp-2 text-xs text-ink-muted">{file.original_filename}</span>
+                    </div>
+                  )}
 
-                <div className="flex items-center justify-between gap-2 border-t border-black/10 px-2 py-1.5">
-                  <span className="min-w-0 flex-1 truncate text-xs text-ink-muted" title={file.original_filename}>
-                    {file.original_filename}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(file.id)}
-                    disabled={deletingId === file.id}
-                    aria-label={`Remove ${file.original_filename}`}
-                    className="shrink-0 text-ink-muted transition hover:text-danger disabled:opacity-60"
-                  >
-                    {deletingId === file.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                    ) : (
-                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                    )}
-                  </button>
+                  <div className="flex items-center justify-between gap-2 border-t border-black/10 px-2 py-1.5">
+                    <span className="min-w-0 flex-1 truncate text-xs text-ink-muted" title={file.original_filename}>
+                      {file.original_filename}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(file.id)}
+                      disabled={deletingId === file.id}
+                      aria-label={`Remove ${file.original_filename}`}
+                      className="shrink-0 text-ink-muted transition hover:text-danger disabled:opacity-60"
+                    >
+                      {deletingId === file.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      )}
+                    </button>
+                  </div>
+                  <div className="border-t border-black/10 px-1">
+                    <FileNoteInput customerId={customerId} fileId={file.id} initialNote={file.note} />
+                  </div>
+                  {file.size_bytes != null && (
+                    <span className="pointer-events-none absolute left-1.5 top-1.5 rounded-full bg-foreground/60 px-1.5 py-0.5 text-[10px] font-medium text-background opacity-0 transition group-hover:opacity-100">
+                      {formatSize(file.size_bytes)}
+                    </span>
+                  )}
                 </div>
-                {file.size_bytes != null && (
-                  <span className="pointer-events-none absolute left-1.5 top-1.5 rounded-full bg-foreground/60 px-1.5 py-0.5 text-[10px] font-medium text-background opacity-0 transition group-hover:opacity-100">
-                    {formatSize(file.size_bytes)}
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
+              ))}
+            </div>
+          )}
+
+          {otherFiles.length > 0 && (
+            <div className="mt-6 divide-y divide-black/10 overflow-hidden rounded-xl border border-black/10">
+              {otherFiles.map((file) => (
+                <div key={file.id} className="px-3 py-2">
+                  <div className="flex items-center gap-3">
+                    {file.signedUrl ? (
+                      <a
+                        href={file.signedUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Open file"
+                        className="flex min-w-0 flex-1 items-center gap-3 hover:underline"
+                      >
+                        <FileText className="h-4 w-4 shrink-0 text-ink-muted" aria-hidden="true" />
+                        <span className="min-w-0 flex-1 truncate text-sm">{file.original_filename}</span>
+                      </a>
+                    ) : (
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                        <FileText className="h-4 w-4 shrink-0 text-ink-muted" aria-hidden="true" />
+                        <span className="min-w-0 flex-1 truncate text-sm">{file.original_filename}</span>
+                      </div>
+                    )}
+                    {file.size_bytes != null && (
+                      <span className="shrink-0 text-xs text-ink-muted">{formatSize(file.size_bytes)}</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(file.id)}
+                      disabled={deletingId === file.id}
+                      aria-label={`Remove ${file.original_filename}`}
+                      className="shrink-0 text-ink-muted transition hover:text-danger disabled:opacity-60"
+                    >
+                      {deletingId === file.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      )}
+                    </button>
+                  </div>
+                  <div className="pl-7">
+                    <FileNoteInput customerId={customerId} fileId={file.id} initialNote={file.note} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

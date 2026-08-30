@@ -104,9 +104,12 @@ export function CustomersTable({ customers: initialCustomers, onAdd, onDelete }:
       <div className="flex items-center justify-end">
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
-            <button type="button" className={cn(buttonVariants({ variant: "outline" }))}>
+            <button
+              type="button"
+              aria-label="Add customer"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-black/20 text-foreground transition hover:bg-foreground/5"
+            >
               <Plus className="h-4 w-4" aria-hidden="true" />
-              Add customer
             </button>
           </DialogTrigger>
           <DialogContent open={addOpen}>

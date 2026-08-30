@@ -22,7 +22,8 @@ create table if not exists public.customer_files (
   storage_path text not null unique,
   original_filename text not null,
   mime_type text,
-  size_bytes bigint
+  size_bytes bigint,
+  note text
 );
 
 create index if not exists customer_files_customer_id_idx on public.customer_files (customer_id);
@@ -32,3 +33,6 @@ alter table public.customer_files enable row level security;
 drop policy if exists "authenticated can manage customer files metadata" on public.customer_files;
 create policy "authenticated can manage customer files metadata" on public.customer_files
   for all to authenticated using (true) with check (true);
+
+-- Migration for a table created before the note field was added — idempotent.
+alter table public.customer_files add column if not exists note text;

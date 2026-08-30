@@ -6,6 +6,7 @@ export type CustomerFile = {
   original_filename: string;
   mime_type: string | null;
   size_bytes: number | null;
+  note: string | null;
 };
 
 // UI-only shape after attaching a signed URL for display.

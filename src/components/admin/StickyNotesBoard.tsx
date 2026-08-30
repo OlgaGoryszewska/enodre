@@ -1,9 +1,8 @@
 "use client";
 
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { motion, useMotionValue } from "framer-motion";
-import { ALargeSmall, List, Plus, Type, X } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { ALargeSmall, List, MoreVertical, Plus, Trash2, Type } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   addStickyNote,
@@ -143,10 +142,10 @@ export function StickyNotesBoard({ customerId, initialNotes }: StickyNotesBoardP
           type="button"
           onClick={handleAddNote}
           disabled={adding}
-          className={cn(buttonVariants({ variant: "outline" }), "shrink-0")}
+          aria-label="Add note"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/20 text-foreground transition hover:bg-foreground/5 disabled:opacity-50"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
-          Add note
         </button>
       </div>
 
@@ -224,6 +223,19 @@ function StickyNoteCard({
   const [size, setSize] = useState({ width: note.width, height: note.height });
   const sizeRef = useRef(size);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
 
   function handleResizePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     event.stopPropagation();
@@ -283,63 +295,79 @@ function StickyNoteCard({
       }}
       className="flex cursor-grab flex-col rounded-xl p-3 shadow-sm active:cursor-grabbing"
     >
-      <div className="flex items-center justify-between gap-1">
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={handleToggleBullet}
-            aria-label="Toggle bullet"
-            className="rounded p-0.5 text-foreground/50 transition hover:bg-black/5 hover:text-foreground"
-          >
-            <List className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={handleToggleFont}
-            aria-label="Toggle font"
-            className="rounded p-0.5 text-foreground/50 transition hover:bg-black/5 hover:text-foreground"
-          >
-            <Type className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={handleToggleTextSize}
-            aria-label={`Toggle text size (currently ${note.text_size})`}
-            title={note.text_size}
-            className="rounded p-0.5 text-foreground/50 transition hover:bg-black/5 hover:text-foreground"
-          >
-            <ALargeSmall className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
-        </div>
+      <div ref={menuRef} className="relative flex justify-end">
         <button
           type="button"
           onPointerDown={(event) => event.stopPropagation()}
-          onClick={onDelete}
-          aria-label="Delete note"
-          className="text-foreground/50 transition hover:text-danger"
+          onClick={() => setMenuOpen((current) => !current)}
+          aria-label="Note options"
+          className="rounded-full p-0.5 text-foreground/50 transition hover:bg-black/5 hover:text-foreground"
         >
-          <X className="h-3.5 w-3.5" aria-hidden="true" />
+          <MoreVertical className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
-      </div>
 
-      <div className="mt-1.5 flex flex-wrap gap-1">
-        {STICKY_NOTE_COLORS.map((color) => (
-          <button
-            key={color}
-            type="button"
+        {menuOpen && (
+          <div
             onPointerDown={(event) => event.stopPropagation()}
-            onClick={() => onColorChange(color)}
-            aria-label={`Set color ${color}`}
-            style={{ backgroundColor: stickyNoteColorHex[color] }}
-            className={cn(
-              "h-3 w-3 rounded-full border border-black/10",
-              note.color === color && "ring-2 ring-foreground/40"
-            )}
-          />
-        ))}
+            className="absolute right-0 top-6 z-20 w-40 overflow-hidden rounded-xl border border-black/10 bg-card p-2 text-foreground shadow-lg"
+          >
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleToggleBullet}
+                aria-label="Toggle bullet"
+                className="flex h-7 w-7 items-center justify-center rounded transition hover:bg-black/5"
+              >
+                <List className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={handleToggleFont}
+                aria-label="Toggle font"
+                className="flex h-7 w-7 items-center justify-center rounded transition hover:bg-black/5"
+              >
+                <Type className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={handleToggleTextSize}
+                aria-label={`Toggle text size (currently ${note.text_size})`}
+                title={note.text_size}
+                className="flex h-7 w-7 items-center justify-center rounded transition hover:bg-black/5"
+              >
+                <ALargeSmall className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className="mt-2 flex flex-wrap gap-1">
+              {STICKY_NOTE_COLORS.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => onColorChange(color)}
+                  aria-label={`Set color ${color}`}
+                  style={{ backgroundColor: stickyNoteColorHex[color] }}
+                  className={cn(
+                    "h-4 w-4 rounded-full border border-black/10",
+                    note.color === color && "ring-2 ring-foreground/40"
+                  )}
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                onDelete();
+              }}
+              className="mt-2 flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-xs font-medium text-danger transition hover:bg-black/5"
+            >
+              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+              Delete
+            </button>
+          </div>
+        )}
       </div>
 
       <textarea

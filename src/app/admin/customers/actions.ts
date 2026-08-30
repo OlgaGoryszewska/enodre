@@ -115,6 +115,18 @@ export async function addCustomerFileRecord(
   return data;
 }
 
+export async function updateCustomerFileNote(customerId: string, fileId: string, note: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("customer_files")
+    .update({ note: note.trim() || null })
+    .eq("id", fileId);
+
+  if (error) throw error;
+
+  revalidatePath(`/admin/customers/${customerId}`);
+}
+
 export async function deleteCustomerFile(customerId: string, fileId: string) {
   const supabase = await createClient();
 
