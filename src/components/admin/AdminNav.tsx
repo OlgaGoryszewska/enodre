@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const links: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/customers", label: "Customers", icon: Users },
+  { href: "/admin/people", label: "People", icon: Users },
   { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/admin/linkedin", label: "LinkedIn", icon: Briefcase },
   { href: "/admin/upwork", label: "Upwork", icon: Handshake },

@@ -19,7 +19,7 @@ export async function addCustomerJournalEntry(customerId: string, content: strin
 
   if (error) throw error;
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidatePath(`/admin/people/${customerId}`);
   return data;
 }
 
@@ -37,7 +37,7 @@ export async function updateCustomerJournalEntry(
 
   if (error) throw error;
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidatePath(`/admin/people/${customerId}`);
 }
 
 export async function deleteCustomerJournalEntry(customerId: string, entryId: string) {
@@ -46,5 +46,5 @@ export async function deleteCustomerJournalEntry(customerId: string, entryId: st
 
   if (error) throw error;
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidatePath(`/admin/people/${customerId}`);
 }

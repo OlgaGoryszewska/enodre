@@ -6,7 +6,7 @@ import type { CustomerFile, CustomerFileWithUrl } from "@/lib/customer-file";
 import type { StickyNote } from "@/lib/customer-sticky-note";
 import type { CustomerJournalEntry } from "@/lib/customer-journal";
 import { createClient } from "@/lib/supabase/server";
-import { updateCustomer, deleteCustomer } from "@/app/admin/customers/actions";
+import { updateCustomer, deleteCustomer } from "@/app/admin/people/actions";
 import { CustomerInfoCard } from "@/components/admin/CustomerInfoCard";
 import { CustomerFilesSection } from "@/components/admin/CustomerFilesSection";
 import { StickyNotesBoard } from "@/components/admin/StickyNotesBoard";
@@ -18,7 +18,7 @@ const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24;
 type CustomerPageProps = { params: Promise<{ id: string }> };
 
 export const metadata: Metadata = {
-  title: "Customer",
+  title: "Person",
 };
 
 export default async function CustomerDetailPage({ params }: CustomerPageProps) {
@@ -89,8 +89,8 @@ export default async function CustomerDetailPage({ params }: CustomerPageProps) 
 
   return (
     <section className="shell py-20 sm:py-28">
-      <Link href="/admin/customers" className="text-sm font-semibold text-ink-muted hover:text-foreground">
-        ← All customers
+      <Link href="/admin/people" className="text-sm font-semibold text-ink-muted hover:text-foreground">
+        ← All people
       </Link>
 
       <div className="mt-10 grid gap-12 lg:grid-cols-[1.3fr_0.7fr]">

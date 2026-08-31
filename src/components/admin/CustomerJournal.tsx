@@ -10,7 +10,7 @@ import {
   addCustomerJournalEntry,
   deleteCustomerJournalEntry,
   updateCustomerJournalEntry,
-} from "@/app/admin/customers/journal-actions";
+} from "@/app/admin/people/journal-actions";
 import type { CustomerJournalEntry } from "@/lib/customer-journal";
 
 interface CustomerJournalProps {
@@ -90,7 +90,7 @@ export function CustomerJournal({ customerId, initialEntries }: CustomerJournalP
   return (
     <div className="mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
       <h2 className="text-lg font-semibold tracking-tight">Journal</h2>
-      <p className="mt-1 text-sm text-ink-muted">Track how things evolve with this customer over time</p>
+      <p className="mt-1 text-sm text-ink-muted">Track how things evolve with this person over time</p>
 
       <div className="mt-5 grid gap-3">
         <Textarea

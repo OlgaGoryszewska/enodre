@@ -3,13 +3,13 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { customerFormSchema } from "@/lib/customer-schema";
-import { CUSTOMER_STATUS_VALUES, type CustomerStatus } from "@/lib/customer";
+import { CUSTOMER_ROLE_VALUES, CUSTOMER_STATUS_VALUES, type CustomerRole, type CustomerStatus } from "@/lib/customer";
 import { createClient } from "@/lib/supabase/server";
 
 const TABLE = "customers";
 const BUCKET = "customer-files";
 
-// The optimistic row in CustomersTable links straight to /admin/customers/[id]
+// The optimistic row in CustomersTable links straight to /admin/people/[id]
 // on add, before this action's insert resolves — so the client generates the
 // id itself and passes it through, keeping the link correct from first paint.
 export async function addCustomer(formData: FormData) {
@@ -37,7 +37,7 @@ export async function addCustomer(formData: FormData) {
 
   if (error) throw error;
 
-  revalidatePath("/admin/customers");
+  revalidatePath("/admin/people");
 }
 
 export async function updateCustomer(id: string, formData: FormData) {
@@ -54,6 +54,9 @@ export async function updateCustomer(id: string, formData: FormData) {
   }
 
   const notes = formData.get("notes");
+  const roles = formData.getAll("roles").filter((role): role is CustomerRole =>
+    CUSTOMER_ROLE_VALUES.includes(role as CustomerRole)
+  );
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -64,6 +67,7 @@ export async function updateCustomer(id: string, formData: FormData) {
       phone: values.phone || null,
       company: values.company || null,
       status,
+      roles,
       notes: (typeof notes === "string" && notes.trim()) || null,
       updated_at: new Date().toISOString(),
     })
@@ -71,8 +75,8 @@ export async function updateCustomer(id: string, formData: FormData) {
 
   if (error) throw error;
 
-  revalidatePath("/admin/customers");
-  revalidatePath(`/admin/customers/${id}`);
+  revalidatePath("/admin/people");
+  revalidatePath(`/admin/people/${id}`);
 }
 
 export async function deleteCustomer(id: string) {
@@ -88,8 +92,8 @@ export async function deleteCustomer(id: string) {
   const { error } = await supabase.from(TABLE).delete().eq("id", id);
   if (error) throw error;
 
-  revalidatePath("/admin/customers");
-  redirect("/admin/customers");
+  revalidatePath("/admin/people");
+  redirect("/admin/people");
 }
 
 export async function addCustomerFileRecord(
@@ -111,7 +115,7 @@ export async function addCustomerFileRecord(
 
   if (error) throw error;
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidatePath(`/admin/people/${customerId}`);
   return data;
 }
 
@@ -124,7 +128,7 @@ export async function updateCustomerFileNote(customerId: string, fileId: string,
 
   if (error) throw error;
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidatePath(`/admin/people/${customerId}`);
 }
 
 export async function deleteCustomerFile(customerId: string, fileId: string) {
@@ -143,5 +147,5 @@ export async function deleteCustomerFile(customerId: string, fileId: string) {
   const { error } = await supabase.from("customer_files").delete().eq("id", fileId);
   if (error) throw error;
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidatePath(`/admin/people/${customerId}`);
 }

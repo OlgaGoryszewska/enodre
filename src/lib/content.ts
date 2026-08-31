@@ -154,7 +154,7 @@ export type Founder = {
 export const founder: Founder = {
   name: "Olga",
   role: "Product Designer & Frontend Developer",
-  image: "/olga_goryszewska_enodre-portfolio.png",
+  image: "/olga_goryszewska_enodre-portfolio-image.png",
   imageAlt: "Portrait of Olga Goryszewska",
   bio: [
     "Olga is a Product Designer and Frontend Developer who believes great software begins with understanding people, not just technology.",

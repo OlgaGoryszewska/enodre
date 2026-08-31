@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { customerFormSchema, type CustomerFormValues } from "@/lib/customer-schema";
-import { customerStatusLabels, type Customer } from "@/lib/customer";
+import { customerRoleLabels, customerStatusLabels, type Customer } from "@/lib/customer";
 
 interface CustomersTableProps {
   customers: Customer[];
@@ -56,7 +56,7 @@ export function CustomersTable({ customers: initialCustomers, onAdd, onDelete }:
 
   async function onSubmit(values: CustomerFormValues) {
     // Generated here (not left to the DB default) so the optimistic row
-    // below links to a real /admin/customers/[id] from the first paint.
+    // below links to a real /admin/people/[id] from the first paint.
     const id = crypto.randomUUID();
 
     const formData = new FormData();
@@ -77,6 +77,7 @@ export function CustomersTable({ customers: initialCustomers, onAdd, onDelete }:
         phone: values.phone || null,
         company: values.company || null,
         status: "lead",
+        roles: [],
         notes: null,
       },
       ...current,
@@ -106,14 +107,14 @@ export function CustomersTable({ customers: initialCustomers, onAdd, onDelete }:
           <DialogTrigger asChild>
             <button
               type="button"
-              aria-label="Add customer"
+              aria-label="Add person"
               className="flex h-8 w-8 items-center justify-center rounded-full border border-black/20 text-foreground transition hover:bg-foreground/5"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
             </button>
           </DialogTrigger>
           <DialogContent open={addOpen}>
-            <DialogTitle className="text-lg font-semibold tracking-tight">Add customer</DialogTitle>
+            <DialogTitle className="text-lg font-semibold tracking-tight">Add person</DialogTitle>
             <DialogDescription className="mt-1 text-sm text-ink-muted">
               Just the basics — you can fill in more from their page.
             </DialogDescription>
@@ -139,7 +140,7 @@ export function CustomersTable({ customers: initialCustomers, onAdd, onDelete }:
                 {isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                 ) : (
-                  "Add customer"
+                  "Add person"
                 )}
               </button>
             </form>
@@ -149,7 +150,7 @@ export function CustomersTable({ customers: initialCustomers, onAdd, onDelete }:
 
       {customers.length === 0 ? (
         <div className="mt-6 rounded-2xl border border-dashed border-black/20 p-10 text-center text-sm text-ink-muted">
-          No customers yet.
+          No people yet.
         </div>
       ) : (
         <div className="mt-6 overflow-hidden rounded-2xl border border-black/10">
@@ -158,6 +159,7 @@ export function CustomersTable({ customers: initialCustomers, onAdd, onDelete }:
               <thead>
                 <tr className="border-b border-black/10 bg-card text-xs uppercase tracking-widest text-ink-muted">
                   <th className="px-5 py-3 font-medium">Name</th>
+                  <th className="px-5 py-3 font-medium">Roles</th>
                   <th className="px-5 py-3 font-medium">Company</th>
                   <th className="px-5 py-3 font-medium">Email</th>
                   <th className="px-5 py-3 font-medium">Phone</th>
@@ -172,9 +174,25 @@ export function CustomersTable({ customers: initialCustomers, onAdd, onDelete }:
                 {customers.map((customer) => (
                   <tr key={customer.id} className="border-b border-black/10 last:border-b-0 hover:bg-card">
                     <td className="px-5 py-4">
-                      <Link href={`/admin/customers/${customer.id}`} className="font-semibold hover:underline">
+                      <Link href={`/admin/people/${customer.id}`} className="font-semibold hover:underline">
                         {customer.name}
                       </Link>
+                    </td>
+                    <td className="px-5 py-4">
+                      {customer.roles.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {customer.roles.map((role) => (
+                            <span
+                              key={role}
+                              className="inline-flex rounded-full bg-black/5 px-2 py-0.5 text-xs text-ink-muted"
+                            >
+                              {customerRoleLabels[role]}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-ink-muted">—</span>
+                      )}
                     </td>
                     <td className="px-5 py-4 text-ink-muted">{customer.company || "—"}</td>
                     <td className="px-5 py-4 text-ink-muted">{customer.email || "—"}</td>

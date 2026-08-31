@@ -20,3 +20,13 @@ alter table public.customers enable row level security;
 drop policy if exists "authenticated can manage customers" on public.customers;
 create policy "authenticated can manage customers" on public.customers
   for all to authenticated using (true) with check (true);
+
+-- Migration for a table created before relationship-type roles were added —
+-- idempotent, no-ops if the table was just created fresh above. A person can
+-- carry more than one role at once (e.g. Client and Partner on the same
+-- contract), hence an array rather than a single enum column like status.
+alter table public.customers add column if not exists roles text[] not null default '{}';
+
+alter table public.customers drop constraint if exists customers_roles_check;
+alter table public.customers add constraint customers_roles_check
+  check (roles <@ array['client', 'contractor', 'partner', 'mentor_advisor', 'collaborator', 'vendor']::text[]);

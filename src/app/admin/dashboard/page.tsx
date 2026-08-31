@@ -6,6 +6,7 @@ import { MoodTracker } from "@/components/admin/MoodTracker";
 import { CalorieTracker } from "@/components/admin/CalorieTracker";
 import { WorkoutTracker } from "@/components/admin/WorkoutTracker";
 import { WeeklySummaryCard } from "@/components/admin/WeeklySummaryCard";
+import { RecentJobsWidget } from "@/components/admin/RecentJobsWidget";
 import { MediaListCard } from "@/components/admin/MediaListCard";
 import { InspiringPeopleCard } from "@/components/admin/InspiringPeopleCard";
 import { LatestPodcast } from "@/components/admin/LatestPodcast";
@@ -29,6 +30,7 @@ import type { CalorieEntry } from "@/lib/calorie";
 import type { WorkoutEntry } from "@/lib/workout";
 import { BOOKS_SELECT, WATCH_SELECT, type MediaItem } from "@/lib/media-item";
 import type { InspiringPerson } from "@/lib/inspiring-person";
+import type { JobLead } from "@/lib/job-lead";
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -45,6 +47,7 @@ export default async function AdminDashboardPage() {
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startOfTomorrow = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
+  const sevenDaysAgo = new Date(startOfToday.getTime() - 6 * 24 * 60 * 60 * 1000);
 
   const [
     { data: eventsData, error: eventsError },
@@ -56,6 +59,8 @@ export default async function AdminDashboardPage() {
     { data: booksData, error: booksError },
     { data: watchData, error: watchError },
     { data: peopleData, error: peopleError },
+    { data: linkedinJobsData, error: linkedinJobsError },
+    { data: upworkJobsData, error: upworkJobsError },
     episode,
   ] = await Promise.all([
     supabase
@@ -72,6 +77,16 @@ export default async function AdminDashboardPage() {
     supabase.from("books_to_read").select(BOOKS_SELECT).order("created_at", { ascending: false }),
     supabase.from("things_to_watch").select(WATCH_SELECT).order("created_at", { ascending: false }),
     supabase.from("inspiring_people").select("*").order("created_at", { ascending: false }),
+    supabase
+      .from("linkedin_jobs")
+      .select("*")
+      .gte("created_at", sevenDaysAgo.toISOString())
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("upwork_jobs")
+      .select("*")
+      .gte("created_at", sevenDaysAgo.toISOString())
+      .order("created_at", { ascending: false }),
     getLatestOnPurposeEpisode(),
   ]);
 
@@ -102,6 +117,12 @@ export default async function AdminDashboardPage() {
   if (peopleError) {
     console.error("Failed to load inspiring people:", peopleError);
   }
+  if (linkedinJobsError) {
+    console.error("Failed to load recent LinkedIn jobs:", linkedinJobsError);
+  }
+  if (upworkJobsError) {
+    console.error("Failed to load recent Upwork jobs:", upworkJobsError);
+  }
 
   const events = (eventsData ?? []) as CalendarEvent[];
   const tasks = (tasksData ?? []) as Task[];
@@ -112,6 +133,8 @@ export default async function AdminDashboardPage() {
   const books = (booksData ?? []) as unknown as MediaItem[];
   const watchList = (watchData ?? []) as unknown as MediaItem[];
   const inspiringPeople = (peopleData ?? []) as InspiringPerson[];
+  const recentLinkedinJobs = (linkedinJobsData ?? []) as JobLead[];
+  const recentUpworkJobs = (upworkJobsData ?? []) as JobLead[];
 
   const today = todayKey();
   const todayMood = moodEntries.find((entry) => entry.entry_date === today) ?? null;
@@ -167,6 +190,10 @@ export default async function AdminDashboardPage() {
             workoutEntries={workoutEntries}
             tasks={tasks}
           />
+        </div>
+
+        <div className="mt-10">
+          <RecentJobsWidget linkedinJobs={recentLinkedinJobs} upworkJobs={recentUpworkJobs} />
         </div>
 
         <div className="mt-10">

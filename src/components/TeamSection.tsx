@@ -58,7 +58,7 @@ export function TeamSection({ member, ctaHref }: TeamSectionProps) {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
           >
-            <p className="eyebrow">Behind the scenes</p>
+            
             <ScrollRevealHeading
               text={`Meet ${member.name}`}
               className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"

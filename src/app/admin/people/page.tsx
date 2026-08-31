@@ -3,12 +3,12 @@ import { AdminNav } from "@/components/admin/AdminNav";
 import { CustomersTable } from "@/components/admin/CustomersTable";
 import { SignOutButton } from "@/components/admin/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
-import { addCustomer, deleteCustomer } from "@/app/admin/customers/actions";
+import { addCustomer, deleteCustomer } from "@/app/admin/people/actions";
 import type { Customer } from "@/lib/customer";
 
 export const metadata: Metadata = {
-  title: "Customers",
-  description: "Admin customers.",
+  title: "People",
+  description: "Admin people.",
 };
 
 export default async function CustomersPage() {
@@ -30,7 +30,7 @@ export default async function CustomersPage() {
 
       <div className="mt-10">
         <p className="eyebrow">Admin</p>
-        <h1 className="page-title mt-4 text-4xl">Customers</h1>
+        <h1 className="page-title mt-4 text-4xl">People</h1>
       </div>
 
       <div className="mt-10">

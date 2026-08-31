@@ -116,43 +116,47 @@ export default function Home() {
 
   return (
     <>
-      <section className="bg-[linear-gradient(to_bottom,var(--background)_0%,#D5D7E2_45%)] py-20 sm:py-28 lg:py-36">
-        <div className="shell">
-          <motion.div
-            className="grid items-center gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)] lg:gap-16"
-            variants={heroContainer}
-            initial="hidden"
-            animate="show"
-          >
-            <div>
-              <motion.p variants={heroItem} className="eyebrow mb-8 mt-25">
-                Digital product studio
-              </motion.p>
-              <ScrollRevealHeading
-                text="We build systems that help businesses work smarter and grow faster."
-                className="display-title"
-                as="h1"
-                mode="page"
-                pageScrollRange={[0, 180]}
-              />
-              <motion.p variants={heroItem} className="mt-10 max-w-2xl text-lg leading-8 text-ink-muted sm:text-xl">
-                We untangle complexity through thoughtfully designed digital solutions. From workflow automation and custom software to insightful dashboards and conversion-focused websites, we build technology that helps your business work smarter, move faster, and scale with clarity.
-              </motion.p>
-              <motion.div variants={heroItem} className="mt-10 flex flex-wrap gap-4">
-                <Link className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-m font-semibold text-background transition hover:opacity-90" href="/services">
-                  <span aria-hidden="true" className="h-2 w-2 rounded-full bg-background" />
-                  <span>Explore our services</span>
-                </Link>
-                <Link className=" bg-background inline-flex items-center gap-2 rounded-full border border-black/20 px-6 py-3 text-m font-semibold transition hover:bg-foreground/5" href="/products">
-                  <span aria-hidden="true" className="h-2 w-2 rounded-full bg-foreground" />
-                  <span>See our work</span>
-                </Link>
-              </motion.div>
-              <motion.div variants={heroItem} className="mt-10 flex items-center gap-4">
-                <TrustedByAvatars />
-                <p className="text-sm text-ink-muted">Trusted by the founders and teams.</p>
-              </motion.div>
-            </div>
+      <section className="relative flex min-h-screen items-start overflow-hidden">
+        <Image
+          src="/olga_goryszewska_enodre-portfolio-image.png"
+          alt=""
+          fill
+          priority
+          className="object-cover object-top"
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/35 to-black/10"
+          aria-hidden="true"
+        />
+        <div className="shell relative z-10 py-32 sm:py-40">
+          <motion.div className="max-w-3xl" variants={heroContainer} initial="hidden" animate="show">
+            <motion.p variants={heroItem} className="eyebrow mb-8 text-white/90">
+              Digital product studio
+            </motion.p>
+            <ScrollRevealHeading
+              text="We build systems that help businesses work smarter and grow faster."
+              className="display-title text-white"
+              as="h1"
+              mode="page"
+              pageScrollRange={[0, 180]}
+            />
+            <motion.p variants={heroItem} className="mt-10 max-w-2xl text-lg leading-8 text-white/80 sm:text-xl">
+              We untangle complexity through thoughtfully designed digital solutions. From workflow automation and custom software to insightful dashboards and conversion-focused websites, we build technology that helps your business work smarter, move faster, and scale with clarity.
+            </motion.p>
+            <motion.div variants={heroItem} className="mt-10 flex flex-wrap gap-4">
+              <Link className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-m font-semibold text-background transition hover:opacity-90" href="/services">
+                <span aria-hidden="true" className="h-2 w-2 rounded-full bg-background" />
+                <span>Explore our services</span>
+              </Link>
+              <Link className="bg-background inline-flex items-center gap-2 rounded-full border border-black/20 px-6 py-3 text-m font-semibold transition hover:bg-foreground/5" href="/products">
+                <span aria-hidden="true" className="h-2 w-2 rounded-full bg-foreground" />
+                <span>See our work</span>
+              </Link>
+            </motion.div>
+            <motion.div variants={heroItem} className="mt-10 flex items-center gap-4">
+              <TrustedByAvatars />
+              <p className="text-sm text-white/70">Trusted by the founders and teams.</p>
+            </motion.div>
           </motion.div>
         </div>
       </section>

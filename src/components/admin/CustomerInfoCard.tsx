@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { Pencil, X } from "lucide-react";
-import { CUSTOMER_STATUS_VALUES, customerStatusLabels, type Customer } from "@/lib/customer";
+import {
+  CUSTOMER_ROLE_VALUES,
+  CUSTOMER_STATUS_VALUES,
+  customerRoleLabels,
+  customerStatusLabels,
+  type Customer,
+} from "@/lib/customer";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +47,7 @@ export function CustomerInfoCard({ customer, onUpdate, onDelete }: CustomerInfoC
     return (
       <div className="h-fit rounded-2xl border border-black/10 bg-card p-8">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Edit customer</h2>
+          <h2 className="font-semibold">Edit person</h2>
           <button
             type="button"
             onClick={() => setIsEditing(false)}
@@ -65,6 +71,36 @@ export function CustomerInfoCard({ customer, onUpdate, onDelete }: CustomerInfoC
           <FormField id="edit-company" label="Company">
             <Input id="edit-company" name="company" defaultValue={customer.company ?? ""} />
           </FormField>
+
+          <fieldset className="grid gap-2">
+            <legend className="text-sm font-medium leading-none text-foreground">
+              Roles <span className="text-xs font-normal text-ink-muted">(pick any that apply)</span>
+            </legend>
+            <div className="mt-1 flex flex-wrap gap-2">
+              {CUSTOMER_ROLE_VALUES.map((role) => (
+                <label
+                  key={role}
+                  htmlFor={`role-${role}`}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition",
+                    customer.roles.includes(role)
+                      ? "border-accent bg-accent/10 text-accent"
+                      : "border-black/10 text-ink-muted hover:border-black/25"
+                  )}
+                >
+                  <input
+                    id={`role-${role}`}
+                    type="checkbox"
+                    name="roles"
+                    value={role}
+                    defaultChecked={customer.roles.includes(role)}
+                    className="h-3.5 w-3.5 accent-accent"
+                  />
+                  {customerRoleLabels[role]}
+                </label>
+              ))}
+            </div>
+          </fieldset>
 
           <fieldset className="grid gap-2">
             <legend className="text-sm font-medium leading-none text-foreground">Status</legend>
@@ -108,7 +144,7 @@ export function CustomerInfoCard({ customer, onUpdate, onDelete }: CustomerInfoC
             type="submit"
             className="w-full text-center text-sm font-semibold text-ink-muted transition hover:text-danger"
           >
-            Delete customer
+            Delete person
           </button>
         </form>
       </div>
@@ -125,12 +161,25 @@ export function CustomerInfoCard({ customer, onUpdate, onDelete }: CustomerInfoC
         <button
           type="button"
           onClick={() => setIsEditing(true)}
-          aria-label="Edit customer"
+          aria-label="Edit person"
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/20 text-foreground transition hover:bg-foreground/5"
         >
           <Pencil className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
+
+      {customer.roles.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {customer.roles.map((role) => (
+            <span
+              key={role}
+              className="inline-flex rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent"
+            >
+              {customerRoleLabels[role]}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="mt-4 grid gap-1 text-sm text-ink-muted">
         {customer.email && <p>{customer.email}</p>}

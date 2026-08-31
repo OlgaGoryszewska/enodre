@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { FileText, Loader2, Paperclip, Trash2, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { addCustomerFileRecord, deleteCustomerFile, updateCustomerFileNote } from "@/app/admin/customers/actions";
+import { addCustomerFileRecord, deleteCustomerFile, updateCustomerFileNote } from "@/app/admin/people/actions";
 import type { CustomerFileWithUrl } from "@/lib/customer-file";
 
 const BUCKET = "customer-files";
@@ -143,7 +143,7 @@ export function CustomerFilesSection({ customerId, initialFiles }: CustomerFiles
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold tracking-tight">Files</h2>
-          <p className="mt-1 text-sm text-ink-muted">Attach images or documents for this customer</p>
+          <p className="mt-1 text-sm text-ink-muted">Attach images or documents for this person</p>
         </div>
         <button
           type="button"

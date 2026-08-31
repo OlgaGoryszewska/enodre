@@ -26,7 +26,7 @@ export async function addStickyNote(customerId: string, posX: number, posY: numb
 
   if (error) throw error;
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidatePath(`/admin/people/${customerId}`);
   return data;
 }
 
@@ -44,7 +44,7 @@ export async function updateStickyNotePosition(
 
   if (error) throw error;
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidatePath(`/admin/people/${customerId}`);
 }
 
 export async function updateStickyNoteContent(customerId: string, noteId: string, content: string) {
@@ -56,7 +56,7 @@ export async function updateStickyNoteContent(customerId: string, noteId: string
 
   if (error) throw error;
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidatePath(`/admin/people/${customerId}`);
 }
 
 export async function updateStickyNoteColor(customerId: string, noteId: string, color: StickyNoteColor) {
@@ -72,7 +72,7 @@ export async function updateStickyNoteColor(customerId: string, noteId: string, 
 
   if (error) throw error;
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidatePath(`/admin/people/${customerId}`);
 }
 
 export async function updateStickyNoteSize(
@@ -89,7 +89,7 @@ export async function updateStickyNoteSize(
 
   if (error) throw error;
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidatePath(`/admin/people/${customerId}`);
 }
 
 export async function updateStickyNoteFont(customerId: string, noteId: string, font: StickyNoteFont) {
@@ -105,7 +105,7 @@ export async function updateStickyNoteFont(customerId: string, noteId: string, f
 
   if (error) throw error;
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidatePath(`/admin/people/${customerId}`);
 }
 
 export async function updateStickyNoteTextSize(
@@ -125,7 +125,7 @@ export async function updateStickyNoteTextSize(
 
   if (error) throw error;
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidatePath(`/admin/people/${customerId}`);
 }
 
 export async function deleteStickyNote(customerId: string, noteId: string) {
@@ -134,5 +134,5 @@ export async function deleteStickyNote(customerId: string, noteId: string) {
 
   if (error) throw error;
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidatePath(`/admin/people/${customerId}`);
 }

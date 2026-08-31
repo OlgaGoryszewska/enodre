@@ -13,7 +13,7 @@ import {
   updateStickyNotePosition,
   updateStickyNoteSize,
   updateStickyNoteTextSize,
-} from "@/app/admin/customers/sticky-notes-actions";
+} from "@/app/admin/people/sticky-notes-actions";
 import {
   STICKY_NOTE_COLORS,
   STICKY_NOTE_FONTS,
