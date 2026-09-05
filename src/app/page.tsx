@@ -116,34 +116,28 @@ export default function Home() {
 
   return (
     <>
-      <section className="relative flex min-h-screen items-start overflow-hidden">
-        <Image
-          src="/olga_goryszewska_enodre-portfolio-image.png"
-          alt=""
-          fill
-          priority
-          className="object-cover object-top"
-        />
+      <section className="relative flex items-start overflow-hidden">
+        <Image src="/hero-image.png" alt="" fill priority className=" hero-img object-cover object-top" />
         <div
           className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/35 to-black/10"
           aria-hidden="true"
         />
         <div className="shell relative z-10 py-32 sm:py-40">
-          <motion.div className="max-w-3xl" variants={heroContainer} initial="hidden" animate="show">
+          <motion.div className="mx-auto max-w-3xl text-center" variants={heroContainer} initial="hidden" animate="show">
             <motion.p variants={heroItem} className="eyebrow mb-8 text-white/90">
               Digital product studio
             </motion.p>
             <ScrollRevealHeading
-              text="We build systems that help businesses work smarter and grow faster."
+              text="We build systems that help businesses work smarter"
               className="display-title text-white"
               as="h1"
               mode="page"
               pageScrollRange={[0, 180]}
             />
-            <motion.p variants={heroItem} className="mt-10 max-w-2xl text-lg leading-8 text-white/80 sm:text-xl">
+            <motion.p variants={heroItem} className="mx-auto mt-10 max-w-2xl text-lg leading-8 text-white/80 sm:text-xl">
               We untangle complexity through thoughtfully designed digital solutions. From workflow automation and custom software to insightful dashboards and conversion-focused websites, we build technology that helps your business work smarter, move faster, and scale with clarity.
             </motion.p>
-            <motion.div variants={heroItem} className="mt-10 flex flex-wrap gap-4">
+            <motion.div variants={heroItem} className="mt-10 flex flex-wrap justify-center gap-4">
               <Link className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-m font-semibold text-background transition hover:opacity-90" href="/services">
                 <span aria-hidden="true" className="h-2 w-2 rounded-full bg-background" />
                 <span>Explore our services</span>
@@ -153,7 +147,7 @@ export default function Home() {
                 <span>See our work</span>
               </Link>
             </motion.div>
-            <motion.div variants={heroItem} className="mt-10 flex items-center gap-4">
+            <motion.div variants={heroItem} className="mt-20 flex items-center justify-center gap-4 sm:mt-28">
               <TrustedByAvatars />
               <p className="text-sm text-white/70">Trusted by the founders and teams.</p>
             </motion.div>

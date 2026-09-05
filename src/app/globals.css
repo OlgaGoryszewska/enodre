@@ -97,3 +97,6 @@ footer {
   letter-spacing: -0.055em;
   line-height: 0.95;
 }
+.hero-img {
+  filter: brightness(0.60);
+}
