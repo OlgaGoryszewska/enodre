@@ -25,6 +25,10 @@ export async function addCustomer(formData: FormData) {
     company: formData.get("company") || undefined,
   });
 
+  const roles = formData.getAll("roles").filter((role): role is CustomerRole =>
+    CUSTOMER_ROLE_VALUES.includes(role as CustomerRole)
+  );
+
   const supabase = await createClient();
   const { error } = await supabase.from(TABLE).insert({
     id,
@@ -33,6 +37,7 @@ export async function addCustomer(formData: FormData) {
     phone: values.phone || null,
     company: values.company || null,
     status: "lead",
+    roles,
   });
 
   if (error) throw error;

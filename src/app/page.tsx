@@ -80,16 +80,20 @@ function TrustedByAvatars() {
   return (
     <div className="flex -space-x-3" role="presentation">
       {visible.map((avatar) => (
-        <Image
+        <div
           key={avatar.src}
-          src={avatar.src}
-          alt={avatar.alt}
-          width={80}
-          height={80}
-          sizes="40px"
-          className="h-10 w-10 flex-none rounded-full border-2 border-background bg-card object-cover shadow-sm"
-          onError={() => setBroken((prev) => new Set(prev).add(avatar.src))}
-        />
+          className="flex-none rounded-full bg-gradient-to-br from-accent to-accent/30 p-[1.5px] shadow-sm"
+        >
+          <Image
+            src={avatar.src}
+            alt={avatar.alt}
+            width={80}
+            height={80}
+            sizes="40px"
+            className="h-10 w-10 rounded-full bg-card object-cover"
+            onError={() => setBroken((prev) => new Set(prev).add(avatar.src))}
+          />
+        </div>
       ))}
     </div>
   );

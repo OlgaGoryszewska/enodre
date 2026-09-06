@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { CustomersTable } from "@/components/admin/CustomersTable";
+import { MentorsSection } from "@/components/admin/MentorsSection";
 import { SignOutButton } from "@/components/admin/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
 import { addCustomer, deleteCustomer } from "@/app/admin/people/actions";
@@ -23,6 +24,7 @@ export default async function CustomersPage() {
   }
 
   const customers = (data ?? []) as Customer[];
+  const mentors = customers.filter((customer) => customer.roles.includes("mentor_advisor"));
 
   return (
     <section className="shell py-20 sm:py-28">
@@ -31,6 +33,10 @@ export default async function CustomersPage() {
       <div className="mt-10">
         <p className="eyebrow">Admin</p>
         <h1 className="page-title mt-4 text-4xl">People</h1>
+      </div>
+
+      <div className="mt-10">
+        <MentorsSection mentors={mentors} />
       </div>
 
       <div className="mt-10">

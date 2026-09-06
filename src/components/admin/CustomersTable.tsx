@@ -17,7 +17,13 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { customerFormSchema, type CustomerFormValues } from "@/lib/customer-schema";
-import { customerRoleLabels, customerStatusLabels, type Customer } from "@/lib/customer";
+import {
+  CUSTOMER_ROLE_VALUES,
+  customerRoleLabels,
+  customerStatusLabels,
+  type Customer,
+  type CustomerRole,
+} from "@/lib/customer";
 
 interface CustomersTableProps {
   customers: Customer[];
@@ -43,6 +49,16 @@ export function CustomersTable({ customers: initialCustomers, onAdd, onDelete }:
   const [customers, setCustomers] = useState(initialCustomers);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [selectedRoles, setSelectedRoles] = useState<Set<CustomerRole>>(new Set());
+
+  function toggleRole(role: CustomerRole) {
+    setSelectedRoles((current) => {
+      const next = new Set(current);
+      if (next.has(role)) next.delete(role);
+      else next.add(role);
+      return next;
+    });
+  }
 
   const {
     register,
@@ -65,6 +81,7 @@ export function CustomersTable({ customers: initialCustomers, onAdd, onDelete }:
     formData.set("email", values.email ?? "");
     formData.set("phone", values.phone ?? "");
     formData.set("company", values.company ?? "");
+    selectedRoles.forEach((role) => formData.append("roles", role));
     await onAdd(formData);
 
     setCustomers((current) => [
@@ -77,12 +94,13 @@ export function CustomersTable({ customers: initialCustomers, onAdd, onDelete }:
         phone: values.phone || null,
         company: values.company || null,
         status: "lead",
-        roles: [],
+        roles: [...selectedRoles],
         notes: null,
       },
       ...current,
     ]);
     reset();
+    setSelectedRoles(new Set());
     setAddOpen(false);
   }
 
@@ -132,6 +150,39 @@ export function CustomersTable({ customers: initialCustomers, onAdd, onDelete }:
               <FormField id="customer-company" label="Company" error={errors.company?.message}>
                 <Input id="customer-company" placeholder="Acme Inc." {...register("company")} />
               </FormField>
+
+              <fieldset className="grid gap-2">
+                <legend className="text-sm font-medium leading-none text-foreground">
+                  Roles <span className="text-xs font-normal text-ink-muted">(pick any that apply)</span>
+                </legend>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {CUSTOMER_ROLE_VALUES.map((role) => {
+                    const active = selectedRoles.has(role);
+                    return (
+                      <label
+                        key={role}
+                        htmlFor={`add-role-${role}`}
+                        className={cn(
+                          "flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition",
+                          active
+                            ? "border-accent bg-accent/10 text-accent"
+                            : "border-black/10 text-ink-muted hover:border-black/25"
+                        )}
+                      >
+                        <input
+                          id={`add-role-${role}`}
+                          type="checkbox"
+                          checked={active}
+                          onChange={() => toggleRole(role)}
+                          className="h-3.5 w-3.5 accent-accent"
+                        />
+                        {customerRoleLabels[role]}
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+
               <button
                 type="submit"
                 disabled={isSubmitting}
