@@ -82,7 +82,7 @@ function TrustedByAvatars() {
       {visible.map((avatar) => (
         <div
           key={avatar.src}
-          className="flex-none rounded-full bg-gradient-to-br from-accent to-accent/30 p-[1.5px] shadow-sm"
+          className="flex-none rounded-full bg-gradient-to-br from-accent to-accent/15 p-[0.5px] shadow-sm"
         >
           <Image
             src={avatar.src}
@@ -90,7 +90,7 @@ function TrustedByAvatars() {
             width={80}
             height={80}
             sizes="40px"
-            className="h-10 w-10 rounded-full bg-card object-cover"
+            className="h-10 w-10 rounded-full bg-accent/15 object-cover"
             onError={() => setBroken((prev) => new Set(prev).add(avatar.src))}
           />
         </div>
@@ -126,8 +126,8 @@ export default function Home() {
           className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/35 to-black/10"
           aria-hidden="true"
         />
-        <div className="shell relative z-10 py-32 sm:py-40">
-          <motion.div className="mx-auto max-w-3xl text-center" variants={heroContainer} initial="hidden" animate="show">
+        <div className="shell relative z-10 pt-32 pb-4 sm:pt-40">
+          <motion.div className="max-w-3xl text-left" variants={heroContainer} initial="hidden" animate="show">
             <motion.p variants={heroItem} className="eyebrow mb-8 text-white/90">
               Digital product studio
             </motion.p>
@@ -138,10 +138,10 @@ export default function Home() {
               mode="page"
               pageScrollRange={[0, 180]}
             />
-            <motion.p variants={heroItem} className="mx-auto mt-10 max-w-2xl text-lg leading-8 text-white/80 sm:text-xl">
+            <motion.p variants={heroItem} className="mt-10 max-w-2xl text-lg leading-8 text-white/80 sm:text-xl">
               We untangle complexity through thoughtfully designed digital solutions. From workflow automation and custom software to insightful dashboards and conversion-focused websites, we build technology that helps your business work smarter, move faster, and scale with clarity.
             </motion.p>
-            <motion.div variants={heroItem} className="mt-10 flex flex-wrap justify-center gap-4">
+            <motion.div variants={heroItem} className="mt-10 flex flex-wrap justify-start gap-4">
               <Link className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-m font-semibold text-background transition hover:opacity-90" href="/services">
                 <span aria-hidden="true" className="h-2 w-2 rounded-full bg-background" />
                 <span>Explore our services</span>
@@ -151,7 +151,7 @@ export default function Home() {
                 <span>See our work</span>
               </Link>
             </motion.div>
-            <motion.div variants={heroItem} className="mt-20 flex items-center justify-center gap-4 sm:mt-28">
+            <motion.div variants={heroItem} className="mt-20 flex items-center justify-start gap-4 sm:mt-28">
               <TrustedByAvatars />
               <p className="text-sm text-white/70">Trusted by the founders and teams.</p>
             </motion.div>
@@ -208,21 +208,12 @@ export default function Home() {
       <section className="py-20 sm:py-28">
         <div className="shell">
           <Reveal>
-            <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
-              <div>
-                <p className="eyebrow">Case studies</p>
-                <ScrollRevealHeading
-                  text="Software we've taken from idea to production."
-                  className="mt-4 text-4xl font-semibold tracking-[-0.05em]"
-                />
-              </div>
-              <Link
-                href="/products"
-                className="inline-flex items-center gap-2 rounded-full border border-black/20 bg-background px-5 py-2.5 text-sm font-semibold transition hover:bg-foreground/5"
-              >
-                <span>All case studies</span>
-                <span aria-hidden="true">→</span>
-              </Link>
+            <div className="mb-10">
+              <p className="eyebrow">Case studies</p>
+              <ScrollRevealHeading
+                text="Software we've taken from idea to production."
+                className="mt-4 text-4xl font-semibold tracking-[-0.05em]"
+              />
             </div>
           </Reveal>
           <div className="grid gap-6">
@@ -268,6 +259,15 @@ export default function Home() {
               </Reveal>
             ))}
           </div>
+          <div className="mt-10 flex justify-center">
+            <Link
+              href="/products"
+              className="inline-flex items-center gap-2 rounded-full border border-black/20 bg-background px-5 py-2.5 text-sm font-semibold transition hover:bg-foreground/5"
+            >
+              <span>All case studies</span>
+              <span aria-hidden="true">→</span>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -301,7 +301,7 @@ export default function Home() {
                     width={224}
                     height={224}
                     sizes="112px"
-                    className="h-28 w-28 flex-none rounded-full object-cover ring-4 ring-card"
+                    className="h-28 w-28 flex-none rounded-full object-cover"
                   />
                   <p className="mt-5 text-base font-semibold">{testimonial.name}</p>
                   {testimonial.role && <p className="text-xs text-ink-muted">{testimonial.role}</p>}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Briefcase, CalendarDays, Handshake, LayoutDashboard, Users, type LucideIcon } from "lucide-react";
+import { Briefcase, CalendarDays, LayoutDashboard, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links: { href: string; label: string; icon: LucideIcon }[] = [
@@ -10,7 +10,6 @@ const links: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/people", label: "People", icon: Users },
   { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/admin/linkedin", label: "LinkedIn", icon: Briefcase },
-  { href: "/admin/upwork", label: "Upwork", icon: Handshake },
 ];
 
 export function AdminNav() {

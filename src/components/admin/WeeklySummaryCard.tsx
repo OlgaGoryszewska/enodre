@@ -3,11 +3,13 @@ import { moodEmoji, moodLabel, type MoodEntry } from "@/lib/mood";
 import type { CalorieEntry } from "@/lib/calorie";
 import type { WorkoutEntry } from "@/lib/workout";
 import type { Task } from "@/lib/task";
+import { MAX_UNICORNS_PER_DAY, type UnicornEntry } from "@/lib/unicorn";
 
 interface WeeklySummaryCardProps {
   moodEntries: MoodEntry[];
   calorieEntries: CalorieEntry[];
   workoutEntries: WorkoutEntry[];
+  unicornEntries: UnicornEntry[];
   tasks: Task[];
 }
 
@@ -98,7 +100,13 @@ function MiniBarChart({
 
 // A plain recap of the daily trackers + task board over the last 7 days —
 // server-rendered, no interactivity needed, so no "use client" here.
-export function WeeklySummaryCard({ moodEntries, calorieEntries, workoutEntries, tasks }: WeeklySummaryCardProps) {
+export function WeeklySummaryCard({
+  moodEntries,
+  calorieEntries,
+  workoutEntries,
+  unicornEntries,
+  tasks,
+}: WeeklySummaryCardProps) {
   const cutoffKey = sevenDayCutoffKey();
   const cutoffISO = sevenDayCutoffISO();
   const days = lastSevenDays();
@@ -106,7 +114,9 @@ export function WeeklySummaryCard({ moodEntries, calorieEntries, workoutEntries,
   const weekMood = moodEntries.filter((entry) => entry.entry_date >= cutoffKey);
   const weekCalories = calorieEntries.filter((entry) => entry.entry_date >= cutoffKey);
   const weekWorkouts = workoutEntries.filter((entry) => entry.entry_date >= cutoffKey);
+  const weekUnicorns = unicornEntries.filter((entry) => entry.entry_date >= cutoffKey);
   const weekDoneTasks = tasks.filter((task) => task.status === "done" && task.updated_at >= cutoffISO);
+  const totalUnicorns = weekUnicorns.reduce((sum, entry) => sum + entry.companies.length, 0);
 
   const avgMood = weekMood.length
     ? Math.round(weekMood.reduce((sum, entry) => sum + entry.mood, 0) / weekMood.length)
@@ -135,6 +145,11 @@ export function WeeklySummaryCard({ moodEntries, calorieEntries, workoutEntries,
       label: "Tasks",
       value: String(weekDoneTasks.length),
       hint: "Completed this week",
+    },
+    {
+      label: "Unicorns",
+      value: String(totalUnicorns),
+      hint: "Proposals sent this week",
     },
   ];
 
@@ -172,6 +187,17 @@ export function WeeklySummaryCard({ moodEntries, calorieEntries, workoutEntries,
     };
   });
 
+  const unicornMax = Math.max(MAX_UNICORNS_PER_DAY, ...weekUnicorns.map((entry) => entry.companies.length), 1);
+  const unicornPoints: BarPoint[] = days.map((day) => {
+    const entry = weekUnicorns.find((e) => e.entry_date === day.key);
+    return {
+      key: day.key,
+      label: day.label,
+      value: entry ? entry.companies.length : null,
+      display: entry ? `${entry.companies.length} sent` : "No entry",
+    };
+  });
+
   return (
     <div className="rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
       <div className="flex items-center gap-3">
@@ -197,7 +223,7 @@ export function WeeklySummaryCard({ moodEntries, calorieEntries, workoutEntries,
         ))}
       </div>
 
-      <div className="mt-6 grid gap-4 border-t border-black/10 pt-6 sm:grid-cols-3">
+      <div className="mt-6 grid gap-4 border-t border-black/10 pt-6 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-black/10 bg-background p-4">
           <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">Mood</p>
           <MiniBarChart points={moodPoints} max={5} />
@@ -214,6 +240,10 @@ export function WeeklySummaryCard({ moodEntries, calorieEntries, workoutEntries,
         <div className="rounded-xl border border-black/10 bg-background p-4">
           <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">Workout minutes</p>
           <MiniBarChart points={workoutPoints} max={workoutMax} />
+        </div>
+        <div className="rounded-xl border border-black/10 bg-background p-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">Unicorns caught</p>
+          <MiniBarChart points={unicornPoints} max={unicornMax} />
         </div>
       </div>
     </div>
