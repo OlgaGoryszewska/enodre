@@ -116,7 +116,7 @@ export function WeeklySummaryCard({
   const weekWorkouts = workoutEntries.filter((entry) => entry.entry_date >= cutoffKey);
   const weekUnicorns = unicornEntries.filter((entry) => entry.entry_date >= cutoffKey);
   const weekDoneTasks = tasks.filter((task) => task.status === "done" && task.updated_at >= cutoffISO);
-  const totalUnicorns = weekUnicorns.reduce((sum, entry) => sum + entry.companies.length, 0);
+  const totalUnicorns = weekUnicorns.reduce((sum, entry) => sum + entry.count, 0);
 
   const avgMood = weekMood.length
     ? Math.round(weekMood.reduce((sum, entry) => sum + entry.mood, 0) / weekMood.length)
@@ -187,14 +187,14 @@ export function WeeklySummaryCard({
     };
   });
 
-  const unicornMax = Math.max(MAX_UNICORNS_PER_DAY, ...weekUnicorns.map((entry) => entry.companies.length), 1);
+  const unicornMax = Math.max(MAX_UNICORNS_PER_DAY, ...weekUnicorns.map((entry) => entry.count), 1);
   const unicornPoints: BarPoint[] = days.map((day) => {
     const entry = weekUnicorns.find((e) => e.entry_date === day.key);
     return {
       key: day.key,
       label: day.label,
-      value: entry ? entry.companies.length : null,
-      display: entry ? `${entry.companies.length} sent` : "No entry",
+      value: entry ? entry.count : null,
+      display: entry ? `${entry.count} sent` : "No entry",
     };
   });
 

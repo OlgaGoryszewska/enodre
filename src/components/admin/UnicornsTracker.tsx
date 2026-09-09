@@ -1,52 +1,42 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { X } from "lucide-react";
 import { MAX_UNICORNS_PER_DAY, type UnicornEntry } from "@/lib/unicorn";
-import { addUnicorn, removeUnicorn } from "@/app/admin/dashboard/unicorn-actions";
+import { incrementUnicorns, decrementUnicorns } from "@/app/admin/dashboard/unicorn-actions";
 
 interface UnicornsTrackerProps {
   entryDate: string;
   todayEntry: UnicornEntry | null;
 }
 
-// A tiny "collect them all" game: today starts with 6 empty slots, and
-// sending an Upwork proposal fills one in with the client's name — replaces
-// the old full Upwork admin section, which had gone unused.
+// A tiny tally counter — click an empty slot each time you send an Upwork
+// proposal, click a filled one to undo. Pure count, no names stored.
 export function UnicornsTracker({ entryDate, todayEntry }: UnicornsTrackerProps) {
-  const [companies, setCompanies] = useState(todayEntry?.companies ?? []);
-  const [addingAt, setAddingAt] = useState<number | null>(null);
-  const [draft, setDraft] = useState("");
+  const [count, setCount] = useState(todayEntry?.count ?? 0);
   const [isPending, startTransition] = useTransition();
 
-  const slots = Array.from({ length: MAX_UNICORNS_PER_DAY }, (_, i) => companies[i] ?? null);
-
-  function handleAdd() {
-    const value = draft.trim();
-    setAddingAt(null);
-    setDraft("");
-    if (!value) return;
-
-    setCompanies((current) => [...current, value]);
+  function handleIncrement() {
+    if (count >= MAX_UNICORNS_PER_DAY) return;
+    setCount((current) => current + 1);
     startTransition(async () => {
       try {
-        await addUnicorn(entryDate, value);
+        await incrementUnicorns(entryDate);
       } catch (error) {
-        console.error("Failed to add unicorn:", error);
-        setCompanies((current) => current.slice(0, -1));
+        console.error("Failed to add a proposal:", error);
+        setCount((current) => current - 1);
       }
     });
   }
 
-  function handleRemove(index: number) {
-    const previous = companies;
-    setCompanies((current) => current.filter((_, i) => i !== index));
+  function handleDecrement() {
+    if (count <= 0) return;
+    setCount((current) => current - 1);
     startTransition(async () => {
       try {
-        await removeUnicorn(entryDate, index);
+        await decrementUnicorns(entryDate);
       } catch (error) {
-        console.error("Failed to remove unicorn:", error);
-        setCompanies(previous);
+        console.error("Failed to remove a proposal:", error);
+        setCount((current) => current + 1);
       }
     });
   }
@@ -61,74 +51,30 @@ export function UnicornsTracker({ entryDate, todayEntry }: UnicornsTrackerProps)
           🦄
         </span>
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">Today&apos;s unicorns</h2>
+          <h2 className="text-lg font-semibold tracking-tight">Upwork proposals counter</h2>
           <p className="text-sm text-ink-muted">
-            {companies.length} of {MAX_UNICORNS_PER_DAY} caught — one per proposal sent
+            {count} of {MAX_UNICORNS_PER_DAY} sent today
           </p>
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-3 gap-3 sm:grid-cols-6">
-        {slots.map((company, index) => {
-          if (company) {
-            return (
-              <div
-                key={index}
-                className="group relative flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border border-accent/30 bg-accent/10 p-2 text-center"
-              >
-                <span className="text-xl" aria-hidden="true">
-                  🦄
-                </span>
-                <span className="line-clamp-2 text-xs font-medium leading-tight">{company}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemove(index)}
-                  aria-label={`Remove ${company}`}
-                  className="absolute right-1 top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-background text-ink-muted transition hover:text-danger group-hover:flex"
-                >
-                  <X className="h-3 w-3" aria-hidden="true" />
-                </button>
-              </div>
-            );
-          }
-
-          if (addingAt === index) {
-            return (
-              <form
-                key={index}
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  handleAdd();
-                }}
-                className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-accent/40 bg-background p-2"
-              >
-                <input
-                  autoFocus
-                  value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
-                  onBlur={handleAdd}
-                  placeholder="Client name"
-                  className="w-full rounded-md border border-black/10 bg-background px-1.5 py-1 text-center text-xs outline-none focus:border-accent"
-                />
-              </form>
-            );
-          }
-
+      <div className="mt-5 flex flex-wrap gap-2">
+        {Array.from({ length: MAX_UNICORNS_PER_DAY }, (_, index) => {
+          const filled = index < count;
           return (
             <button
               key={index}
               type="button"
-              onClick={() => {
-                setAddingAt(index);
-                setDraft("");
-              }}
+              onClick={filled ? handleDecrement : handleIncrement}
               disabled={isPending}
-              className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-black/15 text-ink-muted transition hover:border-accent/40 hover:text-accent disabled:opacity-60"
+              aria-label={filled ? "Remove a sent proposal" : "Log a sent proposal"}
+              className={
+                filled
+                  ? "flex h-10 w-10 items-center justify-center rounded-lg border border-accent/30 bg-accent/10 text-base transition hover:opacity-70 disabled:opacity-60"
+                  : "flex h-10 w-10 items-center justify-center rounded-lg border border-dashed border-black/15 text-base opacity-30 transition hover:border-accent/40 hover:opacity-60 disabled:opacity-20"
+              }
             >
-              <span className="text-xl opacity-30" aria-hidden="true">
-                🦄
-              </span>
-              <span className="text-[10px] font-medium">Add</span>
+              🦄
             </button>
           );
         })}

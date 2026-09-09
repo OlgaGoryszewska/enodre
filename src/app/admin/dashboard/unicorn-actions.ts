@@ -6,28 +6,26 @@ import { MAX_UNICORNS_PER_DAY } from "@/lib/unicorn";
 
 const TABLE = "unicorn_entries";
 
-export async function addUnicorn(entryDate: string, company: string) {
-  const trimmed = company.trim();
-  if (!trimmed) throw new Error("Company name is required.");
+async function getTodaysCount(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  entryDate: string
+): Promise<number> {
+  const { data, error } = await supabase.from(TABLE).select("count").eq("entry_date", entryDate).maybeSingle();
+  if (error) throw error;
+  return data?.count ?? 0;
+}
 
+export async function incrementUnicorns(entryDate: string) {
   const supabase = await createClient();
-  const { data: existing, error: fetchError } = await supabase
-    .from(TABLE)
-    .select("companies")
-    .eq("entry_date", entryDate)
-    .maybeSingle();
-
-  if (fetchError) throw fetchError;
-
-  const companies: string[] = existing?.companies ?? [];
-  if (companies.length >= MAX_UNICORNS_PER_DAY) {
-    throw new Error("Today's 6 unicorn spots are full.");
+  const current = await getTodaysCount(supabase, entryDate);
+  if (current >= MAX_UNICORNS_PER_DAY) {
+    throw new Error("Today's 6 spots are full.");
   }
 
   const { error } = await supabase
     .from(TABLE)
     .upsert(
-      { entry_date: entryDate, companies: [...companies, trimmed], updated_at: new Date().toISOString() },
+      { entry_date: entryDate, count: current + 1, updated_at: new Date().toISOString() },
       { onConflict: "entry_date" }
     );
 
@@ -36,22 +34,14 @@ export async function addUnicorn(entryDate: string, company: string) {
   revalidatePath("/admin/dashboard");
 }
 
-export async function removeUnicorn(entryDate: string, index: number) {
+export async function decrementUnicorns(entryDate: string) {
   const supabase = await createClient();
-  const { data: existing, error: fetchError } = await supabase
-    .from(TABLE)
-    .select("companies")
-    .eq("entry_date", entryDate)
-    .maybeSingle();
-
-  if (fetchError) throw fetchError;
-  if (!existing) return;
-
-  const companies: string[] = (existing.companies ?? []).filter((_: string, i: number) => i !== index);
+  const current = await getTodaysCount(supabase, entryDate);
+  if (current <= 0) return;
 
   const { error } = await supabase
     .from(TABLE)
-    .update({ companies, updated_at: new Date().toISOString() })
+    .update({ count: current - 1, updated_at: new Date().toISOString() })
     .eq("entry_date", entryDate);
 
   if (error) throw error;

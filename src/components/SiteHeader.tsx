@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { DoorOpen, Menu, X } from "lucide-react";
 
 const NAV_LINKS = [
   { href: "/services", label: "Services" },
@@ -57,7 +57,7 @@ export function SiteHeader() {
           />
         </Link>
 
-        <nav aria-label="Primary navigation" className="hidden gap-5 text-sm font-medium sm:flex sm:gap-8">
+        <nav aria-label="Primary navigation" className="hidden gap-5 text-sm font-medium sm:flex sm:items-center sm:gap-8">
           {NAV_LINKS.map((link) => (
             <Link key={link.href} className="nav-link" href={link.href}>
               {link.label}
@@ -65,17 +65,27 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <button
-          ref={toggleRef}
-          type="button"
-          aria-expanded={open}
-          aria-controls={menuId}
-          aria-label={open ? "Close menu" : "Open menu"}
-          onClick={() => setOpen((value) => !value)}
-          className="-mr-2 flex h-10 w-10 items-center justify-center rounded-full text-foreground transition hover:bg-foreground/5 sm:hidden"
-        >
-          {open ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
-        </button>
+        <div className="-mr-2 flex items-center">
+          <button
+            ref={toggleRef}
+            type="button"
+            aria-expanded={open}
+            aria-controls={menuId}
+            aria-label={open ? "Close menu" : "Open menu"}
+            onClick={() => setOpen((value) => !value)}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-foreground transition hover:bg-foreground/5 sm:hidden"
+          >
+            {open ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
+          </button>
+
+          <Link
+            href="/login"
+            aria-label="Admin"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-foreground/15 transition hover:text-accent"
+          >
+            <DoorOpen className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </div>
       </div>
 
       <AnimatePresence>

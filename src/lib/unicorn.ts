@@ -5,5 +5,5 @@ export type UnicornEntry = {
   created_at: string;
   updated_at: string;
   entry_date: string;
-  companies: string[];
+  count: number;
 };
