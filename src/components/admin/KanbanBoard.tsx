@@ -31,7 +31,7 @@ interface KanbanBoardProps {
 }
 
 function groupTasks(tasks: Task[]): Record<TaskStatus, Task[]> {
-  const grouped: Record<TaskStatus, Task[]> = { todo: [], in_progress: [], done: [] };
+  const grouped: Record<TaskStatus, Task[]> = { recurring: [], todo: [], in_progress: [], done: [] };
   for (const task of [...tasks].sort((a, b) => a.position - b.position)) {
     grouped[task.status].push(task);
   }
@@ -92,6 +92,7 @@ function TaskCard({ task, onClick }: { task: Task; onClick: () => void }) {
 }
 
 const columnStyles: Record<TaskStatus, string> = {
+  recurring: "bg-accent/10 border-accent/25",
   todo: "bg-card",
   in_progress: "bg-[#FFF6C9] border-[#F0E29C]",
   done: "bg-[#EDE7FE] border-[#D6CBFB]",

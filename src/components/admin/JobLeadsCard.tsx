@@ -23,6 +23,8 @@ interface JobLeadsCardProps {
   heading: string;
   subtitle: string;
   companyLabel: string;
+  titleLabel?: string;
+  titlePlaceholder?: string;
   jobs: JobLead[];
   onAdd: (formData: FormData) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -43,6 +45,8 @@ export function JobLeadsCard({
   heading,
   subtitle,
   companyLabel,
+  titleLabel = "Title",
+  titlePlaceholder = "Product Designer",
   jobs: initialJobs,
   onAdd,
   onDelete,
@@ -138,8 +142,8 @@ export function JobLeadsCard({
             </DialogDescription>
 
             <form onSubmit={handleSubmit(onSubmit)} className="mt-5 grid gap-4">
-              <FormField id={`${heading}-title`} label="Title" required error={errors.title?.message}>
-                <Input id={`${heading}-title`} placeholder="Product Designer" {...register("title")} />
+              <FormField id={`${heading}-title`} label={titleLabel} required error={errors.title?.message}>
+                <Input id={`${heading}-title`} placeholder={titlePlaceholder} {...register("title")} />
               </FormField>
               <FormField id={`${heading}-company`} label={companyLabel} error={errors.company?.message}>
                 <Input id={`${heading}-company`} placeholder="Acme Inc." {...register("company")} />

@@ -1,4 +1,4 @@
--- Admin dashboard kanban board (To do / In progress / Done).
+-- Admin dashboard kanban board (Recurring / To do / In progress / Done).
 -- Run this in the Supabase SQL Editor: https://supabase.com/dashboard/project/_/sql/new
 --
 -- If you already created this table before start_date/end_date/repeat_daily
@@ -11,7 +11,7 @@ create table public.tasks (
   updated_at timestamptz not null default now(),
   title text not null,
   description text,
-  status text not null default 'todo' check (status in ('todo', 'in_progress', 'done')),
+  status text not null default 'todo' check (status in ('recurring', 'todo', 'in_progress', 'done')),
   -- ordering within a column; re-sequenced on every drag, so plain integers
   -- (not fractional) are fine at this scale.
   position integer not null default 0,
@@ -40,3 +40,11 @@ create policy "authenticated can manage tasks" on public.tasks
 -- alter table public.tasks add column if not exists repeat_daily boolean not null default false;
 -- alter table public.tasks add constraint tasks_end_after_start
 --   check (end_date is null or start_date is null or end_date >= start_date);
+
+-- ---------------------------------------------------------------------
+-- Already have the table without the "Recurring" column? Run this too —
+-- idempotent, safe even if the constraint was never added.
+-- ---------------------------------------------------------------------
+-- alter table public.tasks drop constraint if exists tasks_status_check;
+-- alter table public.tasks add constraint tasks_status_check
+--   check (status in ('recurring', 'todo', 'in_progress', 'done'));

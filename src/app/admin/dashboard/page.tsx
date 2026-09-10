@@ -22,7 +22,7 @@ import {
   deleteInspiringPerson,
   updateInspiringPersonReason,
 } from "@/app/admin/dashboard/people-actions";
-import { BookOpen, Briefcase, Film } from "lucide-react";
+import { BookOpen, Briefcase, Film, UserSearch } from "lucide-react";
 import { JobLeadsCard } from "@/components/admin/JobLeadsCard";
 import {
   addLinkedInJob,
@@ -30,6 +30,12 @@ import {
   setLinkedInJobProposalSent,
   updateLinkedInJobNote,
 } from "@/app/admin/dashboard/linkedin-actions";
+import {
+  addHeadhunter,
+  deleteHeadhunter,
+  setHeadhunterSent,
+  updateHeadhunterNote,
+} from "@/app/admin/dashboard/headhunter-actions";
 import type { CalendarEvent } from "@/lib/calendar";
 import type { Task } from "@/lib/task";
 import type { MoodEntry } from "@/lib/mood";
@@ -70,6 +76,7 @@ export default async function AdminDashboardPage() {
     { data: watchData, error: watchError },
     { data: peopleData, error: peopleError },
     { data: linkedinJobsData, error: linkedinJobsError },
+    { data: headhuntersData, error: headhuntersError },
     episode,
   ] = await Promise.all([
     supabase
@@ -88,6 +95,7 @@ export default async function AdminDashboardPage() {
     supabase.from("things_to_watch").select(WATCH_SELECT).order("created_at", { ascending: false }),
     supabase.from("inspiring_people").select("*").order("created_at", { ascending: false }),
     supabase.from("linkedin_jobs").select("*").order("created_at", { ascending: false }),
+    supabase.from("headhunters").select("*").order("created_at", { ascending: false }),
     getLatestOnPurposeEpisode(),
   ]);
 
@@ -124,6 +132,9 @@ export default async function AdminDashboardPage() {
   if (linkedinJobsError) {
     console.error("Failed to load recent LinkedIn jobs:", linkedinJobsError);
   }
+  if (headhuntersError) {
+    console.error("Failed to load headhunters:", headhuntersError);
+  }
 
   const events = (eventsData ?? []) as CalendarEvent[];
   const tasks = (tasksData ?? []) as Task[];
@@ -137,6 +148,7 @@ export default async function AdminDashboardPage() {
   const inspiringPeople = (peopleData ?? []) as InspiringPerson[];
   const linkedinJobs = (linkedinJobsData ?? []) as JobLead[];
   const recentLinkedinJobs = linkedinJobs.filter((job) => job.created_at >= sevenDaysAgo.toISOString());
+  const headhunters = (headhuntersData ?? []) as JobLead[];
 
   const today = todayKey();
   const todayMood = moodEntries.find((entry) => entry.entry_date === today) ?? null;
@@ -215,6 +227,22 @@ export default async function AdminDashboardPage() {
             onDelete={deleteLinkedInJob}
             onSetProposalSent={setLinkedInJobProposalSent}
             onUpdateNote={updateLinkedInJobNote}
+          />
+        </div>
+
+        <div className="mt-10">
+          <JobLeadsCard
+            icon={<UserSearch className="h-4 w-4 text-accent" aria-hidden="true" />}
+            heading="Headhunters"
+            subtitle="Recruiters you've sent a CV or message to"
+            companyLabel="Agency"
+            titleLabel="Name"
+            titlePlaceholder="Sarah Cohen"
+            jobs={headhunters}
+            onAdd={addHeadhunter}
+            onDelete={deleteHeadhunter}
+            onSetProposalSent={setHeadhunterSent}
+            onUpdateNote={updateHeadhunterNote}
           />
         </div>
 

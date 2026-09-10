@@ -1,8 +1,9 @@
-export const TASK_STATUS_VALUES = ["todo", "in_progress", "done"] as const;
+export const TASK_STATUS_VALUES = ["recurring", "todo", "in_progress", "done"] as const;
 
 export type TaskStatus = (typeof TASK_STATUS_VALUES)[number];
 
 export const taskStatusLabels: Record<TaskStatus, string> = {
+  recurring: "Recurring",
   todo: "To do",
   in_progress: "In progress",
   done: "Done",
