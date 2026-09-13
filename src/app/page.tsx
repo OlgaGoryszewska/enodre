@@ -82,7 +82,7 @@ function TrustedByAvatars() {
       {visible.map((avatar) => (
         <div
           key={avatar.src}
-          className="flex-none rounded-full bg-gradient-to-br from-accent to-accent/15 p-[0.5px] shadow-sm"
+          className="flex-none rounded-full  shadow-sm"
         >
           <Image
             src={avatar.src}
@@ -90,7 +90,7 @@ function TrustedByAvatars() {
             width={80}
             height={80}
             sizes="40px"
-            className="h-10 w-10 rounded-full bg-accent/15 object-cover"
+            className="h-10 w-10 rounded-full object-cover"
             onError={() => setBroken((prev) => new Set(prev).add(avatar.src))}
           />
         </div>

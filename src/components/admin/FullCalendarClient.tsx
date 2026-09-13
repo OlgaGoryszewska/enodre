@@ -10,7 +10,7 @@ import interactionPlugin, {
 } from "@fullcalendar/interaction";
 import type { EventClickArg, EventDropArg, DatesSetArg } from "@fullcalendar/core";
 import type { CalendarEvent } from "@/lib/calendar";
-import type { Task } from "@/lib/task";
+import { formatTaskTime, type Task } from "@/lib/task";
 import type { WellnessMarker } from "@/lib/wellness-markers";
 
 const TASK_ID_PREFIX = "task-";
@@ -41,13 +41,18 @@ function eachDateInclusive(startDate: string, endDate: string) {
 // task id lives in extendedProps (not parsed from the DOM id string) since
 // task ids are UUIDs and would collide with our own "-" separators.
 function buildTaskEventInputs(task: Task) {
-  const classNames = ["fc-task-event", `fc-task-${task.status}`];
+  // Recurring is a Kanban to-do list category (daily habits), not a
+  // calendar concept — never show these here even if dates got set.
+  if (task.status === "recurring") return [];
   if (!task.start_date || !task.end_date) return [];
+
+  const classNames = ["fc-task-event", `fc-task-${task.status}`];
+  const title = task.due_time ? `${formatTaskTime(task.due_time)} ${task.title}` : task.title;
 
   if (task.repeat_daily) {
     return eachDateInclusive(task.start_date, task.end_date).map((date) => ({
       id: `${TASK_ID_PREFIX}${task.id}-${date}`,
-      title: `↻ ${task.title}`,
+      title: `↻ ${title}`,
       start: date,
       end: dayAfter(date),
       allDay: true,
@@ -60,7 +65,7 @@ function buildTaskEventInputs(task: Task) {
   return [
     {
       id: `${TASK_ID_PREFIX}${task.id}`,
-      title: task.title,
+      title,
       start: task.start_date,
       end: dayAfter(task.end_date),
       allDay: true,

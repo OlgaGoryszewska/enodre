@@ -11,6 +11,7 @@ function parseForm(formData: FormData) {
     description: formData.get("description") || undefined,
     startDate: formData.get("startDate") || undefined,
     endDate: formData.get("endDate") || undefined,
+    dueTime: formData.get("dueTime") || undefined,
     repeatDaily: formData.get("repeatDaily") === "on",
   });
 }
@@ -41,6 +42,7 @@ export async function createTask(status: string, formData: FormData) {
     position: count ?? 0,
     start_date: values.startDate || null,
     end_date: values.endDate || null,
+    due_time: values.dueTime || null,
     repeat_daily: values.repeatDaily,
   });
 
@@ -60,6 +62,7 @@ export async function updateTask(id: string, formData: FormData) {
       description: values.description || null,
       start_date: values.startDate || null,
       end_date: values.endDate || null,
+      due_time: values.dueTime || null,
       repeat_daily: values.repeatDaily,
       updated_at: new Date().toISOString(),
     })

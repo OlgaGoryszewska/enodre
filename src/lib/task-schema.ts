@@ -6,6 +6,7 @@ export const taskFormSchema = z
     description: z.string().optional(),
     startDate: z.string().optional(),
     endDate: z.string().optional(),
+    dueTime: z.string().optional(),
     repeatDaily: z.boolean(),
   })
   .refine(

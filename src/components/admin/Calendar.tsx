@@ -195,6 +195,7 @@ export function Calendar({
     : [];
   const dayTasks = dayViewDate
     ? tasks.filter((task) => {
+        if (task.status === "recurring") return false;
         if (!task.start_date || !task.end_date) return false;
         const dateKey = toDateKey(dayViewDate);
         return dateKey >= task.start_date && dateKey <= task.end_date;

@@ -20,4 +20,15 @@ export type Task = {
   start_date: string | null;
   end_date: string | null;
   repeat_daily: boolean;
+  due_time: string | null;
 };
+
+// due_time comes back from Postgres as "HH:MM:SS" — format for display as
+// a plain 12-hour time, e.g. "2:30 PM".
+export function formatTaskTime(value: string): string {
+  const [hours, minutes] = value.split(":").map(Number);
+  return new Date(2000, 0, 1, hours, minutes).toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}

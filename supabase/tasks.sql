@@ -21,6 +21,8 @@ create table public.tasks (
   -- when true, the task shows as a separate entry on every day from
   -- start_date through end_date instead of one spanning bar.
   repeat_daily boolean not null default false,
+  -- optional time of day, shown alongside the task on the calendar.
+  due_time time,
   constraint tasks_end_after_start check (end_date is null or start_date is null or end_date >= start_date)
 );
 
@@ -48,3 +50,8 @@ create policy "authenticated can manage tasks" on public.tasks
 -- alter table public.tasks drop constraint if exists tasks_status_check;
 -- alter table public.tasks add constraint tasks_status_check
 --   check (status in ('recurring', 'todo', 'in_progress', 'done'));
+
+-- ---------------------------------------------------------------------
+-- Already have the table without due_time? Run just this line.
+-- ---------------------------------------------------------------------
+-- alter table public.tasks add column if not exists due_time time;

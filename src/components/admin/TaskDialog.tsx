@@ -40,6 +40,7 @@ export function TaskDialog({ open, onOpenChange, task, createStatus }: TaskDialo
       description: task?.description ?? "",
       startDate: task?.start_date ?? "",
       endDate: task?.end_date ?? "",
+      dueTime: task?.due_time?.slice(0, 5) ?? "",
       repeatDaily: task?.repeat_daily ?? false,
     },
   });
@@ -62,6 +63,7 @@ export function TaskDialog({ open, onOpenChange, task, createStatus }: TaskDialo
     formData.set("description", values.description ?? "");
     formData.set("startDate", values.startDate ?? "");
     formData.set("endDate", values.endDate ?? "");
+    formData.set("dueTime", values.dueTime ?? "");
     if (values.repeatDaily && values.startDate && values.endDate) {
       formData.set("repeatDaily", "on");
     }
@@ -73,7 +75,7 @@ export function TaskDialog({ open, onOpenChange, task, createStatus }: TaskDialo
         await createTask(createStatus, formData);
       }
       onOpenChange(false);
-      reset({ title: "", description: "", startDate: "", endDate: "", repeatDaily: false });
+      reset({ title: "", description: "", startDate: "", endDate: "", dueTime: "", repeatDaily: false });
     } catch {
       setError("Something went wrong saving this task.");
     } finally {
@@ -119,9 +121,12 @@ export function TaskDialog({ open, onOpenChange, task, createStatus }: TaskDialo
             <FormField id="endDate" label="Finish date" error={errors.endDate?.message}>
               <Input id="endDate" type="date" {...register("endDate")} />
             </FormField>
+            <FormField id="dueTime" label="Time" error={errors.dueTime?.message}>
+              <Input id="dueTime" type="time" {...register("dueTime")} />
+            </FormField>
           </div>
           <p className="-mt-3 text-xs text-ink-muted">
-            Set both dates to show this task on the calendar.
+            Set both dates to show this task on the calendar. Time is optional.
           </p>
 
           {hasDateRange && (

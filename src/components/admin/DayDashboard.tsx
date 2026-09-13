@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { BookOpen, Dumbbell, Flame, Loader2, MoreVertical, Plus, Smile } from "lucide-react";
-import { taskStatusLabels, type Task } from "@/lib/task";
+import { taskStatusLabels, formatTaskTime, type Task } from "@/lib/task";
 import type { CalendarEvent } from "@/lib/calendar";
 import { moodLabel, type MoodEntry } from "@/lib/mood";
 import type { JournalEntry } from "@/lib/journal";
@@ -453,7 +453,12 @@ export function DayDashboard({
                 onClick={() => onEditTask(task)}
                 className="flex items-center justify-between gap-3 rounded-xl border border-black/10 bg-card p-3 text-left text-sm transition hover:border-black/25"
               >
-                <span className="font-medium">{task.title}</span>
+                <span className="font-medium">
+                  {task.due_time && (
+                    <span className="text-ink-muted">{formatTaskTime(task.due_time)} · </span>
+                  )}
+                  {task.title}
+                </span>
                 <span className="flex-none text-xs text-ink-muted">
                   {taskStatusLabels[task.status]}
                 </span>

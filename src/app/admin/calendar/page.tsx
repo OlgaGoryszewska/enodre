@@ -31,6 +31,7 @@ export default async function AdminCalendarPage() {
     supabase
       .from("tasks")
       .select("*")
+      .neq("status", "recurring")
       .not("start_date", "is", null)
       .not("end_date", "is", null),
     supabase.from("mood_entries").select("*"),

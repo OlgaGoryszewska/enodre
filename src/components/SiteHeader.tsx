@@ -65,27 +65,17 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="-mr-2 flex items-center">
-          <button
-            ref={toggleRef}
-            type="button"
-            aria-expanded={open}
-            aria-controls={menuId}
-            aria-label={open ? "Close menu" : "Open menu"}
-            onClick={() => setOpen((value) => !value)}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-foreground transition hover:bg-foreground/5 sm:hidden"
-          >
-            {open ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
-          </button>
-
-          <Link
-            href="/login"
-            aria-label="Admin"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-foreground/15 transition hover:text-accent"
-          >
-            <DoorOpen className="h-4 w-4" aria-hidden="true" />
-          </Link>
-        </div>
+        <button
+          ref={toggleRef}
+          type="button"
+          aria-expanded={open}
+          aria-controls={menuId}
+          aria-label={open ? "Close menu" : "Open menu"}
+          onClick={() => setOpen((value) => !value)}
+          className="-mr-2 flex h-10 w-10 items-center justify-center rounded-full text-foreground transition hover:bg-foreground/5 sm:hidden"
+        >
+          {open ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
+        </button>
       </div>
 
       <AnimatePresence>
@@ -120,6 +110,14 @@ export function SiteHeader() {
                 </Link>
               ))}
             </motion.nav>
+
+            <Link
+              href="/login"
+              aria-label="Admin"
+              className="absolute bottom-6 right-6 flex h-10 w-10 items-center justify-center rounded-full text-foreground/15 transition hover:text-accent"
+            >
+              <DoorOpen className="h-4 w-4" aria-hidden="true" />
+            </Link>
           </motion.div>
         )}
       </AnimatePresence>

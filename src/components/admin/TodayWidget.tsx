@@ -116,6 +116,7 @@ export function TodayWidget({ initialEvents, tasks, mood, journal, calories, wor
   const todayKey = toDateKey(today);
   const todayEvents = events.filter((event) => isSameDay(new Date(event.start_time), today));
   const todayTasks = tasks.filter((task) => {
+    if (task.status === "recurring") return false;
     if (!task.start_date || !task.end_date) return false;
     return todayKey >= task.start_date && todayKey <= task.end_date;
   });

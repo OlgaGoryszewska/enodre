@@ -21,10 +21,10 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CalendarDays, GripVertical, Plus } from "lucide-react";
+import { CalendarDays, Clock, GripVertical, Plus } from "lucide-react";
 import { TaskDialog } from "@/components/admin/TaskDialog";
 import { createClient } from "@/lib/supabase/client";
-import { TASK_STATUS_VALUES, taskStatusLabels, type Task, type TaskStatus } from "@/lib/task";
+import { TASK_STATUS_VALUES, taskStatusLabels, formatTaskTime, type Task, type TaskStatus } from "@/lib/task";
 
 interface KanbanBoardProps {
   initialTasks: Task[];
@@ -84,6 +84,12 @@ function TaskCard({ task, onClick }: { task: Task; onClick: () => void }) {
           <p className="mt-1.5 flex items-center gap-1 text-xs text-ink-muted">
             <CalendarDays className="h-3 w-3" aria-hidden="true" />
             {formatDateRange(task.start_date, task.end_date)}
+          </p>
+        )}
+        {task.due_time && (
+          <p className="mt-1 flex items-center gap-1 text-xs text-ink-muted">
+            <Clock className="h-3 w-3" aria-hidden="true" />
+            {formatTaskTime(task.due_time)}
           </p>
         )}
       </button>
