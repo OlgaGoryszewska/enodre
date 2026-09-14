@@ -291,7 +291,7 @@ function HourNoteRow({
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-black/10 bg-background px-3 py-2">
+    <div className="flex min-w-0 items-center gap-2 rounded-xl border border-black/10 bg-background px-3 py-2">
       <span className="min-w-0 flex-1 truncate text-sm">{event.title}</span>
       <NoteKebabMenu onEdit={() => setEditing(true)} onRemove={handleRemove} removing={removing} />
     </div>
@@ -338,7 +338,7 @@ function WellnessItemRow({
   }
 
   return (
-    <div className="flex items-start gap-2 rounded-xl border border-black/10 bg-card p-3 text-sm">
+    <div className="flex min-w-0 items-start gap-2 rounded-xl border border-black/10 bg-card p-3 text-sm">
       <span className="mt-0.5 shrink-0 text-accent" aria-hidden="true">
         {item.icon}
       </span>
@@ -364,7 +364,7 @@ function WellnessItemRow({
             className="mt-1 w-full rounded-lg border border-accent/40 bg-background px-2 py-1 text-xs text-foreground focus:outline-none disabled:opacity-60"
           />
         ) : (
-          item.content && <p className="mt-0.5 text-xs text-ink-muted">{item.content}</p>
+          item.content && <p className="mt-0.5 break-words text-xs text-ink-muted">{item.content}</p>
         )}
       </div>
       <NoteKebabMenu onEdit={() => setEditing(true)} onRemove={handleRemove} removing={removing} />
@@ -438,11 +438,11 @@ export function DayDashboard({
                 key={event.id}
                 type="button"
                 onClick={() => onEditEvent(event)}
-                className="rounded-xl border border-black/10 bg-card p-3 text-left text-sm transition hover:border-black/25"
+                className="min-w-0 rounded-xl border border-black/10 bg-card p-3 text-left text-sm transition hover:border-black/25"
               >
-                <span className="font-medium">{event.title}</span>
+                <span className="block truncate font-medium">{event.title}</span>
                 {event.description && (
-                  <p className="mt-1 text-xs text-ink-muted">{event.description}</p>
+                  <p className="mt-1 truncate text-xs text-ink-muted">{event.description}</p>
                 )}
               </button>
             ))}
@@ -451,9 +451,9 @@ export function DayDashboard({
                 key={task.id}
                 type="button"
                 onClick={() => onEditTask(task)}
-                className="flex items-center justify-between gap-3 rounded-xl border border-black/10 bg-card p-3 text-left text-sm transition hover:border-black/25"
+                className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-black/10 bg-card p-3 text-left text-sm transition hover:border-black/25"
               >
-                <span className="font-medium">
+                <span className="min-w-0 flex-1 truncate font-medium">
                   {task.due_time && (
                     <span className="text-ink-muted">{formatTaskTime(task.due_time)} · </span>
                   )}

@@ -100,6 +100,21 @@
   font-weight: 600;
   border: none;
   cursor: pointer;
+  overflow: hidden;
+}
+
+/* Long, unbroken titles (URLs, run-on notes) would otherwise overflow the
+   event block and bleed into the next day's column in week/day timeGrid
+   views — force them to wrap and clip within their own box instead. */
+.admin-calendar .fc-timegrid-event {
+  overflow: hidden;
+}
+
+.admin-calendar .fc-event-title {
+  overflow: hidden;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
 }
 
 .admin-calendar .fc-daygrid-event-dot {
