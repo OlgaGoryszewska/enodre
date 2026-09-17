@@ -49,8 +49,8 @@ export function SiteHeader() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 border-b border-black/10 bg-cover bg-top bg-fixed",
-        isHome ? "bg-[url('/noise-enodre.png')]" : "bg-background"
+        "sticky top-0 z-50 border-b border-black/10 bg-top",
+        isHome ? "bg-[url('/noise-enodre.png')] [background-size:300%_auto]" : "bg-background"
       )}
     >
       <div className="shell flex h-20 items-center justify-between">

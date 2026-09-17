@@ -87,7 +87,7 @@ export default function Home() {
     <>
       <section className="relative flex items-start overflow-hidden">
         <div
-          className="absolute inset-0 bg-[url('/noise-enodre.png')] bg-cover bg-top bg-fixed"
+          className="absolute inset-0 bg-[url('/noise-enodre.png')] bg-cover bg-top sm:bg-fixed"
           aria-hidden="true"
         />
         <div className="shell relative z-10 pt-32 pb-24 sm:pt-40 sm:pb-32">
@@ -98,17 +98,17 @@ export default function Home() {
             >
               Digital Studio
             </motion.h1>
-            <motion.p variants={heroItem} className="font-poppins mt-8 text-2xl font-medium text-foreground sm:text-3xl">
+            <motion.p variants={heroItem} className="font-poppins mt-8 text-2xl font-normal text-foreground sm:text-3xl">
               Build the right product. From the start.
             </motion.p>
             <motion.p variants={heroItem} className="font-poppins mt-3 text-base text-ink-muted">
               Senior product engineering for founders, backed by 12 years of experience
             </motion.p>
             <motion.div variants={heroItem} className="mt-10 flex justify-center">
-              <div className="rounded-full bg-[linear-gradient(90deg,#FB52ED_0%,#C7B2FD_23%,#4D5CFF_70%,#29FF6F_90%,#5CFF91_100%)] p-[2px] shadow-[0_4px_4px_rgba(0,0,0,0.15)]">
+              <div className="rounded-full bg-[linear-gradient(90deg,#FB52ED_0%,#C7B2FD_23%,#4D5CFF_70%,#29FF6F_90%,#5CFF91_100%)] p-[2px] shadow-[0_4px_4px_rgba(0,0,0,0.15)] [background-size:200%_100%] [background-position:0%_50%] transition-[background-position] duration-500 hover:[background-position:100%_50%] active:[background-position:100%_50%]">
                 <Link
                   href="#get-in-touch"
-                  className="font-poppins flex items-center justify-center rounded-full bg-background px-20 py-3 text-base font-medium text-foreground transition hover:bg-foreground/5"
+                  className="font-poppins flex items-center justify-center rounded-full bg-background px-20 py-3 text-base font-medium text-foreground"
                 >
                   Get in touch
                 </Link>
