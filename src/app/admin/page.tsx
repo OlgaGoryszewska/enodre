@@ -29,8 +29,7 @@ export default async function AdminPage() {
 
       <div className="mt-10 flex flex-wrap items-end justify-between gap-6">
         <div>
-          <p className="eyebrow">Admin</p>
-          <h1 className="page-title mt-4 text-4xl">Contact submissions</h1>
+          <h1 className="page-title text-2xl">Contact submissions</h1>
         </div>
       </div>
 

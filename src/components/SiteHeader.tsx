@@ -5,12 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { DoorOpen, Menu, X } from "lucide-react";
+import { DoorOpen, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
   { href: "/services", label: "Services" },
   { href: "/products", label: "Case studies" },
-  { href: "/pricing", label: "Pricing" },
 ];
 
 export function SiteHeader() {
@@ -44,17 +44,25 @@ export function SiteHeader() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
+  const isHome = pathname === "/";
+
   return (
-    <header className="sticky top-0 z-50 border-b border-black/10 bg-background">
+    <header
+      className={cn(
+        "sticky top-0 z-50 border-b border-black/10 bg-cover bg-top bg-fixed",
+        isHome ? "bg-[url('/noise-enodre.png')]" : "bg-background"
+      )}
+    >
       <div className="shell flex h-20 items-center justify-between">
-        <Link href="/" onClick={() => setOpen(false)}>
+        <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-2">
           <Image
-            src="/enodre-logo-full.svg"
-            alt="Enodre"
-            width={183}
-            height={46}
-            className="h-9 w-auto"
+            src="/logo-border-enodre.png"
+            alt=""
+            width={1230}
+            height={1278}
+            className="h-7 w-auto"
           />
+          <span className="font-poppins text-lg font-medium tracking-tight">enodre</span>
         </Link>
 
         <nav aria-label="Primary navigation" className="hidden gap-5 text-sm font-medium sm:flex sm:items-center sm:gap-8">
@@ -74,7 +82,14 @@ export function SiteHeader() {
           onClick={() => setOpen((value) => !value)}
           className="-mr-2 flex h-10 w-10 items-center justify-center rounded-full text-foreground transition hover:bg-foreground/5 sm:hidden"
         >
-          {open ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
+          {open ? (
+            <X className="h-5 w-5" aria-hidden="true" />
+          ) : (
+            <svg width="26" height="10" viewBox="0 0 26 10" fill="none" aria-hidden="true">
+              <line x1="0" y1="1.25" x2="26" y2="1.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="0" y1="8.75" x2="26" y2="8.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          )}
         </button>
       </div>
 

@@ -1,6 +1,8 @@
 @import url("https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@1&f[]=satoshi@1&f[]=manrope@1&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Funnel+Display:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -46,6 +48,14 @@ body {
 .font-handwritten {
   font-family: "Caveat", "Comic Sans MS", cursive;
   font-weight: 600;
+}
+
+.font-poppins {
+  font-family: "Poppins", "Satoshi", Arial, Helvetica, sans-serif;
+}
+
+.font-funnel-display {
+  font-family: "Funnel Display", "Cabinet Grotesk", "Satoshi", Arial, Helvetica, sans-serif;
 }
 
 footer {
@@ -96,7 +106,4 @@ footer {
   font-weight: 600;
   letter-spacing: -0.055em;
   line-height: 0.95;
-}
-.hero-img {
-  filter: brightness(0.60);
 }

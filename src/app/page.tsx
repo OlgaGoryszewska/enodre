@@ -33,13 +33,6 @@ const EXPERTISE_ICONS: Record<string, typeof LayoutDashboard> = {
   "CMS & Content Platforms": Layers,
 };
 
-const trustAvatars = [
-  { src: "/avatars/Sylwia-avatar.png", alt: "" },
-  { src: "/avatars/Nick-avatar.png", alt: "" },
-  { src: "/avatars/Boony-avatar.png", alt: "" },
-  { src: "/avatars/Robert-avatar.png", alt: "" },
-];
-
 const testimonials = [
   {
     name: "Sylwia",
@@ -71,34 +64,6 @@ const testimonials = [
   },
 ];
 
-function TrustedByAvatars() {
-  const [broken, setBroken] = useState<Set<string>>(new Set());
-  const visible = trustAvatars.filter((avatar) => !broken.has(avatar.src));
-
-  if (visible.length === 0) return null;
-
-  return (
-    <div className="flex -space-x-3" role="presentation">
-      {visible.map((avatar) => (
-        <div
-          key={avatar.src}
-          className="flex-none rounded-full  shadow-sm"
-        >
-          <Image
-            src={avatar.src}
-            alt={avatar.alt}
-            width={80}
-            height={80}
-            sizes="40px"
-            className="h-10 w-10 rounded-full object-cover"
-            onError={() => setBroken((prev) => new Set(prev).add(avatar.src))}
-          />
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export default function Home() {
   const testimonialsRef = useRef<HTMLDivElement>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
@@ -121,39 +86,43 @@ export default function Home() {
   return (
     <>
       <section className="relative flex items-start overflow-hidden">
-        <Image src="/hero-image.png" alt="" fill priority className=" hero-img object-cover object-top" />
         <div
-          className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/35 to-black/10"
+          className="absolute inset-0 bg-[url('/noise-enodre.png')] bg-cover bg-top bg-fixed"
           aria-hidden="true"
         />
-        <div className="shell relative z-10 pt-32 pb-4 sm:pt-40">
-          <motion.div className="max-w-3xl text-left" variants={heroContainer} initial="hidden" animate="show">
-            <motion.p variants={heroItem} className="eyebrow mb-8 text-white/90">
-              Digital product studio
+        <div className="shell relative z-10 pt-32 pb-24 sm:pt-40 sm:pb-32">
+          <motion.div className="mx-auto max-w-3xl text-center" variants={heroContainer} initial="hidden" animate="show">
+            <motion.h1
+              variants={heroItem}
+              className="font-funnel-display text-6xl font-normal tracking-tight text-foreground sm:text-7xl"
+            >
+              Digital Studio
+            </motion.h1>
+            <motion.p variants={heroItem} className="font-poppins mt-8 text-2xl font-medium text-foreground sm:text-3xl">
+              Build the right product. From the start.
             </motion.p>
-            <ScrollRevealHeading
-              text="We build systems that help businesses work smarter"
-              className="display-title text-white"
-              as="h1"
-              mode="page"
-              pageScrollRange={[0, 180]}
-            />
-            <motion.p variants={heroItem} className="mt-10 max-w-2xl text-lg leading-8 text-white/80 sm:text-xl">
-              We untangle complexity through thoughtfully designed digital solutions. From workflow automation and custom software to insightful dashboards and conversion-focused websites, we build technology that helps your business work smarter, move faster, and scale with clarity.
+            <motion.p variants={heroItem} className="font-poppins mt-3 text-base text-ink-muted">
+              Senior product engineering for founders, backed by 12 years of experience
             </motion.p>
-            <motion.div variants={heroItem} className="mt-10 flex flex-wrap justify-start gap-4">
-              <Link className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-m font-semibold text-background transition hover:opacity-90" href="/services">
-                <span aria-hidden="true" className="h-2 w-2 rounded-full bg-background" />
-                <span>Explore our services</span>
-              </Link>
-              <Link className="bg-background inline-flex items-center gap-2 rounded-full border border-black/20 px-6 py-3 text-m font-semibold transition hover:bg-foreground/5" href="/products">
-                <span aria-hidden="true" className="h-2 w-2 rounded-full bg-foreground" />
-                <span>See our work</span>
-              </Link>
+            <motion.div variants={heroItem} className="mt-10 flex justify-center">
+              <div className="rounded-full bg-[linear-gradient(90deg,#FB52ED_0%,#C7B2FD_23%,#4D5CFF_70%,#29FF6F_90%,#5CFF91_100%)] p-[2px] shadow-[0_4px_4px_rgba(0,0,0,0.15)]">
+                <Link
+                  href="#get-in-touch"
+                  className="font-poppins flex items-center justify-center rounded-full bg-background px-20 py-3 text-base font-medium text-foreground transition hover:bg-foreground/5"
+                >
+                  Get in touch
+                </Link>
+              </div>
             </motion.div>
-            <motion.div variants={heroItem} className="mt-20 flex items-center justify-start gap-4 sm:mt-28">
-              <TrustedByAvatars />
-              <p className="text-sm text-white/70">Trusted by the founders and teams.</p>
+            <motion.div
+              variants={heroItem}
+              className="font-poppins mt-32 flex items-center justify-center gap-3 text-sm text-ink-muted sm:mt-40"
+            >
+              <span>Consulting</span>
+              <span className="text-black/20">|</span>
+              <span>B2B</span>
+              <span className="text-black/20">|</span>
+              <span>In the House</span>
             </motion.div>
           </motion.div>
         </div>

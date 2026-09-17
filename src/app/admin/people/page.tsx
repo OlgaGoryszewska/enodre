@@ -31,8 +31,7 @@ export default async function CustomersPage() {
       <AdminNav />
 
       <div className="mt-10">
-        <p className="eyebrow">Admin</p>
-        <h1 className="page-title mt-4 text-4xl">People</h1>
+        <h1 className="page-title text-2xl">People</h1>
       </div>
 
       <div className="mt-10">

@@ -72,8 +72,7 @@ export default async function AdminCalendarPage() {
       <AdminNav />
 
       <div className="mt-10">
-        <p className="eyebrow">Admin</p>
-        <h1 className="page-title mt-4 text-4xl">Calendar</h1>
+        <h1 className="page-title text-2xl">Calendar</h1>
       </div>
 
       <div className="mt-10">
