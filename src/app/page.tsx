@@ -3,9 +3,10 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, type Variants } from "framer-motion";
-import { Globe, Layers, LayoutDashboard, MapPin, Quote, Smartphone, Sparkles } from "lucide-react";
-import { expertiseAreas, founder, products, stackGroups } from "@/lib/content";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
+import { MapPin, Plus, Quote } from "lucide-react";
+import { expertiseAreas, founder, industries, products, stackGroups } from "@/lib/content";
+import { cn } from "@/lib/utils";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
 import { TeamSection } from "@/components/TeamSection";
 import { StackSection } from "@/components/StackSection";
@@ -25,12 +26,11 @@ const heroItem: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } },
 };
 
-const EXPERTISE_ICONS: Record<string, typeof LayoutDashboard> = {
-  "Custom Dashboards": LayoutDashboard,
-  "Web Applications & Websites": Globe,
-  "AI Integrations & Automation": Sparkles,
-  "Native Mobile Apps": Smartphone,
-  "CMS & Content Platforms": Layers,
+const EXPERTISE_ICON_IMAGES: Record<string, string> = {
+  DevOps: "/dev-icon.png",
+  "Mobile App Development": "/mobile-app-dev-icon.png",
+  "Software Code Audit": "/code-audit-icon.png",
+  "Legacy Code Refactoring": "/legacy-code-icon.png",
 };
 
 const testimonials = [
@@ -67,6 +67,7 @@ const testimonials = [
 export default function Home() {
   const testimonialsRef = useRef<HTMLDivElement>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [openService, setOpenService] = useState<number | null>(null);
 
   const handleTestimonialsScroll = () => {
     const el = testimonialsRef.current;
@@ -86,10 +87,7 @@ export default function Home() {
   return (
     <>
       <section className="relative flex items-start overflow-hidden">
-        <div
-          className="absolute inset-0 bg-[url('/noise-enodre.png')] bg-cover bg-top sm:bg-fixed"
-          aria-hidden="true"
-        />
+       
         <div className="shell relative z-10 pt-32 pb-24 sm:pt-40 sm:pb-32">
           <motion.div className="mx-auto max-w-3xl text-center" variants={heroContainer} initial="hidden" animate="show">
             <motion.h1
@@ -144,32 +142,82 @@ export default function Home() {
             <Reveal>
               <p className="eyebrow">Our expertise</p>
             </Reveal>
-            <div className="mt-6 grid gap-6 sm:grid-cols-2">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {expertiseAreas.map((area, index) => {
-                const Icon = EXPERTISE_ICONS[area.title];
+                const isOpen = openService === index;
                 return (
-                  <Reveal key={area.title} delay={index * 0.08}>
-                    <div className="group relative overflow-hidden rounded-2xl border border-black/10 bg-card p-7 transition duration-300 hover:-translate-y-1 hover:shadow-lg">
-                      <Icon
-                        className="pointer-events-none absolute -bottom-5 -right-5 h-28 w-28 text-accent/[0.07] transition duration-500 ease-out group-hover:-rotate-6 group-hover:scale-110 group-hover:text-accent/[0.12]"
-                        strokeWidth={1}
-                        aria-hidden="true"
-                      />
-                      <div className="relative flex items-start justify-between">
-                        <Icon
-                          className="h-7 w-7 text-ink transition duration-300 group-hover:text-accent"
-                          strokeWidth={1.25}
-                          aria-hidden="true"
-                        />
-                        <span className="font-mono text-xs text-ink-muted/50">0{index + 1}</span>
+                  <Reveal key={area.title} delay={index * 0.05}>
+                    <button
+                      type="button"
+                      onClick={() => setOpenService(isOpen ? null : index)}
+                      aria-expanded={isOpen}
+                      className={cn(
+                        "w-full rounded-2xl border bg-card p-6 text-left transition",
+                        isOpen ? "border-accent" : "border-black/10 hover:border-black/25"
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          {EXPERTISE_ICON_IMAGES[area.title] && (
+                            <Image
+                              src={EXPERTISE_ICON_IMAGES[area.title]}
+                              alt=""
+                              width={96}
+                              height={96}
+                              className="h-16 w-16 shrink-0 object-contain"
+                            />
+                          )}
+                          <h3 className="text-lg font-semibold tracking-tight text-foreground">{area.title}</h3>
+                        </div>
+                        <span
+                          className={cn(
+                            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition duration-200",
+                            isOpen ? "rotate-45 border-accent text-accent" : "border-black/15 text-ink-muted"
+                          )}
+                        >
+                          <Plus className="h-4 w-4" aria-hidden="true" />
+                        </span>
                       </div>
-                      <h3 className="relative mt-6 text-xl font-semibold tracking-tight">{area.title}</h3>
-                      <p className="relative mt-3 leading-7 text-ink-muted">{area.description}</p>
-                    </div>
+                      <AnimatePresence initial={false}>
+                        {isOpen && (
+                          <motion.p
+                            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                            animate={{ opacity: 1, height: "auto", marginTop: 12 }}
+                            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                            className="overflow-hidden text-sm leading-6 text-ink-muted"
+                          >
+                            {area.description}
+                          </motion.p>
+                        )}
+                      </AnimatePresence>
+                    </button>
                   </Reveal>
                 );
               })}
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 sm:py-28">
+        <div className="shell">
+          <Reveal>
+            <p className="eyebrow">Industries</p>
+            <ScrollRevealHeading
+              text="Built for the industries that run on operational complexity."
+              className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em]"
+            />
+          </Reveal>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {industries.map((industry, index) => (
+              <Reveal key={industry.title} delay={index * 0.06}>
+                <div className="h-full rounded-2xl border border-black/10 bg-card p-6 transition duration-300 hover:-translate-y-1 hover:shadow-lg">
+                  <h3 className="text-base font-semibold tracking-tight">{industry.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-ink-muted">{industry.description}</p>
+                </div>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>

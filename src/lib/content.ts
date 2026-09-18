@@ -49,24 +49,80 @@ export type ExpertiseArea = {
 
 export const expertiseAreas: ExpertiseArea[] = [
   {
-    title: "Custom Dashboards",
-    description: "Transform complex data into clear insights with dashboards that help your team make faster, smarter decisions.",
+    title: "Custom Software Development",
+    description: "Tailored software built around how your business actually operates, not a one-size-fits-all template.",
   },
   {
-    title: "Web Applications & Websites",
-    description: "From high-converting marketing websites to powerful internal platforms, we create fast, modern experiences that drive results.",
+    title: "MVP Development",
+    description: "Go from idea to a working product fast, scoped tightly around the riskiest assumptions worth testing first.",
   },
   {
-    title: "AI Integrations & Automation",
-    description: "Connect AI to your workflows to automate repetitive tasks, improve productivity, and unlock new capabilities.",
+    title: "Web Development",
+    description: "From high-converting marketing websites to powerful internal platforms, we create fast, modern experiences.",
   },
   {
-    title: "Native Mobile Apps",
-    description: "Build seamless iOS and Android experiences that keep your business connected wherever work happens.",
+    title: "Mobile App Development",
+    description: "Native and cross-platform iOS and Android experiences that keep your business connected wherever work happens.",
   },
   {
-    title: "CMS & Content Platforms",
-    description: "Empower your team with flexible, easy-to-manage content systems tailored to your workflow.",
+    title: "Legacy Code Refactoring",
+    description: "Modernize ageing codebases for maintainability and performance without disrupting the business running on them.",
+  },
+  {
+    title: "DevOps",
+    description: "Automate deployment, monitoring, and scaling so releases are routine instead of risky.",
+  },
+  {
+    title: "Software Code Audit",
+    description: "A thorough technical assessment of your codebase's quality, security, and scalability, with a clear action plan.",
+  },
+  {
+    title: "Cloud Migration",
+    description: "Move applications and data to the cloud with minimal downtime and a plan for cost and performance after launch.",
+  },
+  {
+    title: "Systems Integration",
+    description: "Connect the tools your business already relies on so data moves between them without manual work.",
+  },
+];
+
+export type Industry = {
+  title: string;
+  description: string;
+};
+
+export const industries: Industry[] = [
+  {
+    title: "Healthcare",
+    description: "Patient-facing and clinical tools, including EHR/EMR and telemedicine platforms.",
+  },
+  {
+    title: "Fintech",
+    description: "Products handling payments, transactions, and financial data at production-grade reliability.",
+  },
+  {
+    title: "eCommerce",
+    description: "Storefronts, checkout flows, and back-office tools built to convert and scale.",
+  },
+  {
+    title: "Education",
+    description: "Learning management systems and platforms for course delivery and student engagement.",
+  },
+  {
+    title: "Retail",
+    description: "Inventory, point-of-sale, and customer-facing systems for physical and online retail.",
+  },
+  {
+    title: "Media & Entertainment",
+    description: "Content platforms and applications built for audience reach and engagement at scale.",
+  },
+  {
+    title: "Human Resources",
+    description: "Recruiting, onboarding, and workforce management tools that simplify HR operations.",
+  },
+  {
+    title: "Wellness & Fitness",
+    description: "Mental health, fitness, and wellness apps designed around everyday habits and routines.",
   },
 ];
 
