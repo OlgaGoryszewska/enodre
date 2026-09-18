@@ -108,7 +108,7 @@ export default function Home() {
             <motion.p variants={heroItem} className="font-poppins mt-8 text-2xl font-normal text-foreground sm:text-3xl">
               Build the right product. From the start.
             </motion.p>
-            <motion.p variants={heroItem} className="font-poppins mt-3 text-base text-ink-muted">
+            <motion.p variants={heroItem} className="font-poppins mt-3 text-base text-[#8D8AA9]">
               Senior product engineering for founders, backed by 12 years of experience
             </motion.p>
             <motion.div variants={heroItem} className="mt-10 flex justify-center">
