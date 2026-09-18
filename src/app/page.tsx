@@ -27,10 +27,19 @@ const heroItem: Variants = {
 };
 
 const EXPERTISE_ICON_IMAGES: Record<string, string> = {
+  "Custom Software Development": "/custome-soft-dev-icon.png",
+  "MVP Development": "/mvp-dev-icon.png",
+  "Web Development": "/web-dev-icon.png",
   DevOps: "/dev-icon.png",
   "Mobile App Development": "/mobile-app-dev-icon.png",
   "Software Code Audit": "/code-audit-icon.png",
   "Legacy Code Refactoring": "/legacy-code-icon.png",
+  "Cloud Migration": "/cloud-migration-icon.png",
+  "Systems Integration": "/system-intergration-icon.png",
+  "SaaS Development Company": "/sas-development-icon.png",
+  "LMS Development": "/LMS-development.png",
+  "UI & UX Design": "/UI-Ux-design-icon.png",
+  "Azure Consulting": "/azure-consulting-icon.png",
 };
 
 const testimonials = [

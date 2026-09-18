@@ -61,8 +61,20 @@ export const expertiseAreas: ExpertiseArea[] = [
     description: "From high-converting marketing websites to powerful internal platforms, we create fast, modern experiences.",
   },
   {
+    title: "SaaS Development Company",
+    description: "Design and build multi-tenant SaaS products with the billing, auth, and account structure to grow on.",
+  },
+  {
     title: "Mobile App Development",
     description: "Native and cross-platform iOS and Android experiences that keep your business connected wherever work happens.",
+  },
+  {
+    title: "LMS Development",
+    description: "Custom learning management systems built around how your courses, cohorts, and content actually work.",
+  },
+  {
+    title: "UI & UX Design",
+    description: "User research, information architecture, and interface design that make complex products feel simple.",
   },
   {
     title: "Legacy Code Refactoring",
@@ -83,6 +95,10 @@ export const expertiseAreas: ExpertiseArea[] = [
   {
     title: "Systems Integration",
     description: "Connect the tools your business already relies on so data moves between them without manual work.",
+  },
+  {
+    title: "Azure Consulting",
+    description: "Architecture, cost, and reliability guidance for teams building on Microsoft Azure.",
   },
 ];
 
