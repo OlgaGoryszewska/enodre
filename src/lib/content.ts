@@ -45,58 +45,77 @@ export const services: Service[] = [
 export type ExpertiseArea = {
   title: string;
   description: string;
+  category: string;
 };
 
 export const expertiseAreas: ExpertiseArea[] = [
   {
+    category: "Product Development",
     title: "Custom Software Development",
     description: "Tailored software built around how your business actually operates, not a one-size-fits-all template.",
   },
   {
+    category: "Product Development",
     title: "MVP Development",
     description: "Go from idea to a working product fast, scoped tightly around the riskiest assumptions worth testing first.",
   },
   {
+    category: "Product Development",
     title: "Web Development",
     description: "From high-converting marketing websites to powerful internal platforms, we create fast, modern experiences.",
   },
   {
+    category: "Product Development",
     title: "SaaS Development Company",
     description: "Design and build multi-tenant SaaS products with the billing, auth, and account structure to grow on.",
   },
   {
+    category: "Product Development",
     title: "Mobile App Development",
     description: "Native and cross-platform iOS and Android experiences that keep your business connected wherever work happens.",
   },
   {
+    category: "Product Development",
     title: "LMS Development",
     description: "Custom learning management systems built around how your courses, cohorts, and content actually work.",
   },
   {
+    category: "Product Development",
+    title: "AI Automation Engineer",
+    description: "Agentic workflows and automations built with n8n and Make, wired up with Claude and GPT API integrations.",
+  },
+  {
+    category: "Product Development",
     title: "UI & UX Design",
     description: "User research, information architecture, and interface design that make complex products feel simple.",
   },
   {
+    category: "Modernize & Maintain",
     title: "Legacy Code Refactoring",
     description: "Modernize ageing codebases for maintainability and performance without disrupting the business running on them.",
   },
   {
-    title: "DevOps",
-    description: "Automate deployment, monitoring, and scaling so releases are routine instead of risky.",
-  },
-  {
+    category: "Modernize & Maintain",
     title: "Software Code Audit",
     description: "A thorough technical assessment of your codebase's quality, security, and scalability, with a clear action plan.",
   },
   {
-    title: "Cloud Migration",
-    description: "Move applications and data to the cloud with minimal downtime and a plan for cost and performance after launch.",
-  },
-  {
+    category: "Modernize & Maintain",
     title: "Systems Integration",
     description: "Connect the tools your business already relies on so data moves between them without manual work.",
   },
   {
+    category: "Cloud & DevOps",
+    title: "DevOps",
+    description: "Automate deployment, monitoring, and scaling so releases are routine instead of risky.",
+  },
+  {
+    category: "Cloud & DevOps",
+    title: "Cloud Migration",
+    description: "Move applications and data to the cloud with minimal downtime and a plan for cost and performance after launch.",
+  },
+  {
+    category: "Cloud & DevOps",
     title: "Azure Consulting",
     description: "Architecture, cost, and reliability guidance for teams building on Microsoft Azure.",
   },
@@ -105,12 +124,14 @@ export const expertiseAreas: ExpertiseArea[] = [
 export type Industry = {
   title: string;
   description: string;
+  image?: string;
 };
 
 export const industries: Industry[] = [
   {
     title: "Healthcare",
     description: "Patient-facing and clinical tools, including EHR/EMR and telemedicine platforms.",
+    image: "/healthcare-img.png",
   },
   {
     title: "Fintech",
@@ -226,7 +247,7 @@ export type Founder = {
 export const founder: Founder = {
   name: "Olga",
   role: "Product Designer & Frontend Developer",
-  image: "/olga_goryszewska_enodre-portfolio-image.png",
+  image: "/profile-olga_goryszewska_enodre-portfolio-image.png",
   imageAlt: "Portrait of Olga Goryszewska",
   bio: [
     "Olga is a Product Designer and Frontend Developer who believes great software begins with understanding people, not just technology.",
@@ -353,6 +374,84 @@ export const howWeWork: ProcessStep[] = [
   { title: "Design & Strategy", description: "Wireframes or UI direction signed off before development starts." },
   { title: "Development", description: "Built, tested across devices, and shared for feedback along the way." },
   { title: "Launch & Support", description: "Ships with a 14-day bug-fix window; ongoing support available via the plans above." },
+];
+
+export type ProcessSubStep = {
+  title: string;
+  description: string;
+};
+
+export type ProcessPhase = {
+  id: string;
+  tabLabel: string;
+  subSteps: ProcessSubStep[];
+  tags: string[];
+};
+
+export const processPhases: ProcessPhase[] = [
+  {
+    id: "discover-planning",
+    tabLabel: "Discover & Planning",
+    subSteps: [
+      {
+        title: "Discover",
+        description: "We conduct a technical audit, identify challenges, and gather requirements to ensure a solid foundation.",
+      },
+      {
+        title: "Planning",
+        description: "We create a structured roadmap with clear milestones, timelines, and resource allocation.",
+      },
+    ],
+    tags: ["Mobile App", "Design System", "Admin Dashboard", "Payment Types"],
+  },
+  {
+    id: "design-development",
+    tabLabel: "Design & Development",
+    subSteps: [
+      {
+        title: "Design",
+        description: "We create a clean, user-friendly interface focused on functionality and ease of use.",
+      },
+      {
+        title: "Development",
+        description: "Our engineers build a fast, scalable, and reliable solution tailored to your needs.",
+      },
+    ],
+    tags: ["User Flow", "Wireframing", "Prototyping"],
+  },
+  {
+    id: "testing",
+    tabLabel: "Testing",
+    subSteps: [
+      {
+        title: "Testing",
+        description: "We run functional, performance, and security tests to catch issues before they ever reach your users.",
+      },
+    ],
+    tags: ["Unit Tests", "Bug Reports", "Performance"],
+  },
+  {
+    id: "release",
+    tabLabel: "Release",
+    subSteps: [
+      {
+        title: "Release",
+        description: "We deploy to production with a rollout plan that minimizes risk, downtime, and last-minute surprises.",
+      },
+    ],
+    tags: ["Production", "Rollback Plan", "Versioning"],
+  },
+  {
+    id: "support",
+    tabLabel: "Support",
+    subSteps: [
+      {
+        title: "Support",
+        description: "We stay close after launch, ready to fix, improve, and extend the product as your needs grow.",
+      },
+    ],
+    tags: ["Monitoring", "Bug Fixes", "Feature Requests"],
+  },
 ];
 
 export function getService(slug: string) {

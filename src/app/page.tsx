@@ -3,11 +3,11 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { AnimatePresence, motion, type Variants } from "framer-motion";
-import { MapPin, Plus, Quote } from "lucide-react";
+import { motion, type Variants } from "framer-motion";
+import { MapPin, Quote } from "lucide-react";
 import { expertiseAreas, founder, industries, products, stackGroups } from "@/lib/content";
-import { cn } from "@/lib/utils";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
+import { ProcessSection } from "@/components/ProcessSection";
 import { TeamSection } from "@/components/TeamSection";
 import { StackSection } from "@/components/StackSection";
 import { ParallaxImage } from "@/components/motion/ParallaxImage";
@@ -40,7 +40,10 @@ const EXPERTISE_ICON_IMAGES: Record<string, string> = {
   "LMS Development": "/LMS-development.png",
   "UI & UX Design": "/UI-Ux-design-icon.png",
   "Azure Consulting": "/azure-consulting-icon.png",
+  "AI Automation Engineer": "/A-automation-icon.png",
 };
+
+const SERVICE_CATEGORIES = Array.from(new Set(expertiseAreas.map((area) => area.category)));
 
 const testimonials = [
   {
@@ -76,7 +79,6 @@ const testimonials = [
 export default function Home() {
   const testimonialsRef = useRef<HTMLDivElement>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
-  const [openService, setOpenService] = useState<number | null>(null);
 
   const handleTestimonialsScroll = () => {
     const el = testimonialsRef.current;
@@ -138,76 +140,46 @@ export default function Home() {
       <section className="border-y border-black/10 bg-card py-20">
         <div className="shell grid gap-10 lg:grid-cols-[1fr_2fr]">
           <Reveal>
-            <p className="eyebrow">What we do</p>
+            <p className="eyebrow">We Offer Services</p>
             <ScrollRevealHeading
-              text="From the first conversation to a product your team actually loves using."
+              text="Full-cycle development teams ready to turn your vision into a working, scalable product."
               className="mt-4 text-3xl font-semibold tracking-[-0.04em]"
             />
-            <p className="mt-6 leading-7 text-ink-muted">
-              We design, build, and launch digital solutions that solve real business problems. Whether you need to streamline operations, modernize outdated tools, or create entirely new experiences, we deliver software that&apos;s intuitive, scalable, and built around the way your business works.
-            </p>
           </Reveal>
           <div>
-            <Reveal>
-              <p className="eyebrow">Our expertise</p>
-            </Reveal>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              {expertiseAreas.map((area, index) => {
-                const isOpen = openService === index;
-                return (
-                  <Reveal key={area.title} delay={index * 0.05}>
-                    <button
-                      type="button"
-                      onClick={() => setOpenService(isOpen ? null : index)}
-                      aria-expanded={isOpen}
-                      className={cn(
-                        "w-full rounded-2xl border bg-card p-6 text-left transition",
-                        isOpen ? "border-accent" : "border-black/10 hover:border-black/25"
-                      )}
-                    >
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                          {EXPERTISE_ICON_IMAGES[area.title] && (
-                            <Image
-                              src={EXPERTISE_ICON_IMAGES[area.title]}
-                              alt=""
-                              width={96}
-                              height={96}
-                              className="h-16 w-16 shrink-0 object-contain"
-                            />
-                          )}
-                          <h3 className="text-lg font-semibold tracking-tight text-foreground">{area.title}</h3>
+            {SERVICE_CATEGORIES.map((category, categoryIndex) => (
+              <div key={category} className={categoryIndex > 0 ? "mt-8" : undefined}>
+                <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">{category}</p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {expertiseAreas
+                    .filter((area) => area.category === category)
+                    .map((area, index) => (
+                      <Reveal key={area.title} delay={index * 0.05}>
+                        <div className="rounded-xl border border-black/10 bg-card p-3 transition hover:border-black/25">
+                          <div className="flex items-center gap-2">
+                            {EXPERTISE_ICON_IMAGES[area.title] && (
+                              <Image
+                                src={EXPERTISE_ICON_IMAGES[area.title]}
+                                alt=""
+                                width={56}
+                                height={56}
+                                className="h-12 w-12 shrink-0 object-contain"
+                              />
+                            )}
+                            <h3 className="text-sm font-semibold tracking-tight text-foreground">{area.title}</h3>
+                          </div>
+                          <p className="mt-2 text-xs leading-5 text-ink-muted">{area.description}</p>
                         </div>
-                        <span
-                          className={cn(
-                            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition duration-200",
-                            isOpen ? "rotate-45 border-accent text-accent" : "border-black/15 text-ink-muted"
-                          )}
-                        >
-                          <Plus className="h-4 w-4" aria-hidden="true" />
-                        </span>
-                      </div>
-                      <AnimatePresence initial={false}>
-                        {isOpen && (
-                          <motion.p
-                            initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                            animate={{ opacity: 1, height: "auto", marginTop: 12 }}
-                            exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                            className="overflow-hidden text-sm leading-6 text-ink-muted"
-                          >
-                            {area.description}
-                          </motion.p>
-                        )}
-                      </AnimatePresence>
-                    </button>
-                  </Reveal>
-                );
-              })}
-            </div>
+                      </Reveal>
+                    ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
+
+      <ProcessSection />
 
       <section className="py-20 sm:py-28">
         <div className="shell">
@@ -221,9 +193,16 @@ export default function Home() {
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {industries.map((industry, index) => (
               <Reveal key={industry.title} delay={index * 0.06}>
-                <div className="h-full rounded-2xl border border-black/10 bg-card p-6 transition duration-300 hover:-translate-y-1 hover:shadow-lg">
-                  <h3 className="text-base font-semibold tracking-tight">{industry.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-ink-muted">{industry.description}</p>
+                <div className="h-full overflow-hidden rounded-2xl border border-black/10 bg-card transition duration-300 hover:-translate-y-1 hover:shadow-lg">
+                  {industry.image && (
+                    <div className="relative h-32 w-full">
+                      <Image src={industry.image} alt="" fill sizes="(min-width: 1024px) 25vw, 50vw" className="object-cover" />
+                    </div>
+                  )}
+                  <div className="p-6">
+                    <h3 className="text-base font-semibold tracking-tight">{industry.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-ink-muted">{industry.description}</p>
+                  </div>
                 </div>
               </Reveal>
             ))}

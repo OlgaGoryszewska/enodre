@@ -40,6 +40,13 @@ body {
   overflow-x: hidden;
 }
 
+/* Thinner than any per-instance font-weight utility (font-semibold, etc.)
+   applied to individual h2s — !important is deliberate here so "all h2"
+   actually means all, regardless of local overrides. */
+h2 {
+  font-weight: 400 !important;
+}
+
 .font-romantic {
   font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
   font-style: italic;
