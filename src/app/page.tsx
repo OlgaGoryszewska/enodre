@@ -113,21 +113,18 @@ export default function Home() {
           <motion.div className="mx-auto max-w-3xl text-center" variants={heroContainer} initial="hidden" animate="show">
             <motion.h1
               variants={heroItem}
-              className="font-funnel-display text-6xl font-normal tracking-tight text-foreground sm:text-7xl"
+              className="font-funnel-display text-4xl font-normal tracking-tight text-foreground sm:text-7xl"
             >
               Digital Studio
             </motion.h1>
-            <motion.p variants={heroItem} className="font-poppins mt-8 tracking-normal text-base text-[#8D8AA9]">
-              
-            </motion.p>
-            <motion.p variants={heroItem} className="font-poppins mt-8 tracking-normal text-base text-[#8D8AA9]">
+            <motion.p variants={heroItem} className="font-poppins mt-3 text-center tracking-normal text-base text-[#8D8AA9] sm:mt-8">
               Build the right product, from the start. <span className="font-bold">Senior product engineering</span> for founders, backed by 12 years of
               experience
             </motion.p>
-            <motion.div variants={heroItem} className="relative mx-auto mt-10 w-[50vw]">
+            <motion.div variants={heroItem} className="relative mx-auto mt-10 w-[70vw] sm:w-[50vw]">
               <div
-                className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[100%] w-[100%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
-                style={{ background: "radial-gradient(circle, #16163C 100%, #7272C7 29%, #ffff 0%)" }}
+                className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[100%] w-[100%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
+                style={{ background: "radial-gradient(circle, #ffffff 0%, #7272C7 29%, #16163C 100%)" }}
                 aria-hidden="true"
               />
               <Image
@@ -142,7 +139,7 @@ export default function Home() {
               <div className="rounded-full bg-[linear-gradient(90deg,#FB52ED_0%,#C7B2FD_23%,#4D5CFF_70%,#29FF6F_90%,#5CFF91_100%)] p-[2px] shadow-[0_4px_4px_rgba(0,0,0,0.15)] [background-size:200%_100%] [background-position:0%_50%] transition-[background-position] duration-500 hover:[background-position:100%_50%] active:[background-position:100%_50%]">
                 <Link
                   href="#get-in-touch"
-                  className="font-poppins flex items-center justify-center rounded-full bg-background px-20 py-3 text-base font-medium text-foreground"
+                  className="font-poppins flex items-center justify-center rounded-full bg-background px-10 py-3 text-base font-medium text-foreground sm:px-20"
                 >
                   Get in touch
                 </Link>
