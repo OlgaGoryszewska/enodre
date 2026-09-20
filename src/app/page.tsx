@@ -26,24 +26,46 @@ const heroItem: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } },
 };
 
-const EXPERTISE_ICON_IMAGES: Record<string, string> = {
-  "Custom Software Development": "/custome-soft-dev-icon.png",
-  "MVP Development": "/mvp-dev-icon.png",
-  "Web Development": "/web-dev-icon.png",
-  DevOps: "/dev-icon.png",
-  "Mobile App Development": "/mobile-app-dev-icon.png",
-  "Software Code Audit": "/code-audit-icon.png",
-  "Legacy Code Refactoring": "/legacy-code-icon.png",
-  "Cloud Migration": "/cloud-migration-icon.png",
-  "Systems Integration": "/system-intergration-icon.png",
-  "SaaS Development Company": "/sas-development-icon.png",
-  "LMS Development": "/LMS-development.png",
-  "UI & UX Design": "/UI-Ux-design-icon.png",
-  "Azure Consulting": "/azure-consulting-icon.png",
-  "AI Automation Engineer": "/A-automation-icon.png",
-};
-
 const SERVICE_CATEGORIES = Array.from(new Set(expertiseAreas.map((area) => area.category)));
+
+const BASE_GRADIENTS = [
+  "linear-gradient(135deg, #A5C1FF 0%, #637499 88%)",
+  "linear-gradient(135deg, #6F6C83 0%, #19181D 100%)",
+  "linear-gradient(135deg, #9693A6 0%, #393840 100%)",
+];
+
+const EXPERTISE_CARD_STYLES: { title: string; number: string; gradient: string }[] = [
+  { title: "Custom Software Development", number: "01", gradient: BASE_GRADIENTS[0] },
+  { title: "MVP Development", number: "02", gradient: BASE_GRADIENTS[1] },
+  { title: "Web Development", number: "03", gradient: BASE_GRADIENTS[2] },
+  { title: "SaaS Development Company", number: "04", gradient: "linear-gradient(135deg, #BDBDBD 0%, #575757 100%)" },
+  { title: "Mobile App Development", number: "05", gradient: "linear-gradient(135deg, #BBAAFF 0%, #706699 100%)" },
+  { title: "LMS Development", number: "06", gradient: BASE_GRADIENTS[0] },
+  { title: "AI Automation Engineer", number: "07", gradient: BASE_GRADIENTS[1] },
+  { title: "UI & UX Design", number: "08", gradient: BASE_GRADIENTS[2] },
+  { title: "Legacy Code Refactoring", number: "09", gradient: BASE_GRADIENTS[0] },
+  { title: "Software Code Audit", number: "10", gradient: BASE_GRADIENTS[1] },
+  { title: "Systems Integration", number: "11", gradient: BASE_GRADIENTS[2] },
+  { title: "DevOps", number: "12", gradient: BASE_GRADIENTS[0] },
+  { title: "Cloud Migration", number: "13", gradient: BASE_GRADIENTS[1] },
+  { title: "Azure Consulting", number: "14", gradient: BASE_GRADIENTS[2] },
+];
+
+function ExpertiseCardBody({ area, light, number }: { area: (typeof expertiseAreas)[number]; light?: boolean; number?: string }) {
+  return (
+    <>
+      {number && (
+        <p className={`font-urbanist text-[36px] font-semibold tracking-widest ${light ? "text-white" : "text-ink-muted"}`}>{number}</p>
+      )}
+      <h3
+        className={`font-semibold leading-tight tracking-tighter ${number ? "mt-2" : ""} ${light ? "text-[32px] text-white" : "text-sm text-foreground"}`}
+      >
+        {area.title}
+      </h3>
+      <p className={`mt-2 leading-5 ${light ? "text-sm text-white" : "text-xs text-ink-muted"}`}>{area.description}</p>
+    </>
+  );
+}
 
 const testimonials = [
   {
@@ -109,7 +131,7 @@ export default function Home() {
     <>
       <section className="relative flex items-start overflow-hidden">
        
-        <div className="shell relative z-10 pt-32 pb-24 sm:pt-40 sm:pb-32">
+        <div className="shell relative z-10 pt-26 pb-24 sm:pt-40 sm:pb-32">
           <motion.div className="mx-auto max-w-3xl text-center" variants={heroContainer} initial="hidden" animate="show">
             <motion.h1
               variants={heroItem}
@@ -117,14 +139,14 @@ export default function Home() {
             >
               Digital Studio
             </motion.h1>
-            <motion.p variants={heroItem} className="font-poppins mt-3 text-center tracking-normal text-base text-[#8D8AA9] sm:mt-8">
+            <motion.p variants={heroItem} className="font-poppins mt-3 pb-3 text-center tracking-normal text-base text-[#8D8AA9] sm:mt-4">
               Build the right product, from the start. <span className="font-bold">Senior product engineering</span> for founders, backed by 12 years of
               experience
             </motion.p>
             <motion.div variants={heroItem} className="relative mx-auto mt-10 w-[70vw] sm:w-[50vw]">
               <div
                 className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[100%] w-[100%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
-                style={{ background: "radial-gradient(circle, #ffffff 0%, #7272C7 29%, #16163C 100%)" }}
+                style={{ background: "radial-gradient(circle, #16163C 30%, #7272C7 40%, #ffffff 100%)" }}
                 aria-hidden="true"
               />
               <Image
@@ -132,7 +154,7 @@ export default function Home() {
                 alt=""
                 width={1277}
                 height={1231}
-                className="relative h-auto w-full"
+                className="relative h-auto w-full mb-6"
               />
             </motion.div>
             <motion.div variants={heroItem} className="mt-10 flex justify-center">
@@ -147,7 +169,7 @@ export default function Home() {
             </motion.div>
             <motion.div
               variants={heroItem}
-              className="font-poppins mt-32 flex items-center justify-center gap-3 text-sm text-ink-muted sm:mt-40"
+              className="font-poppins mt-28 flex items-center justify-center gap-3 text-sm text-ink-muted sm:mt-30"
             >
               <span>Consulting</span>
               <span className="text-black/20">|</span>
@@ -167,38 +189,32 @@ export default function Home() {
       <section className="border-y border-black/10 bg-card py-20">
         <div className="shell grid gap-10 lg:grid-cols-[1fr_2fr]">
           <Reveal>
-            <p className="eyebrow">We Offer Services</p>
+            <p className="font-funnel-display text-3xl font-normal tracking-tight text-foreground sm:text-4xl">Services we offer</p>
             <ScrollRevealHeading
               text="Full-cycle development teams ready to turn your vision into a working, scalable product."
-              className="mt-4 text-3xl font-semibold tracking-[-0.04em]"
+              className="font-poppins mt-4 text-sm font-normal"
             />
           </Reveal>
-          <div>
+          <div className="min-w-0">
             {SERVICE_CATEGORIES.map((category, categoryIndex) => (
-              <div key={category} className={categoryIndex > 0 ? "mt-8" : undefined}>
-                <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">{category}</p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div key={category} className={`min-w-0${categoryIndex > 0 ? " mt-8" : ""}`}>
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#9EA5C3]">{category}</p>
+                <div className="mt-3 flex gap-[30px] overflow-x-auto pb-4 [scrollbar-width:thin] snap-x snap-mandatory">
                   {expertiseAreas
                     .filter((area) => area.category === category)
-                    .map((area, index) => (
-                      <Reveal key={area.title} delay={index * 0.05}>
-                        <div className="rounded-xl border border-black/10 bg-card p-3 transition hover:border-black/25">
-                          <div className="flex items-center gap-2">
-                            {EXPERTISE_ICON_IMAGES[area.title] && (
-                              <Image
-                                src={EXPERTISE_ICON_IMAGES[area.title]}
-                                alt=""
-                                width={56}
-                                height={56}
-                                className="h-12 w-12 shrink-0 object-contain"
-                              />
-                            )}
-                            <h3 className="text-sm font-semibold tracking-tight text-foreground">{area.title}</h3>
+                    .map((area, index) => {
+                      const cardStyle = EXPERTISE_CARD_STYLES.find((card) => card.title === area.title)!;
+                      return (
+                        <Reveal key={area.title} delay={index * 0.05} className="flex-none snap-center">
+                          <div
+                            className="h-[310px] w-[240px] rounded-xl border border-[#DCDEE4] p-3 transition hover:border-black/25"
+                            style={{ background: cardStyle.gradient }}
+                          >
+                            <ExpertiseCardBody area={area} light number={cardStyle.number} />
                           </div>
-                          <p className="mt-2 text-xs leading-5 text-ink-muted">{area.description}</p>
-                        </div>
-                      </Reveal>
-                    ))}
+                        </Reveal>
+                      );
+                    })}
                 </div>
               </div>
             ))}
