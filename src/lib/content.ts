@@ -56,8 +56,18 @@ export const expertiseAreas: ExpertiseArea[] = [
   },
   {
     category: "Product Development",
+    title: "AI Automation Engineer",
+    description: "Agentic workflows and automations built with n8n and Make, wired up with Claude and GPT API integrations.",
+  },
+  {
+    category: "Product Development",
     title: "MVP Development",
     description: "Go from idea to a working product fast, scoped tightly around the riskiest assumptions worth testing first.",
+  },
+  {
+    category: "Product Development",
+    title: "UI & UX Design",
+    description: "User research, information architecture, and interface design that make complex products feel simple.",
   },
   {
     category: "Product Development",
@@ -66,7 +76,7 @@ export const expertiseAreas: ExpertiseArea[] = [
   },
   {
     category: "Product Development",
-    title: "SaaS Development Company",
+    title: "SaaS Development",
     description: "Design and build multi-tenant SaaS products with the billing, auth, and account structure to grow on.",
   },
   {
@@ -78,16 +88,6 @@ export const expertiseAreas: ExpertiseArea[] = [
     category: "Product Development",
     title: "LMS Development",
     description: "Custom learning management systems built around how your courses, cohorts, and content actually work.",
-  },
-  {
-    category: "Product Development",
-    title: "AI Automation Engineer",
-    description: "Agentic workflows and automations built with n8n and Make, wired up with Claude and GPT API integrations.",
-  },
-  {
-    category: "Product Development",
-    title: "UI & UX Design",
-    description: "User research, information architecture, and interface design that make complex products feel simple.",
   },
   {
     category: "Modernize & Maintain",

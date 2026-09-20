@@ -120,17 +120,3 @@ footer {
   line-height: 0.95;
 }
 
-/* A grid of rainbow pixels — same gradient as the "Get in touch" button
-   border, revealed only at small dot positions via a mask so it reads as a
-   pixel grid rather than a solid gradient bar. */
-.hero-rainbow-grid {
-  background-image: linear-gradient(90deg, #fb52ed 0%, #c7b2fd 23%, #4d5cff 70%, #29ff6f 90%, #5cff91 100%);
-  background-size: 200% 100%;
-  background-repeat: repeat;
-  -webkit-mask-image: radial-gradient(circle, #000 1.5px, transparent 1.6px);
-  mask-image: radial-gradient(circle, #000 1.5px, transparent 1.6px);
-  -webkit-mask-size: 10px 10px;
-  mask-size: 10px 10px;
-  -webkit-mask-repeat: repeat;
-  mask-repeat: repeat;
-}

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useMotionTemplate, useScroll, useTransform, type Variants } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { MapPin, Quote } from "lucide-react";
 import { expertiseAreas, founder, industries, products, stackGroups } from "@/lib/content";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
@@ -28,42 +28,28 @@ const heroItem: Variants = {
 
 const SERVICE_CATEGORIES = Array.from(new Set(expertiseAreas.map((area) => area.category)));
 
-const BASE_GRADIENTS = [
-  "linear-gradient(135deg, #A5C1FF 0%, #637499 88%)",
-  "linear-gradient(135deg, #6F6C83 0%, #19181D 100%)",
-  "linear-gradient(135deg, #9693A6 0%, #393840 100%)",
+const EXPERTISE_CARD_STYLES: { title: string; number: string; gradient: string; light?: boolean }[] = [
+  { title: "Custom Software Development", number: "01", gradient: "linear-gradient(135deg, #E9F1FF 0%, #FFFFFF 100%)" },
+  { title: "MVP Development", number: "02", gradient: "linear-gradient(135deg, #ECEEF5 0%, #FFFFFF 100%)" },
+  { title: "Web Development", number: "03", gradient: "linear-gradient(135deg, #EFEFF4 0%, #FFFFFF 100%)" },
+  { title: "SaaS Development", number: "04", gradient: "linear-gradient(135deg, #DDEFF8 0%, #F9F9F9 100%)" },
+  { title: "Mobile App Development", number: "05", gradient: "linear-gradient(135deg, #F5F1FF 0%, #FFFFFF 100%)" },
+  { title: "LMS Development", number: "06", gradient: "linear-gradient(135deg, #EAF4FF 0%, #FFFFFF 100%)" },
+  { title: "AI Automation Engineer", number: "07", gradient: "linear-gradient(135deg, #F3EEFF 0%, #FFFFFF 100%)", light: true },
+  { title: "UI & UX Design", number: "08", gradient: "linear-gradient(135deg, #FFF0F6 0%, #FFFFFF 100%)", light: true },
+  { title: "Legacy Code Refactoring", number: "09", gradient: "linear-gradient(135deg, #F0F0F2 0%, #FFFFFF 100%)" },
+  { title: "Software Code Audit", number: "10", gradient: "linear-gradient(135deg, #EAFBF1 0%, #FFFFFF 100%)", light: true },
+  { title: "Systems Integration", number: "11", gradient: "linear-gradient(135deg, #FFF8EA 0%, #FFFFFF 100%)" },
+  { title: "DevOps", number: "12", gradient: "linear-gradient(135deg, #EAF6FF 0%, #FFFFFF 100%)" },
+  { title: "Cloud Migration", number: "13", gradient: "linear-gradient(135deg, #F1F0FF 0%, #FFFFFF 100%)" },
+  { title: "Azure Consulting", number: "14", gradient: "linear-gradient(135deg, #E8F0FF 0%, #FFFFFF 100%)" },
 ];
 
-const EXPERTISE_CARD_STYLES: { title: string; number: string; gradient: string }[] = [
-  { title: "Custom Software Development", number: "01", gradient: BASE_GRADIENTS[0] },
-  { title: "MVP Development", number: "02", gradient: BASE_GRADIENTS[1] },
-  { title: "Web Development", number: "03", gradient: BASE_GRADIENTS[2] },
-  { title: "SaaS Development Company", number: "04", gradient: "linear-gradient(135deg, #BDBDBD 0%, #575757 100%)" },
-  { title: "Mobile App Development", number: "05", gradient: "linear-gradient(135deg, #BBAAFF 0%, #706699 100%)" },
-  { title: "LMS Development", number: "06", gradient: BASE_GRADIENTS[0] },
-  { title: "AI Automation Engineer", number: "07", gradient: BASE_GRADIENTS[1] },
-  { title: "UI & UX Design", number: "08", gradient: BASE_GRADIENTS[2] },
-  { title: "Legacy Code Refactoring", number: "09", gradient: BASE_GRADIENTS[0] },
-  { title: "Software Code Audit", number: "10", gradient: BASE_GRADIENTS[1] },
-  { title: "Systems Integration", number: "11", gradient: BASE_GRADIENTS[2] },
-  { title: "DevOps", number: "12", gradient: BASE_GRADIENTS[0] },
-  { title: "Cloud Migration", number: "13", gradient: BASE_GRADIENTS[1] },
-  { title: "Azure Consulting", number: "14", gradient: BASE_GRADIENTS[2] },
-];
-
-function ExpertiseCardBody({ area, light, number }: { area: (typeof expertiseAreas)[number]; light?: boolean; number?: string }) {
+function ExpertiseCardBody({ area, light }: { area: (typeof expertiseAreas)[number]; light?: boolean }) {
   return (
-    <>
-      {number && (
-        <p className={`font-urbanist text-[36px] font-semibold tracking-widest ${light ? "text-white" : "text-ink-muted"}`}>{number}</p>
-      )}
-      <h3
-        className={`font-semibold leading-tight tracking-tighter ${number ? "mt-2" : ""} ${light ? "text-[32px] text-white" : "text-sm text-foreground"}`}
-      >
-        {area.title}
-      </h3>
-      <p className={`mt-2 leading-5 ${light ? "text-sm text-white" : "text-xs text-ink-muted"}`}>{area.description}</p>
-    </>
+    <h3 className={`text-[38px] font-semibold leading-tight tracking-tighter ${light ? "text-white" : "text-[#1D1D1F]"}`}>
+      {area.title}
+    </h3>
   );
 }
 
@@ -101,16 +87,6 @@ const testimonials = [
 export default function Home() {
   const testimonialsRef = useRef<HTMLDivElement>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
-
-  // Rainbow grid at the bottom of the hero: stable on hover — the only
-  // motion is tied to scroll. Colors flow sideways (through white, so the
-  // dots visibly flash white as they cycle) while the whole dot pattern
-  // drifts along a wavy path, so dots shift up/down and left/right together.
-  const { scrollY } = useScroll();
-  const rainbowPositionX = useTransform(scrollY, [0, 1000], ["0%", "300%"]);
-  const rainbowWaveX = useTransform(scrollY, (value) => `${Math.sin(value / 140) * 6}px`);
-  const rainbowWaveY = useTransform(scrollY, (value) => `${Math.cos(value / 100) * 6}px`);
-  const rainbowMaskPosition = useMotionTemplate`${rainbowWaveX} ${rainbowWaveY}`;
 
   const handleTestimonialsScroll = () => {
     const el = testimonialsRef.current;
@@ -179,11 +155,6 @@ export default function Home() {
             </motion.div>
           </motion.div>
         </div>
-        <motion.div
-          style={{ backgroundPositionX: rainbowPositionX, maskPosition: rainbowMaskPosition, WebkitMaskPosition: rainbowMaskPosition }}
-          className="hero-rainbow-grid absolute inset-x-0 bottom-0 h-16 sm:h-24"
-          aria-hidden="true"
-        />
       </section>
 
       <section className="border-y border-black/10 bg-card py-20">
@@ -207,10 +178,102 @@ export default function Home() {
                       return (
                         <Reveal key={area.title} delay={index * 0.05} className="flex-none snap-center">
                           <div
-                            className="h-[310px] w-[240px] rounded-xl border border-[#DCDEE4] p-3 transition hover:border-black/25"
+                            className="relative h-[460px] w-[340px] cursor-pointer overflow-hidden rounded-[28px] p-7 shadow-[0_24px_48px_-20px_rgba(30,30,60,0.35)] transition-all duration-200 ease-out hover:scale-[0.97] hover:shadow-[0_10px_24px_-14px_rgba(30,30,60,0.35)]"
                             style={{ background: cardStyle.gradient }}
                           >
-                            <ExpertiseCardBody area={area} light number={cardStyle.number} />
+                            {area.title === "Software Code Audit" && (
+                              <>
+                                <Image
+                                  src="/audit-img.png"
+                                  alt=""
+                                  fill
+                                  sizes="340px"
+                                  className="pointer-events-none object-cover"
+                                />
+                                <div
+                                  className="pointer-events-none absolute inset-0"
+                                  style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0) 55%)" }}
+                                />
+                              </>
+                            )}
+                            {area.title === "AI Automation Engineer" && (
+                              <>
+                                <Image
+                                  src="/ai-automation-img.png"
+                                  alt=""
+                                  fill
+                                  sizes="340px"
+                                  className="pointer-events-none object-cover"
+                                />
+                                <div
+                                  className="pointer-events-none absolute inset-0"
+                                  style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0) 55%)" }}
+                                />
+                              </>
+                            )}
+                            {area.title === "UI & UX Design" && (
+                              <>
+                                <Image
+                                  src="/ux-design.png"
+                                  alt=""
+                                  fill
+                                  sizes="340px"
+                                  className="pointer-events-none object-cover"
+                                />
+                                <div
+                                  className="pointer-events-none absolute inset-0"
+                                  style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0) 55%)" }}
+                                />
+                              </>
+                            )}
+                            <div className="relative z-10">
+                              <ExpertiseCardBody area={area} light={cardStyle.light} />
+                            </div>
+                            {area.title === "Custom Software Development" && (
+                              <Image
+                                src="/custome-software-img.png"
+                                alt=""
+                                width={1536}
+                                height={1024}
+                                className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
+                              />
+                            )}
+                            {area.title === "Web Development" && (
+                              <Image
+                                src="/web-devel-img.png"
+                                alt=""
+                                width={1536}
+                                height={1024}
+                                className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
+                              />
+                            )}
+                            {area.title === "MVP Development" && (
+                              <Image
+                                src="/mvp-image.png"
+                                alt=""
+                                width={1370}
+                                height={1148}
+                                className="pointer-events-none absolute -bottom-10 -right-16 w-[380px]"
+                              />
+                            )}
+                            {area.title === "Mobile App Development" && (
+                              <Image
+                                src="/mobile-app-image.png"
+                                alt=""
+                                width={800}
+                                height={776}
+                                className="pointer-events-none absolute -bottom-10 -right-16 w-[340px]"
+                              />
+                            )}
+                            {area.title === "SaaS Development" && (
+                              <Image
+                                src="/sas-image.png"
+                                alt=""
+                                width={1536}
+                                height={1024}
+                                className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
+                              />
+                            )}
                           </div>
                         </Reveal>
                       );
