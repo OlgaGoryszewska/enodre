@@ -121,13 +121,13 @@ export default function Home() {
               
             </motion.p>
             <motion.p variants={heroItem} className="font-poppins mt-8 tracking-normal text-base text-[#8D8AA9]">
-              <span className="font-bold">Senior product engineering</span> for founders, backed by 12 years of
+              Build the right product, from the start. <span className="font-bold">Senior product engineering</span> for founders, backed by 12 years of
               experience
             </motion.p>
             <motion.div variants={heroItem} className="relative mx-auto mt-10 w-[50vw]">
               <div
-                className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[90%] w-[90%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
-                style={{ background: "radial-gradient(circle, #16163C 100%, #7272C7 29%, #ffff 100%)" }}
+                className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[100%] w-[100%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+                style={{ background: "radial-gradient(circle, #16163C 100%, #7272C7 29%, #ffff 0%)" }}
                 aria-hidden="true"
               />
               <Image
