@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, type Variants } from "framer-motion";
+import { motion, useMotionTemplate, useScroll, useTransform, type Variants } from "framer-motion";
 import { MapPin, Quote } from "lucide-react";
 import { expertiseAreas, founder, industries, products, stackGroups } from "@/lib/content";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
@@ -80,6 +80,16 @@ export default function Home() {
   const testimonialsRef = useRef<HTMLDivElement>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
 
+  // Rainbow grid at the bottom of the hero: stable on hover — the only
+  // motion is tied to scroll. Colors flow sideways (through white, so the
+  // dots visibly flash white as they cycle) while the whole dot pattern
+  // drifts along a wavy path, so dots shift up/down and left/right together.
+  const { scrollY } = useScroll();
+  const rainbowPositionX = useTransform(scrollY, [0, 1000], ["0%", "300%"]);
+  const rainbowWaveX = useTransform(scrollY, (value) => `${Math.sin(value / 140) * 6}px`);
+  const rainbowWaveY = useTransform(scrollY, (value) => `${Math.cos(value / 100) * 6}px`);
+  const rainbowMaskPosition = useMotionTemplate`${rainbowWaveX} ${rainbowWaveY}`;
+
   const handleTestimonialsScroll = () => {
     const el = testimonialsRef.current;
     if (!el) return;
@@ -107,12 +117,27 @@ export default function Home() {
             >
               Digital Studio
             </motion.h1>
-            <motion.p variants={heroItem} className="font-poppins mt-8 text-2xl font-normal text-foreground sm:text-3xl">
-              Build the right product. From the start.
+            <motion.p variants={heroItem} className="font-poppins mt-8 tracking-normal text-base text-[#8D8AA9]">
+              
             </motion.p>
-            <motion.p variants={heroItem} className="font-poppins mt-3 text-base text-[#8D8AA9]">
-              Senior product engineering for founders, backed by 12 years of experience
+            <motion.p variants={heroItem} className="font-poppins mt-8 tracking-normal text-base text-[#8D8AA9]">
+              <span className="font-bold">Senior product engineering</span> for founders, backed by 12 years of
+              experience
             </motion.p>
+            <motion.div variants={heroItem} className="relative mx-auto mt-10 w-[50vw]">
+              <div
+                className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[90%] w-[90%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+                style={{ background: "radial-gradient(circle, #16163C 100%, #7272C7 29%, #ffff 100%)" }}
+                aria-hidden="true"
+              />
+              <Image
+                src="/nick/moc3.png"
+                alt=""
+                width={1277}
+                height={1231}
+                className="relative h-auto w-full"
+              />
+            </motion.div>
             <motion.div variants={heroItem} className="mt-10 flex justify-center">
               <div className="rounded-full bg-[linear-gradient(90deg,#FB52ED_0%,#C7B2FD_23%,#4D5CFF_70%,#29FF6F_90%,#5CFF91_100%)] p-[2px] shadow-[0_4px_4px_rgba(0,0,0,0.15)] [background-size:200%_100%] [background-position:0%_50%] transition-[background-position] duration-500 hover:[background-position:100%_50%] active:[background-position:100%_50%]">
                 <Link
@@ -135,6 +160,11 @@ export default function Home() {
             </motion.div>
           </motion.div>
         </div>
+        <motion.div
+          style={{ backgroundPositionX: rainbowPositionX, maskPosition: rainbowMaskPosition, WebkitMaskPosition: rainbowMaskPosition }}
+          className="hero-rainbow-grid absolute inset-x-0 bottom-0 h-16 sm:h-24"
+          aria-hidden="true"
+        />
       </section>
 
       <section className="border-y border-black/10 bg-card py-20">

@@ -6,7 +6,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { DoorOpen, X } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
   { href: "/services", label: "Services" },
@@ -44,15 +43,8 @@ export function SiteHeader() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
-  const isHome = pathname === "/";
-
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-50 border-b border-black/10 bg-top",
-        isHome ? "bg-[url('/noise-enodre.png')] [background-size:300%_auto]" : "bg-background"
-      )}
-    >
+    <header className="sticky top-0 z-50 border-b border-black/10 bg-transparent">
       <div className="shell flex h-20 items-center justify-between">
         <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-2">
           <Image
