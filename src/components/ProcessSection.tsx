@@ -3,6 +3,14 @@
 import { Reveal } from "@/components/motion/Reveal";
 import { processPhases } from "@/lib/content";
 
+const PROCESS_COLORS = [
+  { gradient: "linear-gradient(135deg, #E9F1FF 0%, #FFFFFF 100%)", accent: "#6B8CCE" },
+  { gradient: "linear-gradient(135deg, #F3EEFF 0%, #FFFFFF 100%)", accent: "#8B7CC7" },
+  { gradient: "linear-gradient(135deg, #EAFBF1 0%, #FFFFFF 100%)", accent: "#4FA97C" },
+  { gradient: "linear-gradient(135deg, #FFF3E8 0%, #FFFFFF 100%)", accent: "#D9944B" },
+  { gradient: "linear-gradient(135deg, #FFF0F6 0%, #FFFFFF 100%)", accent: "#D76BA0" },
+];
+
 export function ProcessSection() {
   return (
     <section className="py-20 sm:py-28">
@@ -16,11 +24,19 @@ export function ProcessSection() {
         </Reveal>
 
         <div className="mt-14 grid max-w-2xl gap-4">
-          {processPhases.map((phase, index) => (
+          {processPhases.map((phase, index) => {
+            const color = PROCESS_COLORS[index % PROCESS_COLORS.length];
+            return (
             <Reveal key={phase.id} delay={index * 0.08}>
-              <div className="rounded-[28px] border border-black/5 bg-card p-8 shadow-[0_24px_48px_-30px_rgba(30,30,60,0.25)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_24px_48px_-20px_rgba(30,30,60,0.25)]">
+              <div
+                className="rounded-[28px] p-8 shadow-[0_24px_48px_-30px_rgba(30,30,60,0.25)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_24px_48px_-20px_rgba(30,30,60,0.25)]"
+                style={{ background: color.gradient }}
+              >
                 <div className="flex items-start gap-5">
-                  <span className="font-urbanist shrink-0 text-[32px] font-semibold leading-none text-accent/50">
+                  <span
+                    className="font-urbanist shrink-0 text-[32px] font-semibold leading-none"
+                    style={{ color: color.accent }}
+                  >
                     {String(index + 1).padStart(2, "0")}
                   </span>
                   <div>
@@ -39,7 +55,8 @@ export function ProcessSection() {
                 </div>
               </div>
             </Reveal>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

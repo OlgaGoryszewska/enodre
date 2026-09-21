@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
-import { Quote } from "lucide-react";
+import { ChevronRight, Quote } from "lucide-react";
 import { expertiseAreas, founder, industries, products, stackGroups } from "@/lib/content";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
 import { ProcessSection } from "@/components/ProcessSection";
@@ -87,6 +87,14 @@ const testimonials = [
 export default function Home() {
   const testimonialsRef = useRef<HTMLDivElement>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const categoryRowRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const scrollCategoryRow = (category: string) => {
+    const el = categoryRowRefs.current[category];
+    if (!el) return;
+    const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
+    el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + 370, behavior: "smooth" });
+  };
 
   const handleTestimonialsScroll = () => {
     const el = testimonialsRef.current;
@@ -111,15 +119,15 @@ export default function Home() {
           <motion.div className="mx-auto max-w-3xl text-center" variants={heroContainer} initial="hidden" animate="show">
             <motion.h1
               variants={heroItem}
-              className="font-funnel-display text-4xl font-normal tracking-tight text-foreground sm:text-7xl"
+              className="font-funnel-display text-6xl font-normal tracking-tight text-foreground sm:text-7xl"
             >
               Digital Studio
             </motion.h1>
-            <motion.p variants={heroItem} className="font-poppins mt-3 pb-3 text-center tracking-normal text-base text-[#8D8AA9] sm:mt-4">
+            <motion.p variants={heroItem} className="font-poppins mt-3 pb-3 text-center tracking-normal text-base text-black sm:mt-4">
               Build the right product, from the start. <span className="font-bold">Senior product engineering</span> for founders, backed by 12 years of
               experience
             </motion.p>
-            <motion.div variants={heroItem} className="relative mx-auto mt-10 w-[70vw] sm:w-[50vw]">
+            <motion.div variants={heroItem} className="relative mx-auto mt-10 w-[50vw]">
               <div
                 className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[100%] w-[100%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
                 style={{ background: "radial-gradient(circle, #16163C 30%, #7272C7 40%, #ffffff 100%)" }}
@@ -170,8 +178,14 @@ export default function Home() {
             {SERVICE_CATEGORIES.map((category, categoryIndex) => (
               <div key={category} className={`min-w-0${categoryIndex > 0 ? " mt-8" : ""}`}>
                 <p className="text-xs font-semibold uppercase tracking-widest text-[#9EA5C3]">{category}</p>
-                <div className="mt-3 flex gap-[30px] overflow-x-auto pb-4 [scrollbar-width:thin] snap-x snap-mandatory">
-                  {expertiseAreas
+                <div className="relative mt-3">
+                  <div
+                    ref={(el) => {
+                      categoryRowRefs.current[category] = el;
+                    }}
+                    className="flex gap-[30px] overflow-x-auto pb-4 [scrollbar-width:thin] snap-x snap-mandatory"
+                  >
+                    {expertiseAreas
                     .filter((area) => area.category === category)
                     .map((area, index) => {
                       const cardStyle = EXPERTISE_CARD_STYLES.find((card) => card.title === area.title)!;
@@ -344,6 +358,17 @@ export default function Home() {
                         </Reveal>
                       );
                     })}
+                  </div>
+                </div>
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => scrollCategoryRow(category)}
+                    aria-label={`Scroll ${category} cards`}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-black/10 bg-background text-foreground transition hover:bg-foreground/5"
+                  >
+                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                  </button>
                 </div>
               </div>
             ))}
@@ -445,7 +470,7 @@ export default function Home() {
           <div
             ref={testimonialsRef}
             onScroll={handleTestimonialsScroll}
-            className="mt-10 flex gap-6 overflow-x-auto pb-4 [scrollbar-width:thin] snap-x snap-mandatory"
+            className="mt-10 flex gap-6 overflow-x-auto px-[calc(50%-144px)] pb-4 [scrollbar-width:thin] snap-x snap-mandatory sm:px-[calc(50%-160px)]"
           >
             {testimonials.map((testimonial, index) => {
               const card = (
@@ -453,10 +478,10 @@ export default function Home() {
                   <Image
                     src={testimonial.avatar}
                     alt=""
-                    width={320}
-                    height={320}
-                    sizes="176px"
-                    className="h-44 w-44 flex-none rounded-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03]"
+                    width={448}
+                    height={448}
+                    sizes="224px"
+                    className="h-56 w-56 flex-none rounded-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03]"
                   />
                   <p className="mt-6 text-base font-semibold text-[#1D1D1F]">{testimonial.name}</p>
                   {testimonial.role && <p className="font-poppins text-xs text-ink-muted">{testimonial.role}</p>}

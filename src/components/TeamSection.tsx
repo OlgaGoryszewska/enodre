@@ -26,7 +26,7 @@ export function TeamSection({ member, ctaHref }: TeamSectionProps) {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="relative mx-auto aspect-square w-full max-w-xs overflow-hidden rounded-[28px] shadow-[0_24px_48px_-20px_rgba(30,30,60,0.35)] lg:mx-0"
+            className="relative mx-auto aspect-square w-full max-w-xs overflow-hidden lg:mx-0"
           >
             <Image
               src={member.image}
@@ -44,10 +44,9 @@ export function TeamSection({ member, ctaHref }: TeamSectionProps) {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
           >
-            
             <ScrollRevealHeading
               text={`Meet ${member.name}`}
-              className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
+              className="text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
             />
             <p className="mt-2 text-sm font-semibold text-accent">{member.role}</p>
 
