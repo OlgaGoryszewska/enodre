@@ -190,6 +190,24 @@ export default function Home() {
                                 className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
                               />
                             )}
+                            {area.title === "DevOps" && (
+                              <Image
+                                src="/DevOPs-img.png"
+                                alt=""
+                                width={1536}
+                                height={1024}
+                                className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
+                              />
+                            )}
+                            {area.title === "Cloud Migration" && (
+                              <Image
+                                src="/cloude-migration-img.png"
+                                alt=""
+                                width={1536}
+                                height={1024}
+                                className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
+                              />
+                            )}
                             {area.title === "Azure Consulting" && (
                               <>
                                 <Image
@@ -431,22 +449,18 @@ export default function Home() {
           >
             {testimonials.map((testimonial, index) => {
               const card = (
-                <div
-                  className={`group flex h-full w-72 flex-col items-center rounded-[28px] bg-background p-8 text-center shadow-[0_24px_48px_-30px_rgba(30,30,60,0.25)] transition-all duration-200 ease-out sm:w-80 ${
-                    testimonial.slug ? "hover:-translate-y-1 hover:shadow-[0_24px_48px_-20px_rgba(30,30,60,0.25)]" : ""
-                  }`}
-                >
+                <div className="group flex h-full w-72 flex-col items-center text-center sm:w-80">
                   <Image
                     src={testimonial.avatar}
                     alt=""
-                    width={224}
-                    height={224}
-                    sizes="112px"
-                    className="h-28 w-28 flex-none rounded-full object-cover"
+                    width={320}
+                    height={320}
+                    sizes="176px"
+                    className="h-44 w-44 flex-none rounded-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03]"
                   />
-                  <p className="mt-5 text-base font-semibold text-[#1D1D1F]">{testimonial.name}</p>
+                  <p className="mt-6 text-base font-semibold text-[#1D1D1F]">{testimonial.name}</p>
                   {testimonial.role && <p className="font-poppins text-xs text-ink-muted">{testimonial.role}</p>}
-                  <div className="mt-5 flex flex-1 flex-col items-center pt-5">
+                  <div className="mt-5 flex flex-1 flex-col items-center">
                     <Quote className="h-5 w-5 flex-none text-accent/40" aria-hidden="true" />
                     <p className="font-poppins mt-3 text-sm leading-6 text-ink-muted">
                       &ldquo;{testimonial.quote}&rdquo;
