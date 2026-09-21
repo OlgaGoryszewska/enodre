@@ -91,7 +91,7 @@ function PillGroup({ items }: { items: string[] }) {
 
 export function StackSection({ groups }: StackSectionProps) {
   return (
-    <section className="bg-foreground py-20 text-background sm:py-28">
+    <section id="stack" className="bg-foreground py-20 text-background sm:py-28">
       <div className="shell">
         <Reveal className="text-center">
           <p className="eyebrow">Tools & stack</p>

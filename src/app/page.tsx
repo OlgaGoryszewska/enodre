@@ -165,7 +165,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="border-y border-black/10 bg-card py-20">
+      <section id="services" className="border-y border-black/10 bg-card py-20">
         <div className="shell grid gap-10 lg:grid-cols-[1fr_2fr]">
           <Reveal>
             <p className="font-funnel-display text-3xl font-normal tracking-tight text-foreground sm:text-4xl">Services we offer</p>
@@ -378,7 +378,7 @@ export default function Home() {
 
       <ProcessSection />
 
-      <section className="py-20 sm:py-28">
+      <section id="industries" className="py-20 sm:py-28">
         <div className="shell">
           <Reveal>
             <p className="eyebrow">Industries</p>

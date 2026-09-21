@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { DoorOpen } from "lucide-react";
 import { MotionConfig } from "framer-motion";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -34,21 +33,7 @@ export default function RootLayout({
         <MotionConfig reducedMotion="user">
           <SiteHeader />
           <main className="flex-1">{children}</main>
-          <footer className="border-t border-black/10 py-8">
-            <div className="shell flex flex-col gap-2 text-sm text-ink-muted sm:flex-row sm:items-center sm:justify-between">
-              <p>© {new Date().getFullYear()} Enodre</p>
-              <div className="flex items-center gap-4">
-                <p>Clear systems for complex work.</p>
-                <Link
-                  href="/login"
-                  aria-label="Admin"
-                  className="ml-auto text-accent transition hover:opacity-70 sm:ml-0"
-                >
-                  <DoorOpen className="h-5 w-5" aria-hidden="true" />
-                </Link>
-              </div>
-            </div>
-          </footer>
+          <SiteFooter />
         </MotionConfig>
       </body>
     </html>
