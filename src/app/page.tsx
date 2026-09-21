@@ -32,9 +32,9 @@ const EXPERTISE_CARD_STYLES: { title: string; number: string; gradient: string; 
   { title: "Custom Software Development", number: "01", gradient: "linear-gradient(135deg, #E9F1FF 0%, #FFFFFF 100%)" },
   { title: "MVP Development", number: "02", gradient: "linear-gradient(135deg, #ECEEF5 0%, #FFFFFF 100%)" },
   { title: "Web Development", number: "03", gradient: "linear-gradient(135deg, #EFEFF4 0%, #FFFFFF 100%)" },
-  { title: "SaaS Development", number: "04", gradient: "linear-gradient(135deg, #DDEFF8 0%, #F9F9F9 100%)" },
+  { title: "SaaS Development", number: "04", gradient: "linear-gradient(135deg, #EFEFEF 0%, #F9F9F9 100%)" },
   { title: "Mobile App Development", number: "05", gradient: "linear-gradient(135deg, #F5F1FF 0%, #FFFFFF 100%)" },
-  { title: "LMS Development", number: "06", gradient: "linear-gradient(135deg, #EAF4FF 0%, #FFFFFF 100%)" },
+  { title: "LMS Development", number: "06", gradient: "linear-gradient(135deg, #EAF4FF 0%, #FFFFFF 100%)", light: true },
   { title: "AI Automation Engineer", number: "07", gradient: "linear-gradient(135deg, #F3EEFF 0%, #FFFFFF 100%)", light: true },
   { title: "UI & UX Design", number: "08", gradient: "linear-gradient(135deg, #FFF0F6 0%, #FFFFFF 100%)", light: true },
   { title: "Legacy Code Refactoring", number: "09", gradient: "linear-gradient(135deg, #F0F0F2 0%, #FFFFFF 100%)" },
@@ -196,10 +196,25 @@ export default function Home() {
                                 />
                               </>
                             )}
+                            {area.title === "LMS Development" && (
+                              <>
+                                <Image
+                                  src="/LMS.png"
+                                  alt=""
+                                  fill
+                                  sizes="340px"
+                                  className="pointer-events-none object-cover"
+                                />
+                                <div
+                                  className="pointer-events-none absolute inset-0"
+                                  style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0) 55%)" }}
+                                />
+                              </>
+                            )}
                             {area.title === "AI Automation Engineer" && (
                               <>
                                 <Image
-                                  src="/ai-automation-img.png"
+                                  src="/ai-image.png"
                                   alt=""
                                   fill
                                   sizes="340px"
@@ -320,11 +335,10 @@ export default function Home() {
         <div className="shell">
           <Reveal>
             <div className="mb-10">
-              <p className="eyebrow">Case studies</p>
-              <ScrollRevealHeading
-                text="Software we've taken from idea to production."
-                className="mt-4 text-4xl font-semibold tracking-[-0.05em]"
-              />
+              <p className="font-funnel-display text-3xl font-normal tracking-tight text-foreground sm:text-4xl">Case studies</p>
+              <p className="font-poppins mt-4 max-w-2xl text-sm font-normal text-ink-muted">
+                Software we&apos;ve taken from idea to production.
+              </p>
             </div>
           </Reveal>
           <div className="grid gap-6">
@@ -332,10 +346,10 @@ export default function Home() {
               <Reveal key={product.slug} delay={index * 0.08}>
                 <Link
                   href={`/products/${product.slug}`}
-                  className="group grid overflow-hidden rounded-2xl border border-black/10 bg-card transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:grid-cols-[0.9fr_1.1fr]"
+                  className="group grid overflow-hidden rounded-[28px] border border-black/5 bg-card shadow-[0_24px_48px_-30px_rgba(30,30,60,0.25)] transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_24px_48px_-20px_rgba(30,30,60,0.25)] sm:grid-cols-[0.9fr_1.1fr]"
                 >
                   {product.image && (
-                    <ParallaxImage className="aspect-[4/3] border-b border-black/10 bg-background sm:aspect-auto sm:h-full sm:border-b-0 sm:border-r">
+                    <ParallaxImage className="aspect-[4/3] bg-background sm:aspect-auto sm:h-full">
                       <Image
                         src={product.image}
                         alt={product.imageAlt ?? ""}
@@ -345,7 +359,7 @@ export default function Home() {
                       />
                     </ParallaxImage>
                   )}
-                  <div className="flex flex-col p-8 sm:p-10">
+                  <div className="flex flex-col justify-center p-8 sm:p-10">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                       <p className="eyebrow">{product.category}</p>
                       <span className="inline-flex items-center gap-1 text-xs font-medium text-ink-muted">
@@ -353,18 +367,9 @@ export default function Home() {
                         {product.location}
                       </span>
                     </div>
-                    <h3 className="mt-4 text-3xl font-semibold tracking-[-0.04em]">{product.name}</h3>
-                    <p className="mt-2 text-lg font-medium text-ink-muted">{product.tagline}</p>
-                    <p className="mt-4 leading-7 text-ink-muted">{product.description}</p>
-                    <div className="mt-6 flex flex-wrap gap-2">
-                      {product.stack.map((item) => (
-                        <span key={item} className="rounded-full border border-black/10 px-3 py-1 text-xs font-medium text-ink-muted">
-                          {item}
-                        </span>
-                      ))}
-                    </div>
-                    <p className="mt-8 font-mono text-sm text-accent">{product.outcome}</p>
-                    <p className="mt-auto pt-8 text-sm font-semibold group-hover:underline">Explore {product.name} →</p>
+                    <h3 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-[#1D1D1F]">{product.name}</h3>
+                    <p className="font-poppins mt-2 text-sm font-normal text-ink-muted">{product.tagline}</p>
+                    <p className="mt-8 text-sm font-semibold text-[#1D1D1F] group-hover:underline">Explore {product.name} →</p>
                   </div>
                 </Link>
               </Reveal>
@@ -373,7 +378,7 @@ export default function Home() {
           <div className="mt-10 flex justify-center">
             <Link
               href="/products"
-              className="inline-flex items-center gap-2 rounded-full border border-black/20 bg-background px-5 py-2.5 text-sm font-semibold transition hover:bg-foreground/5"
+              className="font-poppins inline-flex items-center gap-2 rounded-full border border-black/10 bg-background px-5 py-2.5 text-sm font-medium transition hover:bg-foreground/5"
             >
               <span>All case studies</span>
               <span aria-hidden="true">→</span>
@@ -385,12 +390,8 @@ export default function Home() {
       <section className="border-t border-black/10 bg-card py-20 sm:py-28">
         <div className="shell">
           <Reveal>
-            <p className="eyebrow">Testimonials</p>
-            <ScrollRevealHeading
-              text="Customers who trust us to get it right."
-              className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
-            />
-            <p className="mt-6 max-w-2xl leading-7 text-ink-muted">
+            <p className="font-funnel-display text-3xl font-normal tracking-tight text-foreground sm:text-4xl">Testimonials</p>
+            <p className="font-poppins mt-4 max-w-2xl text-sm font-normal text-ink-muted">
               What the founders and investors we&apos;ve built for have to say.
             </p>
           </Reveal>
@@ -402,8 +403,8 @@ export default function Home() {
             {testimonials.map((testimonial, index) => {
               const card = (
                 <div
-                  className={`group flex h-full w-72 flex-col items-center rounded-2xl border border-black/10 bg-background p-8 text-center shadow-sm transition duration-300 sm:w-80 ${
-                    testimonial.slug ? "hover:-translate-y-1 hover:shadow-xl" : ""
+                  className={`group flex h-full w-72 flex-col items-center rounded-[28px] bg-background p-8 text-center shadow-[0_24px_48px_-30px_rgba(30,30,60,0.25)] transition-all duration-200 ease-out sm:w-80 ${
+                    testimonial.slug ? "hover:-translate-y-1 hover:shadow-[0_24px_48px_-20px_rgba(30,30,60,0.25)]" : ""
                   }`}
                 >
                   <Image
@@ -414,11 +415,11 @@ export default function Home() {
                     sizes="112px"
                     className="h-28 w-28 flex-none rounded-full object-cover"
                   />
-                  <p className="mt-5 text-base font-semibold">{testimonial.name}</p>
-                  {testimonial.role && <p className="text-xs text-ink-muted">{testimonial.role}</p>}
-                  <div className="mt-5 flex flex-1 flex-col items-center border-t border-black/10 pt-5">
+                  <p className="mt-5 text-base font-semibold text-[#1D1D1F]">{testimonial.name}</p>
+                  {testimonial.role && <p className="font-poppins text-xs text-ink-muted">{testimonial.role}</p>}
+                  <div className="mt-5 flex flex-1 flex-col items-center pt-5">
                     <Quote className="h-5 w-5 flex-none text-accent/40" aria-hidden="true" />
-                    <p className="mt-3 text-sm italic leading-6 text-ink-muted">
+                    <p className="font-poppins mt-3 text-sm leading-6 text-ink-muted">
                       &ldquo;{testimonial.quote}&rdquo;
                     </p>
                   </div>

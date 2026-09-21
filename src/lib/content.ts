@@ -66,13 +66,18 @@ export const expertiseAreas: ExpertiseArea[] = [
   },
   {
     category: "Product Development",
-    title: "UI & UX Design",
-    description: "User research, information architecture, and interface design that make complex products feel simple.",
+    title: "LMS Development",
+    description: "Custom learning management systems built around how your courses, cohorts, and content actually work.",
   },
   {
     category: "Product Development",
     title: "Web Development",
     description: "From high-converting marketing websites to powerful internal platforms, we create fast, modern experiences.",
+  },
+  {
+    category: "Product Development",
+    title: "UI & UX Design",
+    description: "User research, information architecture, and interface design that make complex products feel simple.",
   },
   {
     category: "Product Development",
@@ -83,11 +88,6 @@ export const expertiseAreas: ExpertiseArea[] = [
     category: "Product Development",
     title: "Mobile App Development",
     description: "Native and cross-platform iOS and Android experiences that keep your business connected wherever work happens.",
-  },
-  {
-    category: "Product Development",
-    title: "LMS Development",
-    description: "Custom learning management systems built around how your courses, cohorts, and content actually work.",
   },
   {
     category: "Modernize & Maintain",
