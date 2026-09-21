@@ -111,13 +111,13 @@ export const expertiseAreas: ExpertiseArea[] = [
   },
   {
     category: "Cloud & DevOps",
-    title: "Cloud Migration",
-    description: "Move applications and data to the cloud with minimal downtime and a plan for cost and performance after launch.",
+    title: "Azure Consulting",
+    description: "Architecture, cost, and reliability guidance for teams building on Microsoft Azure.",
   },
   {
     category: "Cloud & DevOps",
-    title: "Azure Consulting",
-    description: "Architecture, cost, and reliability guidance for teams building on Microsoft Azure.",
+    title: "Cloud Migration",
+    description: "Move applications and data to the cloud with minimal downtime and a plan for cost and performance after launch.",
   },
 ];
 
