@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
-import { MapPin, Quote } from "lucide-react";
+import { Quote } from "lucide-react";
 import { expertiseAreas, founder, industries, products, stackGroups } from "@/lib/content";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
 import { ProcessSection } from "@/components/ProcessSection";
@@ -39,10 +39,10 @@ const EXPERTISE_CARD_STYLES: { title: string; number: string; gradient: string; 
   { title: "UI & UX Design", number: "08", gradient: "linear-gradient(135deg, #FFF0F6 0%, #FFFFFF 100%)", light: true },
   { title: "Legacy Code Refactoring", number: "09", gradient: "linear-gradient(135deg, #F0F0F2 0%, #FFFFFF 100%)" },
   { title: "Software Code Audit", number: "10", gradient: "linear-gradient(135deg, #EAFBF1 0%, #FFFFFF 100%)", light: true },
-  { title: "Systems Integration", number: "11", gradient: "linear-gradient(135deg, #FFF8EA 0%, #FFFFFF 100%)" },
+  { title: "Systems Integration", number: "11", gradient: "linear-gradient(135deg, #DFF5F1 0%, #FFFFFF 100%)" },
   { title: "DevOps", number: "12", gradient: "linear-gradient(135deg, #EAF6FF 0%, #FFFFFF 100%)" },
   { title: "Cloud Migration", number: "13", gradient: "linear-gradient(135deg, #F1F0FF 0%, #FFFFFF 100%)" },
-  { title: "Azure Consulting", number: "14", gradient: "linear-gradient(135deg, #E8F0FF 0%, #FFFFFF 100%)" },
+  { title: "Azure Consulting", number: "14", gradient: "linear-gradient(135deg, #E8F0FF 0%, #FFFFFF 100%)", light: true },
 ];
 
 function ExpertiseCardBody({ area, light }: { area: (typeof expertiseAreas)[number]; light?: boolean }) {
@@ -181,6 +181,30 @@ export default function Home() {
                             className="relative h-[460px] w-[340px] cursor-pointer overflow-hidden rounded-[28px] p-7 shadow-[0_24px_48px_-20px_rgba(30,30,60,0.35)] transition-all duration-200 ease-out hover:scale-[0.97] hover:shadow-[0_10px_24px_-14px_rgba(30,30,60,0.35)]"
                             style={{ background: cardStyle.gradient }}
                           >
+                            {area.title === "Systems Integration" && (
+                              <Image
+                                src="/system-integration-image.png"
+                                alt=""
+                                width={1536}
+                                height={1024}
+                                className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
+                              />
+                            )}
+                            {area.title === "Azure Consulting" && (
+                              <>
+                                <Image
+                                  src="/azure-img.png"
+                                  alt=""
+                                  fill
+                                  sizes="340px"
+                                  className="pointer-events-none object-cover"
+                                />
+                                <div
+                                  className="pointer-events-none absolute inset-0"
+                                  style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0) 55%)" }}
+                                />
+                              </>
+                            )}
                             {area.title === "Software Code Audit" && (
                               <>
                                 <Image
@@ -195,6 +219,15 @@ export default function Home() {
                                   style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0) 55%)" }}
                                 />
                               </>
+                            )}
+                            {area.title === "Legacy Code Refactoring" && (
+                              <Image
+                                src="/code-refactory-image.png"
+                                alt=""
+                                width={1536}
+                                height={1024}
+                                className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
+                              />
                             )}
                             {area.title === "LMS Development" && (
                               <>
@@ -360,13 +393,9 @@ export default function Home() {
                     </ParallaxImage>
                   )}
                   <div className="flex flex-col justify-center p-8 sm:p-10">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <p className="eyebrow">{product.category}</p>
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-ink-muted">
-                        <MapPin className="h-3 w-3" aria-hidden="true" />
-                        {product.location}
-                      </span>
-                    </div>
+                    <p className="eyebrow">
+                      {product.category} · {product.location}
+                    </p>
                     <h3 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-[#1D1D1F]">{product.name}</h3>
                     <p className="font-poppins mt-2 text-sm font-normal text-ink-muted">{product.tagline}</p>
                     <p className="mt-8 text-sm font-semibold text-[#1D1D1F] group-hover:underline">Explore {product.name} →</p>
