@@ -6,9 +6,10 @@ import { expertiseAreas, industries } from "@/lib/content";
 
 const COMPANY_LINKS = [
   { href: "/", label: "Home" },
-  { href: "/services", label: "Services" },
+  { href: "/#services", label: "Services" },
   { href: "/products", label: "Case studies" },
   { href: "/#get-in-touch", label: "Contact" },
+  { href: "/faq", label: "FAQ" },
 ];
 
 const TECHNOLOGIES = ["Node.js", "React JS", "Vue.js", "Ruby on Rails", "Python", "Shopify", "Django", ".NET"];

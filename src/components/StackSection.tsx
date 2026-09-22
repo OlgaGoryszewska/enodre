@@ -6,15 +6,22 @@ import { Bot, Code2, Database, Mail, Palette, Sparkles, SquareTerminal } from "l
 import {
   SiClaude,
   SiCursor,
+  SiDjango,
+  SiDotnet,
   SiFigma,
   SiNextdotjs,
+  SiNodedotjs,
   SiPwa,
+  SiPython,
   SiReact,
+  SiRubyonrails,
+  SiShopify,
   SiStripe,
   SiSupabase,
   SiTailwindcss,
   SiTypescript,
   SiVercel,
+  SiVuedotjs,
 } from "react-icons/si";
 import type { StackGroup } from "@/lib/content";
 import { Reveal } from "@/components/motion/Reveal";
@@ -49,6 +56,14 @@ const STACK_ICONS: Record<string, Icon> = {
   Stripe: SiStripe,
   Nodemailer: Mail,
   Vercel: SiVercel,
+  "Node.js": SiNodedotjs,
+  "React JS": SiReact,
+  "Vue.js": SiVuedotjs,
+  "Ruby on Rails": SiRubyonrails,
+  Python: SiPython,
+  Shopify: SiShopify,
+  Django: SiDjango,
+  ".NET": SiDotnet,
 };
 
 const pillContainer: Variants = {

@@ -1,47 +1,3 @@
-export type Service = {
-  slug: string;
-  number: string;
-  title: string;
-  summary: string;
-  description: string;
-  deliverables: string[];
-};
-
-export const services: Service[] = [
-  {
-    slug: "workflow-design",
-    number: "01",
-    title: "Workflow design",
-    summary: "Map the real work, remove friction, and define a system your team will actually use.",
-    description: "We work alongside your team to understand how work moves today, where it gets stuck, and what a better operating model looks like.",
-    deliverables: ["Process mapping", "Service blueprints", "Product requirements", "Implementation roadmap"],
-  },
-  {
-    slug: "product-ux",
-    number: "02",
-    title: "Product & UX",
-    summary: "Turn complex operational needs into calm, intuitive digital tools.",
-    description: "We translate business rules and frontline realities into clear journeys, interfaces, and prototypes that can be tested early.",
-    deliverables: ["User research", "Information architecture", "Interactive prototypes", "Design systems"],
-  },
-  {
-    slug: "software-development",
-    number: "03",
-    title: "Software development",
-    summary: "Build dependable web software, from field tools to operational dashboards.",
-    description: "We build production-ready software with a focus on maintainability, performance, accessibility, and a clean handover.",
-    deliverables: ["Frontend development", "Backend integrations", "Quality assurance", "Deployment and handover"],
-  },
-  {
-    slug: "product-partnership",
-    number: "04",
-    title: "Product partnership",
-    summary: "Keep improving after launch with focused product and engineering support.",
-    description: "We stay close to the product after launch, using feedback and real usage to prioritise the improvements that matter most.",
-    deliverables: ["Product strategy", "Iteration cycles", "Performance reviews", "Ongoing development"],
-  },
-];
-
 export type ExpertiseArea = {
   title: string;
   description: string;
@@ -291,6 +247,14 @@ export const stackGroups: StackGroup[] = [
       "Stripe",
       "Nodemailer",
       "Vercel",
+      "Node.js",
+      "React JS",
+      "Vue.js",
+      "Ruby on Rails",
+      "Python",
+      "Shopify",
+      "Django",
+      ".NET",
     ],
   },
 ];
@@ -454,6 +418,65 @@ export const processPhases: ProcessPhase[] = [
   },
 ];
 
-export function getService(slug: string) {
-  return services.find((service) => service.slug === slug);
-}
+export type Faq = {
+  question: string;
+  answer: string;
+};
+
+export const faqs: Faq[] = [
+  {
+    question: "How can I start working with you?",
+    answer:
+      "Reach out through the contact form or book a short call. We'll talk through what you're trying to build, and within a day or two you'll have a clear next step — either a proposal for a defined project or a plan for an initial discovery workshop.",
+  },
+  {
+    question: "Will I get an estimate before the project starts?",
+    answer:
+      "Yes. Once we understand the scope, you'll get a fixed price and timeline before any work begins — no open-ended hourly billing on project work. Most engagements land somewhere between a focused landing page (around $900) and a full product build spanning web, mobile, and backend (from $8,500).",
+  },
+  {
+    question: "How will I receive updates on my project?",
+    answer:
+      "You'll have direct access to me throughout — no account managers relaying messages. Expect regular check-ins tied to each phase of the process (discovery, design, development, testing, release), plus a shared space to track progress in between.",
+  },
+  {
+    question: "What if I'm not sure what kind of engagement I need?",
+    answer:
+      "That's normal, and it's exactly what the discovery call is for. If you have a clear project, we scope it as fixed-price work. If you need an ongoing partner for smaller improvements and support, a monthly plan usually fits better. We'll figure out which one together.",
+  },
+  {
+    question: "Who will actually work on my project?",
+    answer:
+      "You'll work with a small, dedicated team. Olga, founder and fullstack developer, leads every project personally and stays hands-on from scoping to delivery — no rotating staff or handoffs to people you haven't met.",
+  },
+  {
+    question: "What if the scope changes during development?",
+    answer:
+      "It happens often, and it's fine. Small adjustments get absorbed as we go. Anything that meaningfully expands the original scope gets discussed openly, with a clear estimate for the added work before it starts — no surprise invoices.",
+  },
+  {
+    question: "Where are you based, and do you work with international clients?",
+    answer:
+      "Yes — clients so far have spanned Saudi Arabia, New Zealand, and beyond. Work happens remotely and asynchronously, with overlap windows scheduled for calls regardless of time zone.",
+  },
+  {
+    question: "What if I'm not happy with the first results?",
+    answer:
+      "We review work together at the end of each phase, so misalignment gets caught early rather than at the finish line. If something isn't landing, we revise it as part of that phase — the goal is a product you're genuinely happy to ship.",
+  },
+  {
+    question: "How do you handle IP and confidentiality?",
+    answer:
+      "Everything built for you is yours — code, designs, and content. An NDA is standard practice for any project involving sensitive business information, and it's signed before any detailed discussion begins.",
+  },
+  {
+    question: "Can we start small and scale up later?",
+    answer:
+      "Yes — that's a common path. Plenty of projects begin as a discovery workshop or a single feature, then grow into a full product once the direction is validated. Monthly partnership plans also flex up or down as your needs change.",
+  },
+  {
+    question: "Do you offer support after launch?",
+    answer:
+      "Yes. Launch isn't the end of the process — it's followed by a support phase, and most clients move into an ongoing monthly plan for fixes, small features, and improvements as real usage surfaces new needs.",
+  },
+];

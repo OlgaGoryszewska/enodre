@@ -7,10 +7,7 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { DoorOpen, X } from "lucide-react";
 
-const NAV_LINKS = [
-  { href: "/services", label: "Services" },
-  { href: "/products", label: "Case studies" },
-];
+const NAV_LINKS = [{ href: "/products", label: "Case studies" }];
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
