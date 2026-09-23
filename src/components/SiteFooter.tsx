@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowUp, DoorOpen } from "lucide-react";
-import { expertiseAreas, industries } from "@/lib/content";
+import { expertiseAreas, industries, technologies } from "@/lib/content";
 
 const COMPANY_LINKS = [
   { href: "/", label: "Home" },
@@ -11,8 +11,6 @@ const COMPANY_LINKS = [
   { href: "/#get-in-touch", label: "Contact" },
   { href: "/faq", label: "FAQ" },
 ];
-
-const TECHNOLOGIES = ["Node.js", "React JS", "Vue.js", "Ruby on Rails", "Python", "Shopify", "Django", ".NET"];
 
 export function SiteFooter() {
   const scrollToTop = () => {
@@ -64,7 +62,7 @@ export function SiteFooter() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-background/50">Technologies</p>
           <ul className="mt-6 grid gap-3 text-sm">
-            {TECHNOLOGIES.map((tech) => (
+            {technologies.map((tech) => (
               <li key={tech} className="text-background/80">
                 {tech}
               </li>

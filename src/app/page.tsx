@@ -32,17 +32,12 @@ const EXPERTISE_CARD_STYLES: { title: string; number: string; gradient: string; 
   { title: "Custom Software Development", number: "01", gradient: "linear-gradient(135deg, #E9F1FF 0%, #FFFFFF 100%)" },
   { title: "MVP Development", number: "02", gradient: "linear-gradient(135deg, #ECEEF5 0%, #FFFFFF 100%)" },
   { title: "Web Development", number: "03", gradient: "linear-gradient(135deg, #EFEFF4 0%, #FFFFFF 100%)" },
-  { title: "SaaS Development", number: "04", gradient: "linear-gradient(135deg, #EFEFEF 0%, #F9F9F9 100%)" },
   { title: "Mobile App Development", number: "05", gradient: "linear-gradient(135deg, #F5F1FF 0%, #FFFFFF 100%)" },
-  { title: "LMS Development", number: "06", gradient: "linear-gradient(135deg, #EAF4FF 0%, #FFFFFF 100%)", light: true },
-  { title: "AI Automation Engineer", number: "07", gradient: "linear-gradient(135deg, #F3EEFF 0%, #FFFFFF 100%)", light: true },
   { title: "UI & UX Design", number: "08", gradient: "linear-gradient(135deg, #FFF0F6 0%, #FFFFFF 100%)", light: true },
   { title: "Legacy Code Refactoring", number: "09", gradient: "linear-gradient(135deg, #F0F0F2 0%, #FFFFFF 100%)" },
   { title: "Software Code Audit", number: "10", gradient: "linear-gradient(135deg, #EAFBF1 0%, #FFFFFF 100%)", light: true },
   { title: "Systems Integration", number: "11", gradient: "linear-gradient(135deg, #DFF5F1 0%, #FFFFFF 100%)" },
-  { title: "DevOps", number: "12", gradient: "linear-gradient(135deg, #EAF6FF 0%, #FFFFFF 100%)" },
   { title: "Cloud Migration", number: "13", gradient: "linear-gradient(135deg, #F1F0FF 0%, #FFFFFF 100%)" },
-  { title: "Azure Consulting", number: "14", gradient: "linear-gradient(135deg, #E8F0FF 0%, #FFFFFF 100%)", light: true },
 ];
 
 function ExpertiseCardBody({ area, light }: { area: (typeof expertiseAreas)[number]; light?: boolean }) {
@@ -165,6 +160,8 @@ export default function Home() {
         </div>
       </section>
 
+      <StackSection groups={stackGroups} />
+
       <section id="services" className="border-y border-black/10 bg-card py-20">
         <div className="shell grid gap-10 lg:grid-cols-[1fr_2fr]">
           <Reveal>
@@ -204,15 +201,6 @@ export default function Home() {
                                 className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
                               />
                             )}
-                            {area.title === "DevOps" && (
-                              <Image
-                                src="/DevOPs-img.png"
-                                alt=""
-                                width={1536}
-                                height={1024}
-                                className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
-                              />
-                            )}
                             {area.title === "Cloud Migration" && (
                               <Image
                                 src="/cloude-migration-img.png"
@@ -221,21 +209,6 @@ export default function Home() {
                                 height={1024}
                                 className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
                               />
-                            )}
-                            {area.title === "Azure Consulting" && (
-                              <>
-                                <Image
-                                  src="/azure-img.png"
-                                  alt=""
-                                  fill
-                                  sizes="340px"
-                                  className="pointer-events-none object-cover"
-                                />
-                                <div
-                                  className="pointer-events-none absolute inset-0"
-                                  style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0) 55%)" }}
-                                />
-                              </>
                             )}
                             {area.title === "Software Code Audit" && (
                               <>
@@ -260,36 +233,6 @@ export default function Home() {
                                 height={1024}
                                 className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
                               />
-                            )}
-                            {area.title === "LMS Development" && (
-                              <>
-                                <Image
-                                  src="/LMS.png"
-                                  alt=""
-                                  fill
-                                  sizes="340px"
-                                  className="pointer-events-none object-cover"
-                                />
-                                <div
-                                  className="pointer-events-none absolute inset-0"
-                                  style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0) 55%)" }}
-                                />
-                              </>
-                            )}
-                            {area.title === "AI Automation Engineer" && (
-                              <>
-                                <Image
-                                  src="/ai-image.png"
-                                  alt=""
-                                  fill
-                                  sizes="340px"
-                                  className="pointer-events-none object-cover"
-                                />
-                                <div
-                                  className="pointer-events-none absolute inset-0"
-                                  style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0) 55%)" }}
-                                />
-                              </>
                             )}
                             {area.title === "UI & UX Design" && (
                               <>
@@ -343,15 +286,6 @@ export default function Home() {
                                 width={800}
                                 height={776}
                                 className="pointer-events-none absolute -bottom-10 -right-16 w-[340px]"
-                              />
-                            )}
-                            {area.title === "SaaS Development" && (
-                              <Image
-                                src="/sas-image.png"
-                                alt=""
-                                width={1536}
-                                height={1024}
-                                className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
                               />
                             )}
                           </div>
@@ -523,8 +457,6 @@ export default function Home() {
       </section>
 
       <TeamSection member={founder} ctaHref="#get-in-touch" />
-
-      <StackSection groups={stackGroups} />
 
       <ChallengeSection />
     </>

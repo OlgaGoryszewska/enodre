@@ -18,7 +18,7 @@ export function TeamSection({ member, ctaHref }: TeamSectionProps) {
   const [intro, ...rest] = member.bio;
 
   return (
-    <section className="border-y border-black/10 bg-card py-20 sm:py-28">
+    <section id="about" className="border-y border-black/10 bg-card py-20 sm:py-28">
       <div className="shell">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
           <motion.div

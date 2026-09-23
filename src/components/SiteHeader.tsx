@@ -5,9 +5,105 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { DoorOpen, X } from "lucide-react";
+import { ChevronDown, DoorOpen, X } from "lucide-react";
+import { expertiseAreas, industries, technologies } from "@/lib/content";
 
-const NAV_LINKS = [{ href: "/products", label: "Case studies" }];
+type NavItem =
+  | { label: string; href: string }
+  | { label: string; items: { label: string; href: string }[] };
+
+const NAV_ITEMS: NavItem[] = [
+  { label: "Industries", items: industries.map((industry) => ({ label: industry.title, href: "/#industries" })) },
+  { label: "Services", items: expertiseAreas.map((area) => ({ label: area.title, href: "/#services" })) },
+  { label: "Technologies", items: technologies.map((tech) => ({ label: tech, href: "/#stack" })) },
+  { label: "Cases", href: "/products" },
+  { label: "FAQ", href: "/faq" },
+  { label: "About Us", href: "/#about" },
+];
+
+function DesktopDropdown({ label, items }: { label: string; items: { label: string; href: string }[] }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="nav-link flex items-center gap-1"
+      >
+        {label}
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+            className="absolute left-1/2 top-full z-50 mt-3 w-72 -translate-x-1/2 rounded-2xl border border-black/10 bg-card p-4 shadow-xl"
+          >
+            <div className="grid max-h-80 gap-1 overflow-y-auto">
+              {items.map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg px-3 py-2 text-sm text-ink-muted transition hover:bg-foreground/5 hover:text-foreground"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function MobileNavSection({ label, items, onNavigate }: { label: string; items: { label: string; href: string }[]; onNavigate: () => void }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="border-b border-black/10">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center justify-between py-5 text-2xl font-semibold tracking-tight"
+      >
+        {label}
+        <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden"
+          >
+            <div className="grid gap-1 pb-5">
+              {items.map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={onNavigate}
+                  className="rounded-lg px-1 py-2 text-base text-ink-muted transition hover:text-foreground"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -54,12 +150,22 @@ export function SiteHeader() {
           <span className="font-poppins text-lg font-medium tracking-tight">enodre</span>
         </Link>
 
-        <nav aria-label="Primary navigation" className="hidden gap-5 text-sm font-medium sm:flex sm:items-center sm:gap-8">
-          {NAV_LINKS.map((link) => (
-            <Link key={link.href} className="nav-link" href={link.href}>
-              {link.label}
-            </Link>
-          ))}
+        <nav aria-label="Primary navigation" className="hidden gap-5 text-sm font-medium sm:flex sm:items-center sm:gap-6">
+          {NAV_ITEMS.map((item) =>
+            "items" in item ? (
+              <DesktopDropdown key={item.label} label={item.label} items={item.items} />
+            ) : (
+              <Link key={item.href} className="nav-link" href={item.href}>
+                {item.label}
+              </Link>
+            )
+          )}
+          <Link
+            href="/#get-in-touch"
+            className="rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background transition hover:opacity-90"
+          >
+            Contact Us
+          </Link>
         </nav>
 
         <button
@@ -93,8 +199,7 @@ export function SiteHeader() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-x-0 top-20 bottom-0 z-40 bg-background sm:hidden"
-            onClick={() => setOpen(false)}
+            className="fixed inset-x-0 top-20 bottom-0 z-40 overflow-y-auto bg-background sm:hidden"
           >
             <motion.nav
               aria-label="Mobile"
@@ -102,22 +207,35 @@ export function SiteHeader() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="shell flex flex-col gap-1 pt-8"
+              className="shell flex flex-col gap-1 pt-4 pb-24"
             >
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="border-b border-black/10 py-5 text-2xl font-semibold tracking-tight"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {NAV_ITEMS.map((item) =>
+                "items" in item ? (
+                  <MobileNavSection key={item.label} label={item.label} items={item.items} onNavigate={() => setOpen(false)} />
+                ) : (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className="border-b border-black/10 py-5 text-2xl font-semibold tracking-tight"
+                  >
+                    {item.label}
+                  </Link>
+                )
+              )}
+              <Link
+                href="/#get-in-touch"
+                onClick={() => setOpen(false)}
+                className="mt-6 inline-flex items-center justify-center rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background"
+              >
+                Contact Us
+              </Link>
             </motion.nav>
 
             <Link
               href="/login"
               aria-label="Admin"
+              onClick={() => setOpen(false)}
               className="absolute bottom-6 right-6 flex h-10 w-10 items-center justify-center rounded-full text-foreground/15 transition hover:text-accent"
             >
               <DoorOpen className="h-4 w-4" aria-hidden="true" />

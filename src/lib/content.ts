@@ -12,18 +12,8 @@ export const expertiseAreas: ExpertiseArea[] = [
   },
   {
     category: "Product Development",
-    title: "AI Automation Engineer",
-    description: "Agentic workflows and automations built with n8n and Make, wired up with Claude and GPT API integrations.",
-  },
-  {
-    category: "Product Development",
     title: "MVP Development",
     description: "Go from idea to a working product fast, scoped tightly around the riskiest assumptions worth testing first.",
-  },
-  {
-    category: "Product Development",
-    title: "LMS Development",
-    description: "Custom learning management systems built around how your courses, cohorts, and content actually work.",
   },
   {
     category: "Product Development",
@@ -34,11 +24,6 @@ export const expertiseAreas: ExpertiseArea[] = [
     category: "Product Development",
     title: "UI & UX Design",
     description: "User research, information architecture, and interface design that make complex products feel simple.",
-  },
-  {
-    category: "Product Development",
-    title: "SaaS Development",
-    description: "Design and build multi-tenant SaaS products with the billing, auth, and account structure to grow on.",
   },
   {
     category: "Product Development",
@@ -59,16 +44,6 @@ export const expertiseAreas: ExpertiseArea[] = [
     category: "Modernize & Maintain",
     title: "Systems Integration",
     description: "Connect the tools your business already relies on so data moves between them without manual work.",
-  },
-  {
-    category: "Cloud & DevOps",
-    title: "DevOps",
-    description: "Automate deployment, monitoring, and scaling so releases are routine instead of risky.",
-  },
-  {
-    category: "Cloud & DevOps",
-    title: "Azure Consulting",
-    description: "Architecture, cost, and reliability guidance for teams building on Microsoft Azure.",
   },
   {
     category: "Cloud & DevOps",
@@ -479,4 +454,15 @@ export const faqs: Faq[] = [
     answer:
       "Yes. Launch isn't the end of the process — it's followed by a support phase, and most clients move into an ongoing monthly plan for fixes, small features, and improvements as real usage surfaces new needs.",
   },
+];
+
+export const technologies: string[] = [
+  "Node.js",
+  "React JS",
+  "Vue.js",
+  "Ruby on Rails",
+  "Python",
+  "Shopify",
+  "Django",
+  ".NET",
 ];
