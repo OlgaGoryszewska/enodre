@@ -42,7 +42,7 @@ const EXPERTISE_CARD_STYLES: { title: string; number: string; gradient: string; 
 
 function ExpertiseCardBody({ area, light }: { area: (typeof expertiseAreas)[number]; light?: boolean }) {
   return (
-    <h3 className={`text-[38px] font-semibold leading-tight tracking-tighter ${light ? "text-white" : "text-[#1D1D1F]"}`}>
+    <h3 className={`text-[28px] font-semibold leading-tight tracking-tighter ${light ? "text-white" : "text-[#1D1D1F]"}`}>
       {area.title}
     </h3>
   );
@@ -54,21 +54,23 @@ const testimonials = [
     role: "Biały Lotos",
     avatar: "/avatars/Sylwia-avatar.png",
     slug: "bialy-lotos",
-    quote: "Perfectly planned, luxurious looking web page.",
+    quote:
+      "I'm very happy with the results, especially the aesthetics and SEO. The page is responsive and representative. Working with Enodre was smooth and fast — I'd definitely recommend them.",
   },
   {
     name: "Nick",
     role: "Nick Whittaker Imagery",
     avatar: "/avatars/Nick-avatar.png",
     slug: "nick-whittaker-imagery",
-    quote: "Is another level of an online gallery.",
+    quote: "Everything I asked for was delivered on time. The page works great and the aesthetic is strong. I'll definitely come back.",
   },
   {
     name: "Boony",
     role: "",
     avatar: "/avatars/Boony-avatar.png",
     slug: null,
-    quote: "Creative approach and storytelling in one webpage.",
+    quote:
+      "My idea wasn't a standard page — we needed 3D prototypes, handcrafted detail, and a luxurious feel for wealthy customers. All of that was thoughtfully applied.",
   },
   {
     name: "Robert",
@@ -83,12 +85,28 @@ export default function Home() {
   const testimonialsRef = useRef<HTMLDivElement>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const categoryRowRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [categoryActiveIndex, setCategoryActiveIndex] = useState<Record<string, number>>({});
 
   const scrollCategoryRow = (category: string) => {
     const el = categoryRowRefs.current[category];
     if (!el) return;
     const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
-    el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + 370, behavior: "smooth" });
+    el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + 310, behavior: "smooth" });
+  };
+
+  const handleCategoryScroll = (category: string, count: number) => {
+    const el = categoryRowRefs.current[category];
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    const ratio = maxScroll > 0 ? el.scrollLeft / maxScroll : 0;
+    setCategoryActiveIndex((prev) => ({ ...prev, [category]: Math.round(ratio * (count - 1)) }));
+  };
+
+  const scrollCategoryToIndex = (category: string, index: number) => {
+    const el = categoryRowRefs.current[category];
+    const card = el?.children[index] as HTMLElement | undefined;
+    if (!el || !card) return;
+    el.scrollTo({ left: card.offsetLeft - (el.clientWidth - card.clientWidth) / 2, behavior: "smooth" });
   };
 
   const handleTestimonialsScroll = () => {
@@ -163,16 +181,18 @@ export default function Home() {
       <StackSection groups={stackGroups} />
 
       <section id="services" className="border-y border-black/10 bg-card py-20">
-        <div className="shell grid gap-10 lg:grid-cols-[1fr_2fr]">
+        <div className="shell flex flex-col gap-10">
           <Reveal>
             <p className="font-funnel-display text-3xl font-normal tracking-tight text-foreground sm:text-4xl">Services we offer</p>
             <ScrollRevealHeading
               text="Full-cycle development teams ready to turn your vision into a working, scalable product."
-              className="font-poppins mt-4 text-sm font-normal"
+              className="font-poppins mt-4 max-w-2xl text-sm font-normal"
             />
           </Reveal>
           <div className="min-w-0">
-            {SERVICE_CATEGORIES.map((category, categoryIndex) => (
+            {SERVICE_CATEGORIES.map((category, categoryIndex) => {
+              const categoryItems = expertiseAreas.filter((area) => area.category === category);
+              return (
               <div key={category} className={`min-w-0${categoryIndex > 0 ? " mt-8" : ""}`}>
                 <p className="text-xs font-semibold uppercase tracking-widest text-[#9EA5C3]">{category}</p>
                 <div className="relative mt-3">
@@ -180,16 +200,16 @@ export default function Home() {
                     ref={(el) => {
                       categoryRowRefs.current[category] = el;
                     }}
-                    className="flex gap-[30px] overflow-x-auto pb-4 [scrollbar-width:thin] snap-x snap-mandatory"
+                    onScroll={() => handleCategoryScroll(category, categoryItems.length)}
+                    className="flex justify-center gap-[30px] overflow-x-auto pb-4 [scrollbar-width:thin] snap-x snap-mandatory"
                   >
-                    {expertiseAreas
-                    .filter((area) => area.category === category)
+                    {categoryItems
                     .map((area, index) => {
                       const cardStyle = EXPERTISE_CARD_STYLES.find((card) => card.title === area.title)!;
                       return (
                         <Reveal key={area.title} delay={index * 0.05} className="flex-none snap-center">
                           <div
-                            className="relative h-[460px] w-[340px] cursor-pointer overflow-hidden rounded-[28px] p-7 shadow-[0_24px_48px_-20px_rgba(30,30,60,0.35)] transition-all duration-200 ease-out hover:scale-[0.97] hover:shadow-[0_10px_24px_-14px_rgba(30,30,60,0.35)]"
+                            className="relative h-[380px] w-[280px] cursor-pointer overflow-hidden rounded-[24px] p-6 shadow-[0_24px_48px_-20px_rgba(30,30,60,0.35)] transition-all duration-200 ease-out hover:scale-[0.97] hover:shadow-[0_10px_24px_-14px_rgba(30,30,60,0.35)]"
                             style={{ background: cardStyle.gradient }}
                           >
                             {area.title === "Systems Integration" && (
@@ -304,8 +324,23 @@ export default function Home() {
                     <ChevronRight className="h-4 w-4" aria-hidden="true" />
                   </button>
                 </div>
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  {categoryItems.map((area, index) => (
+                    <button
+                      key={area.title}
+                      type="button"
+                      onClick={() => scrollCategoryToIndex(category, index)}
+                      aria-label={`Go to ${area.title}`}
+                      aria-current={(categoryActiveIndex[category] ?? 0) === index}
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        (categoryActiveIndex[category] ?? 0) === index ? "w-6 bg-accent" : "w-2 bg-black/15 hover:bg-black/30"
+                      }`}
+                    />
+                  ))}
+                </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -404,7 +439,7 @@ export default function Home() {
           <div
             ref={testimonialsRef}
             onScroll={handleTestimonialsScroll}
-            className="mt-10 flex gap-6 overflow-x-auto px-[calc(50%-144px)] pb-4 [scrollbar-width:thin] snap-x snap-mandatory sm:px-[calc(50%-160px)]"
+            className="mt-10 flex gap-6 overflow-x-auto pb-4 [scrollbar-width:thin] snap-x snap-proximity"
           >
             {testimonials.map((testimonial, index) => {
               const card = (
@@ -412,10 +447,10 @@ export default function Home() {
                   <Image
                     src={testimonial.avatar}
                     alt=""
-                    width={448}
-                    height={448}
-                    sizes="224px"
-                    className="h-56 w-56 flex-none rounded-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03]"
+                    width={512}
+                    height={512}
+                    sizes="256px"
+                    className="h-64 w-64 flex-none rounded-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03]"
                   />
                   <p className="mt-6 text-base font-semibold text-[#1D1D1F]">{testimonial.name}</p>
                   {testimonial.role && <p className="font-poppins text-xs text-ink-muted">{testimonial.role}</p>}

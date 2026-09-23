@@ -46,7 +46,7 @@ export const expertiseAreas: ExpertiseArea[] = [
     description: "Connect the tools your business already relies on so data moves between them without manual work.",
   },
   {
-    category: "Cloud & DevOps",
+    category: "Modernize & Maintain",
     title: "Cloud Migration",
     description: "Move applications and data to the cloud with minimal downtime and a plan for cost and performance after launch.",
   },
