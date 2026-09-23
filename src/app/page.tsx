@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
-import { ChevronRight, Quote } from "lucide-react";
+import { Quote } from "lucide-react";
 import { expertiseAreas, founder, industries, products, stackGroups } from "@/lib/content";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
 import { ProcessSection } from "@/components/ProcessSection";
@@ -28,23 +28,36 @@ const heroItem: Variants = {
 
 const SERVICE_CATEGORIES = Array.from(new Set(expertiseAreas.map((area) => area.category)));
 
-const EXPERTISE_CARD_STYLES: { title: string; number: string; gradient: string; light?: boolean }[] = [
+const EXPERTISE_CARD_STYLES: { title: string; number: string; gradient: string }[] = [
   { title: "Custom Software Development", number: "01", gradient: "linear-gradient(135deg, #E9F1FF 0%, #FFFFFF 100%)" },
   { title: "MVP Development", number: "02", gradient: "linear-gradient(135deg, #ECEEF5 0%, #FFFFFF 100%)" },
   { title: "Web Development", number: "03", gradient: "linear-gradient(135deg, #EFEFF4 0%, #FFFFFF 100%)" },
   { title: "Mobile App Development", number: "05", gradient: "linear-gradient(135deg, #F5F1FF 0%, #FFFFFF 100%)" },
-  { title: "UI & UX Design", number: "08", gradient: "linear-gradient(135deg, #FFF0F6 0%, #FFFFFF 100%)", light: true },
+  { title: "UI & UX Design", number: "08", gradient: "linear-gradient(135deg, #FFF0F6 0%, #FFFFFF 100%)" },
   { title: "Legacy Code Refactoring", number: "09", gradient: "linear-gradient(135deg, #F0F0F2 0%, #FFFFFF 100%)" },
-  { title: "Software Code Audit", number: "10", gradient: "linear-gradient(135deg, #EAFBF1 0%, #FFFFFF 100%)", light: true },
+  { title: "Software Code Audit", number: "10", gradient: "linear-gradient(135deg, #EAFBF1 0%, #FFFFFF 100%)" },
   { title: "Systems Integration", number: "11", gradient: "linear-gradient(135deg, #DFF5F1 0%, #FFFFFF 100%)" },
   { title: "Cloud Migration", number: "13", gradient: "linear-gradient(135deg, #F1F0FF 0%, #FFFFFF 100%)" },
 ];
 
-function ExpertiseCardBody({ area, light }: { area: (typeof expertiseAreas)[number]; light?: boolean }) {
+const EXPERTISE_IMAGES: Record<string, string> = {
+  "Custom Software Development": "/custome-software-img.png",
+  "MVP Development": "/mvp-image.png",
+  "Web Development": "/web-devel-img.png",
+  "Mobile App Development": "/mobile-app-image.png",
+  "UI & UX Design": "/ux-design.png",
+  "Legacy Code Refactoring": "/code-refactory-image.png",
+  "Software Code Audit": "/audit-img.png",
+  "Systems Integration": "/system-integration-image.png",
+  "Cloud Migration": "/cloude-migration-img.png",
+};
+
+function ExpertiseCardBody({ area }: { area: (typeof expertiseAreas)[number] }) {
   return (
-    <h3 className={`text-[28px] font-semibold leading-tight tracking-tighter ${light ? "text-white" : "text-[#1D1D1F]"}`}>
-      {area.title}
-    </h3>
+    <>
+      <h3 className="text-[22px] font-semibold leading-tight tracking-tighter text-[#1D1D1F]">{area.title}</h3>
+      <p className="font-poppins mt-2 text-sm leading-6 text-ink-muted">{area.description}</p>
+    </>
   );
 }
 
@@ -84,31 +97,6 @@ const testimonials = [
 export default function Home() {
   const testimonialsRef = useRef<HTMLDivElement>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
-  const categoryRowRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [categoryActiveIndex, setCategoryActiveIndex] = useState<Record<string, number>>({});
-
-  const scrollCategoryRow = (category: string) => {
-    const el = categoryRowRefs.current[category];
-    if (!el) return;
-    const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
-    el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + 310, behavior: "smooth" });
-  };
-
-  const handleCategoryScroll = (category: string, count: number) => {
-    const el = categoryRowRefs.current[category];
-    if (!el) return;
-    const maxScroll = el.scrollWidth - el.clientWidth;
-    const ratio = maxScroll > 0 ? el.scrollLeft / maxScroll : 0;
-    setCategoryActiveIndex((prev) => ({ ...prev, [category]: Math.round(ratio * (count - 1)) }));
-  };
-
-  const scrollCategoryToIndex = (category: string, index: number) => {
-    const el = categoryRowRefs.current[category];
-    const card = el?.children[index] as HTMLElement | undefined;
-    if (!el || !card) return;
-    el.scrollTo({ left: card.offsetLeft - (el.clientWidth - card.clientWidth) / 2, behavior: "smooth" });
-  };
-
   const handleTestimonialsScroll = () => {
     const el = testimonialsRef.current;
     if (!el) return;
@@ -195,148 +183,32 @@ export default function Home() {
               return (
               <div key={category} className={`min-w-0${categoryIndex > 0 ? " mt-8" : ""}`}>
                 <p className="text-xs font-semibold uppercase tracking-widest text-[#9EA5C3]">{category}</p>
-                <div className="relative mt-3">
-                  <div
-                    ref={(el) => {
-                      categoryRowRefs.current[category] = el;
-                    }}
-                    onScroll={() => handleCategoryScroll(category, categoryItems.length)}
-                    className="flex justify-center gap-[30px] overflow-x-auto pb-4 [scrollbar-width:thin] snap-x snap-mandatory"
-                  >
-                    {categoryItems
-                    .map((area, index) => {
-                      const cardStyle = EXPERTISE_CARD_STYLES.find((card) => card.title === area.title)!;
-                      return (
-                        <Reveal key={area.title} delay={index * 0.05} className="flex-none snap-center">
-                          <div
-                            className="relative h-[380px] w-[280px] cursor-pointer overflow-hidden rounded-[24px] p-6 shadow-[0_24px_48px_-20px_rgba(30,30,60,0.35)] transition-all duration-200 ease-out hover:scale-[0.97] hover:shadow-[0_10px_24px_-14px_rgba(30,30,60,0.35)]"
-                            style={{ background: cardStyle.gradient }}
-                          >
-                            {area.title === "Systems Integration" && (
+                <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  {categoryItems.map((area, index) => {
+                    const cardStyle = EXPERTISE_CARD_STYLES.find((card) => card.title === area.title)!;
+                    return (
+                      <Reveal key={area.title} delay={index * 0.05}>
+                        <div className="relative flex h-full min-h-[380px] w-full flex-col overflow-hidden rounded-[24px] bg-background shadow-[0_24px_48px_-20px_rgba(30,30,60,0.35)] transition-all duration-200 ease-out hover:-translate-y-1">
+                          <div className="relative h-[170px] w-full flex-none">
+                            {EXPERTISE_IMAGES[area.title] ? (
                               <Image
-                                src="/system-integration-image.png"
+                                src={EXPERTISE_IMAGES[area.title]}
                                 alt=""
-                                width={1536}
-                                height={1024}
-                                className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
+                                fill
+                                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                                className="object-cover"
                               />
-                            )}
-                            {area.title === "Cloud Migration" && (
-                              <Image
-                                src="/cloude-migration-img.png"
-                                alt=""
-                                width={1536}
-                                height={1024}
-                                className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
-                              />
-                            )}
-                            {area.title === "Software Code Audit" && (
-                              <>
-                                <Image
-                                  src="/audit-img.png"
-                                  alt=""
-                                  fill
-                                  sizes="340px"
-                                  className="pointer-events-none object-cover"
-                                />
-                                <div
-                                  className="pointer-events-none absolute inset-0"
-                                  style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0) 55%)" }}
-                                />
-                              </>
-                            )}
-                            {area.title === "Legacy Code Refactoring" && (
-                              <Image
-                                src="/code-refactory-image.png"
-                                alt=""
-                                width={1536}
-                                height={1024}
-                                className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
-                              />
-                            )}
-                            {area.title === "UI & UX Design" && (
-                              <>
-                                <Image
-                                  src="/ux-design.png"
-                                  alt=""
-                                  fill
-                                  sizes="340px"
-                                  className="pointer-events-none object-cover"
-                                />
-                                <div
-                                  className="pointer-events-none absolute inset-0"
-                                  style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0) 55%)" }}
-                                />
-                              </>
-                            )}
-                            <div className="relative z-10">
-                              <ExpertiseCardBody area={area} light={cardStyle.light} />
-                            </div>
-                            {area.title === "Custom Software Development" && (
-                              <Image
-                                src="/custome-software-img.png"
-                                alt=""
-                                width={1536}
-                                height={1024}
-                                className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
-                              />
-                            )}
-                            {area.title === "Web Development" && (
-                              <Image
-                                src="/web-devel-img.png"
-                                alt=""
-                                width={1536}
-                                height={1024}
-                                className="pointer-events-none absolute -bottom-16 -right-10 w-[420px] rounded-xl"
-                              />
-                            )}
-                            {area.title === "MVP Development" && (
-                              <Image
-                                src="/mvp-image.png"
-                                alt=""
-                                width={1370}
-                                height={1148}
-                                className="pointer-events-none absolute -bottom-10 -right-16 w-[380px]"
-                              />
-                            )}
-                            {area.title === "Mobile App Development" && (
-                              <Image
-                                src="/mobile-app-image.png"
-                                alt=""
-                                width={800}
-                                height={776}
-                                className="pointer-events-none absolute -bottom-10 -right-16 w-[340px]"
-                              />
+                            ) : (
+                              <div className="h-full w-full" style={{ background: cardStyle.gradient }} />
                             )}
                           </div>
-                        </Reveal>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="mt-3 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => scrollCategoryRow(category)}
-                    aria-label={`Scroll ${category} cards`}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border border-black/10 bg-background text-foreground transition hover:bg-foreground/5"
-                  >
-                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                  </button>
-                </div>
-                <div className="mt-4 flex items-center justify-center gap-2">
-                  {categoryItems.map((area, index) => (
-                    <button
-                      key={area.title}
-                      type="button"
-                      onClick={() => scrollCategoryToIndex(category, index)}
-                      aria-label={`Go to ${area.title}`}
-                      aria-current={(categoryActiveIndex[category] ?? 0) === index}
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        (categoryActiveIndex[category] ?? 0) === index ? "w-6 bg-accent" : "w-2 bg-black/15 hover:bg-black/30"
-                      }`}
-                    />
-                  ))}
+                          <div className="flex-1 p-6" style={{ background: cardStyle.gradient }}>
+                            <ExpertiseCardBody area={area} />
+                          </div>
+                        </div>
+                      </Reveal>
+                    );
+                  })}
                 </div>
               </div>
               );

@@ -67,6 +67,7 @@ export const industries: Industry[] = [
   {
     title: "Fintech",
     description: "Products handling payments, transactions, and financial data at production-grade reliability.",
+    image: "/azure-img.png",
   },
   {
     title: "eCommerce",
@@ -79,6 +80,7 @@ export const industries: Industry[] = [
   {
     title: "Retail",
     description: "Inventory, point-of-sale, and customer-facing systems for physical and online retail.",
+    image: "/sas-image.png",
   },
   {
     title: "Media & Entertainment",
@@ -87,6 +89,7 @@ export const industries: Industry[] = [
   {
     title: "Human Resources",
     description: "Recruiting, onboarding, and workforce management tools that simplify HR operations.",
+    image: "/ai-image.png",
   },
   {
     title: "Wellness & Fitness",
