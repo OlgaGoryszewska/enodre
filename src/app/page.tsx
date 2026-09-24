@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
 import { Quote } from "lucide-react";
-import { expertiseAreas, founder, industries, products, stackGroups } from "@/lib/content";
+import { expertiseAreas, industries, products, stackGroups, teamMembers } from "@/lib/content";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
 import { ProcessSection } from "@/components/ProcessSection";
 import { TeamSection } from "@/components/TeamSection";
@@ -311,14 +311,14 @@ export default function Home() {
           >
             {testimonials.map((testimonial, index) => {
               const card = (
-                <div className="group flex h-full w-72 flex-col items-center text-center sm:w-80">
+                <div className="group flex h-full w-72 flex-none flex-col items-center rounded-[28px] bg-background p-8 text-center shadow-[0_24px_48px_-30px_rgba(30,30,60,0.25)] transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_24px_48px_-20px_rgba(30,30,60,0.25)] sm:w-80">
                   <Image
                     src={testimonial.avatar}
                     alt={testimonial.name}
-                    width={512}
-                    height={512}
-                    sizes="256px"
-                    className="h-64 w-64 flex-none rounded-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03]"
+                    width={448}
+                    height={448}
+                    sizes="224px"
+                    className="h-56 w-56 flex-none rounded-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.03]"
                   />
                   <p className="mt-6 text-base font-semibold text-[#1D1D1F]">{testimonial.name}</p>
                   {testimonial.role && <p className="font-poppins text-xs text-ink-muted">{testimonial.role}</p>}
@@ -359,7 +359,7 @@ export default function Home() {
         </div>
       </section>
 
-      <TeamSection member={founder} ctaHref="#get-in-touch" />
+      <TeamSection members={teamMembers} ctaHref="#get-in-touch" />
 
       <ChallengeSection />
     </>

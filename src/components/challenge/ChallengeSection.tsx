@@ -55,8 +55,8 @@ export function ChallengeSection() {
 
               <div className="mt-10 flex items-center gap-3">
                 <Image
-                  src={founder.image}
-                  alt={founder.imageAlt}
+                  src={founder.image!}
+                  alt={founder.imageAlt!}
                   width={48}
                   height={48}
                   className="h-12 w-12 rounded-full object-cover"

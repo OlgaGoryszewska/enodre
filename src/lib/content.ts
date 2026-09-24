@@ -448,9 +448,10 @@ export const products: Product[] = [
 export type Founder = {
   name: string;
   role: string;
-  image: string;
-  imageAlt: string;
+  image?: string;
+  imageAlt?: string;
   bio: string[];
+  linkedin?: string;
 };
 
 export const founder: Founder = {
@@ -459,13 +460,27 @@ export const founder: Founder = {
   image: "/profile-olga_goryszewska_enodre-portfolio-image.png",
   imageAlt: "Portrait of Olga Goryszewska",
   bio: [
-    "Olga is a Fullstack Developer and CEO who believes great software begins with understanding people, not just technology.",
-    "With a background spanning UX strategy, product design, and modern web development, she helps businesses untangle complex workflows and transform them into intuitive digital experiences. Her work combines user research, interface design, and engineering to create products that are both elegant and practical.",
+    "Olga is a Fullstack Developer and CEO who believes great software begins with understanding people, not just technology. With a background spanning UX strategy, product design, and modern web development, she helps businesses untangle complex workflows and turn them into intuitive digital experiences that are both elegant and practical.",
     "She specializes in designing dashboards, business applications, workflow automation, AI-powered solutions, and high-performance websites. Every project starts with one question: What's really slowing this business down? From there, she works closely with clients to uncover opportunities, simplify processes, and build software that delivers measurable results.",
     "Olga's approach is collaborative, detail-oriented, and focused on long-term value. Rather than building features for the sake of technology, she creates solutions that improve efficiency, reduce friction, and help businesses grow with confidence.",
     "Whether partnering with startups, growing companies, or enterprise teams, her goal remains the same: to design software that feels effortless to use and makes everyday work better.",
   ],
 };
+
+export const nick: Founder = {
+  name: "Nick",
+  role: "Technical Lead & CEO",
+  image: "/nick-enodre.png",
+  imageAlt: "Portrait of Nick Chaudhari",
+  linkedin: "https://www.linkedin.com/in/nikhilesh-chaudhari/",
+  bio: [
+    "Nick is a Technical Lead and CEO with 9+ years of experience across startups, consultancies, and enterprise environments, with a track record of designing and shipping scalable full-stack platforms across SaaS, retail technology, cybersecurity, insurance, and sports tech.",
+    "Most recently, he's led the architecture of an integrations platform and an agentic AI system for Australian accounting firms at Nagaris, building resilient, event-driven workflows with Python, Django, React, and AWS. Before that, he spent two years at Splunk as a Senior Forward Deployed Software Engineer, and three years at Kangatech scaling the KT360 sports-science platform as an early engineer.",
+    "He's earned recognition along the way, including Splunk's MVP of the Year in 2024, and holds a Master of Information Technology from Monash University. Beyond the code, he's known for mentoring engineers and setting the standards — CI/CD, testing, observability — that keep platforms reliable as they scale.",
+  ],
+};
+
+export const teamMembers: Founder[] = [founder, nick];
 
 export type StackGroup = {
   heading: string;
