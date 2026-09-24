@@ -9,6 +9,7 @@ import { expertiseAreas, industries, products, stackGroups, teamMembers } from "
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
 import { ProcessSection } from "@/components/ProcessSection";
 import { TeamSection } from "@/components/TeamSection";
+import { BlogSection } from "@/components/BlogSection";
 import { StackSection } from "@/components/StackSection";
 import { WhyUsSection } from "@/components/WhyUsSection";
 import { PerformanceSection } from "@/components/PerformanceSection";
@@ -363,6 +364,8 @@ export default function Home() {
       </section>
 
       <TeamSection members={teamMembers} ctaHref="#get-in-touch" />
+
+      <BlogSection />
 
       <ChallengeSection />
     </>

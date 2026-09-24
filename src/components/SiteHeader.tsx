@@ -23,6 +23,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   { label: "Technologies", items: technologies.map((tech) => ({ label: tech, href: "/#stack" })) },
   { label: "Cases", href: "/products" },
+  { label: "Blog", href: "/blog" },
   { label: "FAQ", href: "/faq" },
   { label: "About Us", href: "/#about" },
 ];
