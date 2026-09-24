@@ -13,3 +13,4 @@ export type MediaItem = {
 
 export const BOOKS_SELECT = "id, created_at, title, category:author, url, done:is_read, note";
 export const WATCH_SELECT = "id, created_at, title, category:watch_type, url, done:is_watched, note";
+export const LEARNING_SELECT = "id, created_at, title, category:skill, url, done:is_completed, note";

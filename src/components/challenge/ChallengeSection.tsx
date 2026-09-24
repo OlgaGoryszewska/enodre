@@ -66,6 +66,13 @@ export function ChallengeSection() {
                   <p className="text-xs text-background/70">{founder.role}</p>
                 </div>
               </div>
+
+              <p className="mt-6 text-sm text-background/70">
+                Or email us directly at{" "}
+                <a href="mailto:info@enodre.com" className="font-medium text-background underline underline-offset-2 hover:text-background/80">
+                  info@enodre.com
+                </a>
+              </p>
             </div>
           </div>
 

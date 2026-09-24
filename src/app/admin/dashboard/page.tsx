@@ -18,11 +18,17 @@ import { getLatestOnPurposeEpisode } from "@/lib/youtube";
 import { addBook, deleteBook, setBookRead, updateBookNote } from "@/app/admin/dashboard/books-actions";
 import { addWatchItem, deleteWatchItem, setWatchItemWatched, updateWatchItemNote } from "@/app/admin/dashboard/watch-actions";
 import {
+  addLearningItem,
+  deleteLearningItem,
+  setLearningItemCompleted,
+  updateLearningItemNote,
+} from "@/app/admin/dashboard/learning-actions";
+import {
   addInspiringPerson,
   deleteInspiringPerson,
   updateInspiringPersonReason,
 } from "@/app/admin/dashboard/people-actions";
-import { BookOpen, Briefcase, Film, UserSearch } from "lucide-react";
+import { BookOpen, Briefcase, Film, GraduationCap, UserSearch } from "lucide-react";
 import { JobLeadsCard } from "@/components/admin/JobLeadsCard";
 import {
   addLinkedInJob,
@@ -43,7 +49,7 @@ import type { JournalEntry } from "@/lib/journal";
 import type { CalorieEntry } from "@/lib/calorie";
 import type { WorkoutEntry } from "@/lib/workout";
 import type { UnicornEntry } from "@/lib/unicorn";
-import { BOOKS_SELECT, WATCH_SELECT, type MediaItem } from "@/lib/media-item";
+import { BOOKS_SELECT, LEARNING_SELECT, WATCH_SELECT, type MediaItem } from "@/lib/media-item";
 import type { InspiringPerson } from "@/lib/inspiring-person";
 import type { JobLead } from "@/lib/job-lead";
 
@@ -74,6 +80,7 @@ export default async function AdminDashboardPage() {
     { data: unicornData, error: unicornError },
     { data: booksData, error: booksError },
     { data: watchData, error: watchError },
+    { data: learningData, error: learningError },
     { data: peopleData, error: peopleError },
     { data: linkedinJobsData, error: linkedinJobsError },
     { data: headhuntersData, error: headhuntersError },
@@ -93,6 +100,7 @@ export default async function AdminDashboardPage() {
     supabase.from("unicorn_entries").select("*").order("entry_date", { ascending: false }).limit(7),
     supabase.from("books_to_read").select(BOOKS_SELECT).order("created_at", { ascending: false }),
     supabase.from("things_to_watch").select(WATCH_SELECT).order("created_at", { ascending: false }),
+    supabase.from("learning_items").select(LEARNING_SELECT).order("created_at", { ascending: false }),
     supabase.from("inspiring_people").select("*").order("created_at", { ascending: false }),
     supabase.from("linkedin_jobs").select("*").order("created_at", { ascending: false }),
     supabase.from("headhunters").select("*").order("created_at", { ascending: false }),
@@ -126,6 +134,9 @@ export default async function AdminDashboardPage() {
   if (watchError) {
     console.error("Failed to load watch list:", watchError);
   }
+  if (learningError) {
+    console.error("Failed to load learning items:", learningError);
+  }
   if (peopleError) {
     console.error("Failed to load inspiring people:", peopleError);
   }
@@ -145,6 +156,7 @@ export default async function AdminDashboardPage() {
   const unicornEntries = (unicornData ?? []) as UnicornEntry[];
   const books = (booksData ?? []) as unknown as MediaItem[];
   const watchList = (watchData ?? []) as unknown as MediaItem[];
+  const learningItems = (learningData ?? []) as unknown as MediaItem[];
   const inspiringPeople = (peopleData ?? []) as InspiringPerson[];
   const linkedinJobs = (linkedinJobsData ?? []) as JobLead[];
   const recentLinkedinJobs = linkedinJobs.filter((job) => job.created_at >= sevenDaysAgo.toISOString());
@@ -274,6 +286,22 @@ export default async function AdminDashboardPage() {
             onDelete={deleteWatchItem}
             onToggleDone={setWatchItemWatched}
             onUpdateNote={updateWatchItemNote}
+          />
+        </div>
+
+        <div className="mt-10">
+          <MediaListCard
+            icon={<GraduationCap className="h-4 w-4" aria-hidden="true" />}
+            title="Learning"
+            subtitle="Courses, skills, and topics you're working through"
+            categoryLabel="Skill"
+            doneLabel="Completed"
+            notDoneLabel="Learning"
+            items={learningItems}
+            onAdd={addLearningItem}
+            onDelete={deleteLearningItem}
+            onToggleDone={setLearningItemCompleted}
+            onUpdateNote={updateLearningItemNote}
           />
         </div>
 

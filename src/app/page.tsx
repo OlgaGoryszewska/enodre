@@ -11,6 +11,7 @@ import { ProcessSection } from "@/components/ProcessSection";
 import { TeamSection } from "@/components/TeamSection";
 import { StackSection } from "@/components/StackSection";
 import { WhyUsSection } from "@/components/WhyUsSection";
+import { PerformanceSection } from "@/components/PerformanceSection";
 import { ParallaxImage } from "@/components/motion/ParallaxImage";
 import { Reveal } from "@/components/motion/Reveal";
 import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
@@ -204,6 +205,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <PerformanceSection />
 
       <ProcessSection />
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { expertiseAreas, getExpertiseArea } from "@/lib/content";
 import { ServiceProcess } from "@/components/ServiceProcess";
+import { ServicePerformanceSection } from "@/components/ServicePerformanceSection";
 import { WhyUsSection } from "@/components/WhyUsSection";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { Reveal } from "@/components/motion/Reveal";
@@ -92,6 +93,14 @@ export default async function ServicePage({ params }: ServicePageProps) {
       </section>
 
       <ServiceProcess title={area.title} steps={area.process} />
+
+      <ServicePerformanceSection
+        title={area.title}
+        metrics={area.metrics}
+        color={area.metricsColor}
+        chart={area.metricsChart}
+        orientation={area.metricsChartOrientation}
+      />
 
       <WhyUsSection />
 

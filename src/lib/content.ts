@@ -8,6 +8,17 @@ export type ExpertiseFaq = {
   answer: string;
 };
 
+export type ExpertiseMetric = {
+  label: string;
+  before: string;
+  after: string;
+  beforePct: number;
+  afterPct: number;
+  benefit: string;
+};
+
+export type MetricsChartType = "dumbbell" | "slope" | "grouped-bar" | "radial-gauge" | "bullet" | "arrow" | "split-bar";
+
 export type ExpertiseArea = {
   slug: string;
   title: string;
@@ -16,6 +27,10 @@ export type ExpertiseArea = {
   image: string;
   process: ExpertiseProcessStep[];
   faqs: ExpertiseFaq[];
+  metrics: ExpertiseMetric[];
+  metricsColor: string;
+  metricsChart: MetricsChartType;
+  metricsChartOrientation?: "horizontal" | "vertical";
 };
 
 export const expertiseAreas: ExpertiseArea[] = [
@@ -53,6 +68,34 @@ export const expertiseAreas: ExpertiseArea[] = [
           "Yes — we regularly plug into existing repos, coding standards, and in-house teams rather than building in isolation.",
       },
     ],
+    metricsColor: "#3661C4",
+    metricsChart: "dumbbell",
+    metrics: [
+      {
+        label: "Manual process time / week",
+        before: "20 hrs",
+        after: "4 hrs",
+        beforePct: 100,
+        afterPct: 20,
+        benefit: "80% less manual work — repetitive tasks get automated into the software itself.",
+      },
+      {
+        label: "Feature request turnaround",
+        before: "6 wks",
+        after: "2 wks",
+        beforePct: 100,
+        afterPct: 33,
+        benefit: "3x faster delivery — a codebase built for change instead of fighting it.",
+      },
+      {
+        label: "Data entry errors / month",
+        before: "15",
+        after: "2",
+        beforePct: 100,
+        afterPct: 13,
+        benefit: "87% fewer errors — validation and structure replace manual re-typing.",
+      },
+    ],
   },
   {
     slug: "mvp-development",
@@ -85,6 +128,34 @@ export const expertiseAreas: ExpertiseArea[] = [
       {
         question: "Is an MVP good enough to show investors?",
         answer: "Yes — it's built to be a credible, working product, not a throwaway prototype.",
+      },
+    ],
+    metricsColor: "#6D3FC7",
+    metricsChart: "slope",
+    metrics: [
+      {
+        label: "Time to first user test",
+        before: "12 wks",
+        after: "6 wks",
+        beforePct: 100,
+        afterPct: 50,
+        benefit: "2x faster validation — real user feedback arrives while the idea is still cheap to change.",
+      },
+      {
+        label: "Cost to validate an idea",
+        before: "$50k",
+        after: "$15k",
+        beforePct: 100,
+        afterPct: 30,
+        benefit: "70% less spent before you know if it's worth building further.",
+      },
+      {
+        label: "Features before launch",
+        before: "40",
+        after: "8",
+        beforePct: 100,
+        afterPct: 20,
+        benefit: "A lean scope focused only on what proves the riskiest assumption.",
       },
     ],
   },
@@ -120,6 +191,34 @@ export const expertiseAreas: ExpertiseArea[] = [
         answer: "Typically Next.js for performance and flexibility, though the right tool depends on what the site actually needs to do.",
       },
     ],
+    metricsColor: "#0E9F8E",
+    metricsChart: "grouped-bar",
+    metrics: [
+      {
+        label: "Avg. page load time",
+        before: "4.5s",
+        after: "1.4s",
+        beforePct: 100,
+        afterPct: 31,
+        benefit: "69% faster loads — visitors see a usable page before they think to leave.",
+      },
+      {
+        label: "Mobile conversion rate",
+        before: "1.2%",
+        after: "3.8%",
+        beforePct: 32,
+        afterPct: 100,
+        benefit: "3x more mobile visitors completing the action the page was built for.",
+      },
+      {
+        label: "Lighthouse performance score",
+        before: "52",
+        after: "96",
+        beforePct: 54,
+        afterPct: 100,
+        benefit: "A site that passes Core Web Vitals instead of fighting them.",
+      },
+    ],
   },
   {
     slug: "ui-ux-design",
@@ -150,6 +249,34 @@ export const expertiseAreas: ExpertiseArea[] = [
       {
         question: "Do you also handle the development, or just the design?",
         answer: "Both, if you need it — or we can hand off polished, dev-ready files to your existing team.",
+      },
+    ],
+    metricsColor: "#C23E85",
+    metricsChart: "radial-gauge",
+    metrics: [
+      {
+        label: "Task completion rate",
+        before: "61%",
+        after: "94%",
+        beforePct: 65,
+        afterPct: 100,
+        benefit: "Most users now complete key flows on the first try, without help.",
+      },
+      {
+        label: "Support tickets (confusion-related)",
+        before: "40 / mo",
+        after: "9 / mo",
+        beforePct: 100,
+        afterPct: 23,
+        benefit: "77% fewer 'how do I...' tickets — the interface explains itself.",
+      },
+      {
+        label: "Time to complete key flow",
+        before: "3m 20s",
+        after: "1m 05s",
+        beforePct: 100,
+        afterPct: 33,
+        benefit: "3x faster task completion — fewer steps, clearer choices at each one.",
       },
     ],
   },
@@ -185,6 +312,34 @@ export const expertiseAreas: ExpertiseArea[] = [
         answer: "Most native/cross-platform builds run 6–10 weeks depending on feature scope and platform count.",
       },
     ],
+    metricsColor: "#B5680F",
+    metricsChart: "bullet",
+    metrics: [
+      {
+        label: "App crash rate",
+        before: "4.1%",
+        after: "0.3%",
+        beforePct: 100,
+        afterPct: 7,
+        benefit: "93% fewer crashes — real device testing catches what simulators miss.",
+      },
+      {
+        label: "App Store rating",
+        before: "3.2★",
+        after: "4.7★",
+        beforePct: 68,
+        afterPct: 100,
+        benefit: "A store rating that helps installs instead of scaring them off.",
+      },
+      {
+        label: "Session length",
+        before: "1m 40s",
+        after: "4m 20s",
+        beforePct: 38,
+        afterPct: 100,
+        benefit: "2.6x longer sessions — people stay because the app actually works.",
+      },
+    ],
   },
   {
     slug: "legacy-code-refactoring",
@@ -216,6 +371,34 @@ export const expertiseAreas: ExpertiseArea[] = [
       {
         question: "Can this run alongside active feature development?",
         answer: "Yes — refactoring is usually staged so your team can keep shipping features in parallel.",
+      },
+    ],
+    metricsColor: "#4A3AA7",
+    metricsChart: "arrow",
+    metrics: [
+      {
+        label: "Build time",
+        before: "18 min",
+        after: "4 min",
+        beforePct: 100,
+        afterPct: 22,
+        benefit: "78% faster builds — less time waiting, more time shipping.",
+      },
+      {
+        label: "Production incidents / month",
+        before: "9",
+        after: "2",
+        beforePct: 100,
+        afterPct: 22,
+        benefit: "Fewer surprises in production once brittle code paths get cleaned up.",
+      },
+      {
+        label: "New feature lead time",
+        before: "5 wks",
+        after: "1.5 wks",
+        beforePct: 100,
+        afterPct: 30,
+        benefit: "3x faster delivery — the codebase stops fighting every new feature.",
       },
     ],
   },
@@ -251,6 +434,34 @@ export const expertiseAreas: ExpertiseArea[] = [
         answer: "We can, or hand the report to your team — whichever fits how you want to move forward.",
       },
     ],
+    metricsColor: "#1B9159",
+    metricsChart: "split-bar",
+    metrics: [
+      {
+        label: "Avg. page load time",
+        before: "4.2s",
+        after: "1.6s",
+        beforePct: 100,
+        afterPct: 38,
+        benefit: "62% faster page loads — trimmed bundles, optimized queries, and cached data where it counts.",
+      },
+      {
+        label: "Critical bugs per month",
+        before: "12",
+        after: "3",
+        beforePct: 100,
+        afterPct: 25,
+        benefit: "75% fewer critical bugs — the riskiest issues get caught in review, before they reach production.",
+      },
+      {
+        label: "New engineer ramp-up time",
+        before: "6 wks",
+        after: "2 wks",
+        beforePct: 100,
+        afterPct: 33,
+        benefit: "3x faster onboarding — a clean, documented codebase means new hires ship sooner.",
+      },
+    ],
   },
   {
     slug: "systems-integration",
@@ -284,6 +495,35 @@ export const expertiseAreas: ExpertiseArea[] = [
         answer: "Yes — credentials and data in transit are handled following each platform's recommended security practices.",
       },
     ],
+    metricsColor: "#0B84A5",
+    metricsChart: "split-bar",
+    metricsChartOrientation: "vertical",
+    metrics: [
+      {
+        label: "Manual data entry / week",
+        before: "15 hrs",
+        after: "2 hrs",
+        beforePct: 100,
+        afterPct: 13,
+        benefit: "87% less manual entry — data moves between systems on its own.",
+      },
+      {
+        label: "Data sync errors / month",
+        before: "22",
+        after: "1",
+        beforePct: 100,
+        afterPct: 5,
+        benefit: "Near-elimination of sync errors — one source of truth instead of copy-pasting between tools.",
+      },
+      {
+        label: "Time to reconcile records",
+        before: "3 days",
+        after: "2 hrs",
+        beforePct: 100,
+        afterPct: 3,
+        benefit: "Records that stay in sync automatically instead of a weekly reconciliation scramble.",
+      },
+    ],
   },
   {
     slug: "cloud-migration",
@@ -314,6 +554,35 @@ export const expertiseAreas: ExpertiseArea[] = [
       {
         question: "What happens if something goes wrong during migration?",
         answer: "Every migration has a rollback plan, so we can revert to the original environment if something doesn't validate correctly.",
+      },
+    ],
+    metricsColor: "#3F5B7A",
+    metricsChart: "slope",
+    metricsChartOrientation: "vertical",
+    metrics: [
+      {
+        label: "Monthly infrastructure cost",
+        before: "$8,400",
+        after: "$3,100",
+        beforePct: 100,
+        afterPct: 37,
+        benefit: "63% lower hosting cost — right-sized infrastructure instead of over-provisioned servers.",
+      },
+      {
+        label: "Deployment time",
+        before: "45 min",
+        after: "6 min",
+        beforePct: 100,
+        afterPct: 13,
+        benefit: "7.5x faster deploys — ship changes without a coffee-break wait.",
+      },
+      {
+        label: "Uptime",
+        before: "98.2%",
+        after: "99.95%",
+        beforePct: 98,
+        afterPct: 100,
+        benefit: "Hours of downtime a year instead of days.",
       },
     ],
   },
@@ -475,7 +744,7 @@ export const nick: Founder = {
   linkedin: "https://www.linkedin.com/in/nikhilesh-chaudhari/",
   bio: [
     "Nick is a Technical Lead and CEO with 9+ years of experience across startups, consultancies, and enterprise environments, with a track record of designing and shipping scalable full-stack platforms across SaaS, retail technology, cybersecurity, insurance, and sports tech.",
-    "Most recently, he's led the architecture of an integrations platform and an agentic AI system for Australian accounting firms at Nagaris, building resilient, event-driven workflows with Python, Django, React, and AWS. Before that, he spent two years at Splunk as a Senior Forward Deployed Software Engineer, and three years at Kangatech scaling the KT360 sports-science platform as an early engineer.",
+    "Most recently, he's led the architecture of an integrations platform and an agentic AI system for Australian accounting firms, building resilient, event-driven workflows with Python, Django, React, and AWS. Before that, he spent two years at Splunk as a Senior Forward Deployed Software Engineer, and three years at Kangatech scaling the KT360 sports-science platform as an early engineer.",
     "He's earned recognition along the way, including Splunk's MVP of the Year in 2024, and holds a Master of Information Technology from Monash University. Beyond the code, he's known for mentoring engineers and setting the standards — CI/CD, testing, observability — that keep platforms reliable as they scale.",
   ],
 };

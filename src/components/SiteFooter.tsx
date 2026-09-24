@@ -73,7 +73,12 @@ export function SiteFooter() {
 
       <div className="border-t border-background/10">
         <div className="shell flex flex-col gap-4 py-6 text-sm text-background/60 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} Enodre. All rights reserved.</p>
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+            <p>© {new Date().getFullYear()} Enodre. All rights reserved.</p>
+            <a href="mailto:info@enodre.com" className="transition hover:text-background">
+              info@enodre.com
+            </a>
+          </div>
           <div className="flex items-center gap-4">
             <Link href="/login" aria-label="Admin" className="transition hover:text-background">
               <DoorOpen className="h-5 w-5" aria-hidden="true" />
