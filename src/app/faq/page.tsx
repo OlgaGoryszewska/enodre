@@ -7,11 +7,31 @@ import { FaqAccordion } from "@/components/FaqAccordion";
 export const metadata: Metadata = {
   title: "FAQ",
   description: "Answers to the questions we hear most about starting a project, pricing, process, and support.",
+  alternates: { canonical: "/faq" },
+  openGraph: {
+    title: "FAQ | Enodre",
+    description: "Answers to the questions we hear most about starting a project, pricing, process, and support.",
+    url: "/faq",
+  },
+};
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.answer,
+    },
+  })),
 };
 
 export default function FaqPage() {
   return (
     <section className="shell py-20 sm:py-28">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <Reveal>
         <p className="font-funnel-display text-3xl font-normal tracking-tight text-foreground sm:text-4xl">
           Frequently asked questions

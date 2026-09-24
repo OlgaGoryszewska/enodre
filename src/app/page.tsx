@@ -178,7 +178,7 @@ export default function Home() {
               />
               <Image
                 src="/nick/moc3.png"
-                alt=""
+                alt="Mobile app dashboard built by Enodre"
                 width={1277}
                 height={1231}
                 className="relative h-auto w-full mb-6"
@@ -235,7 +235,7 @@ export default function Home() {
                             {EXPERTISE_IMAGES[area.title] ? (
                               <Image
                                 src={EXPERTISE_IMAGES[area.title]}
-                                alt=""
+                                alt={`${area.title} preview`}
                                 fill
                                 sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                                 className="object-cover"
@@ -307,7 +307,13 @@ export default function Home() {
                 <div className="h-full overflow-hidden rounded-2xl border border-black/10 bg-card transition duration-300 hover:-translate-y-1 hover:shadow-lg">
                   {industry.image && (
                     <div className="relative h-32 w-full">
-                      <Image src={industry.image} alt="" fill sizes="(min-width: 1024px) 25vw, 50vw" className="object-cover" />
+                      <Image
+                        src={industry.image}
+                        alt={`${industry.title} industry`}
+                        fill
+                        sizes="(min-width: 1024px) 25vw, 50vw"
+                        className="object-cover"
+                      />
                     </div>
                   )}
                   <div className="p-6">
@@ -391,7 +397,7 @@ export default function Home() {
                 <div className="group flex h-full w-72 flex-col items-center text-center sm:w-80">
                   <Image
                     src={testimonial.avatar}
-                    alt=""
+                    alt={testimonial.name}
                     width={512}
                     height={512}
                     sizes="256px"

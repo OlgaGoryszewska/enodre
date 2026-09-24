@@ -8,6 +8,12 @@ import { Reveal } from "@/components/motion/Reveal";
 export const metadata: Metadata = {
   title: "Case studies",
   description: "Software we've taken from idea to production for our clients.",
+  alternates: { canonical: "/products" },
+  openGraph: {
+    title: "Case studies | Enodre",
+    description: "Software we've taken from idea to production for our clients.",
+    url: "/products",
+  },
 };
 
 export default function ProductsPage() {
