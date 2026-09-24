@@ -167,7 +167,7 @@ export default function Home() {
               Digital Studio
             </motion.h1>
             <motion.p variants={heroItem} className="font-poppins mt-3 pb-3 text-center tracking-normal text-base text-black sm:mt-4">
-              Build the right product, from the start. <span className="font-bold">Senior product engineering</span> for founders, backed by 12 years of
+              Build the right product, from the start. <span className="font-bold">Senior product engineering</span> for founders, backed by 9+ years of
               experience
             </motion.p>
             <motion.div variants={heroItem} className="relative mx-auto mt-10 w-[50vw]">

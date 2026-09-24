@@ -72,10 +72,12 @@ export const industries: Industry[] = [
   {
     title: "eCommerce",
     description: "Storefronts, checkout flows, and back-office tools built to convert and scale.",
+    image: "/nick/nick-front.jpg",
   },
   {
     title: "Education",
     description: "Learning management systems and platforms for course delivery and student engagement.",
+    image: "/Education-image.png",
   },
   {
     title: "Retail",
@@ -85,6 +87,7 @@ export const industries: Industry[] = [
   {
     title: "Media & Entertainment",
     description: "Content platforms and applications built for audience reach and engagement at scale.",
+    image: "/media-img.png",
   },
   {
     title: "Human Resources",
@@ -94,6 +97,7 @@ export const industries: Industry[] = [
   {
     title: "Wellness & Fitness",
     description: "Mental health, fitness, and wellness apps designed around everyday habits and routines.",
+    image: "/lotos/Screenshot-bialy-lotos-desktop-01.png",
   },
 ];
 
