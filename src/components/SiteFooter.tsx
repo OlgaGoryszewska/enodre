@@ -6,7 +6,7 @@ import { expertiseAreas, industries, technologies } from "@/lib/content";
 
 const COMPANY_LINKS = [
   { href: "/", label: "Home" },
-  { href: "/#services", label: "Services" },
+  { href: "/services", label: "Services" },
   { href: "/products", label: "Case studies" },
   { href: "/#get-in-touch", label: "Contact" },
   { href: "/faq", label: "FAQ" },

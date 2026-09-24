@@ -1,56 +1,327 @@
+export type ExpertiseProcessStep = {
+  title: string;
+  description: string;
+};
+
+export type ExpertiseFaq = {
+  question: string;
+  answer: string;
+};
+
 export type ExpertiseArea = {
+  slug: string;
   title: string;
   description: string;
   category: string;
+  image: string;
+  process: ExpertiseProcessStep[];
+  faqs: ExpertiseFaq[];
 };
 
 export const expertiseAreas: ExpertiseArea[] = [
   {
+    slug: "custom-software-development",
     category: "Product Development",
     title: "Custom Software Development",
     description: "Tailored software built around how your business actually operates, not a one-size-fits-all template.",
+    image: "/custome-software-img.png",
+    process: [
+      { title: "Discovery", description: "Audit your current workflows and pin down exactly what the software needs to do." },
+      { title: "Architecture", description: "Design a system structure that fits how your business actually operates, not a generic template." },
+      { title: "Build", description: "Develop the product in focused iterations, with working software to review at every stage." },
+      { title: "Test & Harden", description: "Functional, performance, and security testing before anything ships." },
+      { title: "Launch & Support", description: "Deploy to production and stay on for fixes and improvements as real usage comes in." },
+    ],
+    faqs: [
+      {
+        question: "How long does a custom software project usually take?",
+        answer:
+          "Most projects run 8–14 weeks depending on scope, though a focused first version can ship sooner. You'll get a concrete timeline once we've scoped the work.",
+      },
+      {
+        question: "Do I own the code once it's built?",
+        answer: "Yes, completely. The code, the repository, and every asset are yours from day one.",
+      },
+      {
+        question: "What if my requirements change mid-project?",
+        answer:
+          "Normal and expected. Small changes get absorbed as we go; anything that meaningfully expands scope gets a clear estimate before it starts.",
+      },
+      {
+        question: "Can you work with my existing team or codebase?",
+        answer:
+          "Yes — we regularly plug into existing repos, coding standards, and in-house teams rather than building in isolation.",
+      },
+    ],
   },
   {
+    slug: "mvp-development",
     category: "Product Development",
     title: "MVP Development",
     description: "Go from idea to a working product fast, scoped tightly around the riskiest assumptions worth testing first.",
+    image: "/mvp-image.png",
+    process: [
+      { title: "Riskiest Assumption", description: "Identify the one thing that has to be true for the product to work, and build to test it." },
+      { title: "Lean Scope", description: "Cut everything that isn't essential to proving the concept." },
+      { title: "Core Build", description: "Ship the smallest version that lets real users complete the key action." },
+      { title: "Real-User Testing", description: "Get the MVP in front of actual users fast and watch what happens." },
+      { title: "Launch & Iterate", description: "Use real feedback to decide what to build next — or what to cut." },
+    ],
+    faqs: [
+      {
+        question: "How fast can an MVP actually ship?",
+        answer: "Most MVPs take 6–10 weeks, scoped tightly around the one assumption that matters most for your idea.",
+      },
+      {
+        question: "What gets cut to keep it an MVP?",
+        answer:
+          "Anything that isn't essential to testing your core hypothesis — polish, edge cases, and \"nice to haves\" wait until you know the idea works.",
+      },
+      {
+        question: "What happens after the MVP launches?",
+        answer:
+          "We use real user feedback to decide what to build next, and can move straight into a full build or an ongoing support plan.",
+      },
+      {
+        question: "Is an MVP good enough to show investors?",
+        answer: "Yes — it's built to be a credible, working product, not a throwaway prototype.",
+      },
+    ],
   },
   {
+    slug: "web-development",
     category: "Product Development",
     title: "Web Development",
     description: "From high-converting marketing websites to powerful internal platforms, we create fast, modern experiences.",
+    image: "/web-devel-img.png",
+    process: [
+      { title: "Discovery & Sitemap", description: "Map the pages, content, and user journeys the site needs to support." },
+      { title: "Design", description: "Build a clean, on-brand interface focused on conversion and clarity." },
+      { title: "Development", description: "Build a fast, responsive site with clean, maintainable code." },
+      { title: "QA & Performance", description: "Cross-browser, cross-device testing plus speed and SEO checks." },
+      { title: "Launch & Support", description: "Go live with monitoring in place, and ongoing updates as your site grows." },
+    ],
+    faqs: [
+      {
+        question: "Will the site be optimized for search engines?",
+        answer:
+          "Yes — proper metadata, semantic markup, sitemaps, and performance are handled by default, not bolted on afterward.",
+      },
+      {
+        question: "Can I update the content myself after launch?",
+        answer: "If you need that, we'll set up a CMS or structured content system so updates don't require touching code.",
+      },
+      {
+        question: "How do you handle mobile responsiveness?",
+        answer: "Every site is built mobile-first and tested across real devices, not just resized browser windows.",
+      },
+      {
+        question: "What platform do you build on?",
+        answer: "Typically Next.js for performance and flexibility, though the right tool depends on what the site actually needs to do.",
+      },
+    ],
   },
   {
+    slug: "ui-ux-design",
     category: "Product Development",
     title: "UI & UX Design",
     description: "User research, information architecture, and interface design that make complex products feel simple.",
+    image: "/ux-design.png",
+    process: [
+      { title: "Research", description: "Understand your users, their goals, and where the current experience breaks down." },
+      { title: "Information Architecture", description: "Structure the product so every flow makes sense before a single screen is designed." },
+      { title: "UI Design", description: "Design interfaces that are both usable and unmistakably yours." },
+      { title: "Prototype & Test", description: "Validate the design with clickable prototypes before development starts." },
+      { title: "Handoff", description: "Deliver production-ready files and specs your developers can build from directly." },
+    ],
+    faqs: [
+      {
+        question: "Do you design in Figma?",
+        answer: "Yes — you'll get organized, well-structured Figma files your team (or ours) can build straight from.",
+      },
+      {
+        question: "Will I get to test the design before development starts?",
+        answer: "Yes — clickable prototypes let you and real users try the flow before a line of code gets written.",
+      },
+      {
+        question: "Can you redesign an existing product instead of starting from scratch?",
+        answer: "Absolutely — most of our UX work starts with an audit of what's already there before proposing changes.",
+      },
+      {
+        question: "Do you also handle the development, or just the design?",
+        answer: "Both, if you need it — or we can hand off polished, dev-ready files to your existing team.",
+      },
+    ],
   },
   {
+    slug: "mobile-app-development",
     category: "Product Development",
     title: "Mobile App Development",
     description: "Native and cross-platform iOS and Android experiences that keep your business connected wherever work happens.",
+    image: "/mobile-app-image.png",
+    process: [
+      { title: "Discovery & Planning", description: "Define the platforms, core features, and technical approach." },
+      { title: "Design", description: "Design native-feeling interfaces for iOS and Android." },
+      { title: "Build", description: "Develop the app with React Native or native tooling, depending on what the product needs." },
+      { title: "Device Testing", description: "Test across real devices and OS versions, not just simulators." },
+      { title: "Submission & Support", description: "Handle App Store and Play Store submission, then support you through updates." },
+    ],
+    faqs: [
+      {
+        question: "Native or cross-platform — which do you recommend?",
+        answer:
+          "Cross-platform (React Native) covers most cases well and ships faster; we'll recommend native only when the app genuinely needs it.",
+      },
+      {
+        question: "Do you handle App Store and Play Store submission?",
+        answer: "Yes — we manage the submission process and the recurring update cycle after launch.",
+      },
+      {
+        question: "Can the app work offline?",
+        answer: "Yes, when the product needs it — offline-first sync is something we've built before and can architect in from the start.",
+      },
+      {
+        question: "How long does a typical app take to build?",
+        answer: "Most native/cross-platform builds run 6–10 weeks depending on feature scope and platform count.",
+      },
+    ],
   },
   {
+    slug: "legacy-code-refactoring",
     category: "Modernize & Maintain",
     title: "Legacy Code Refactoring",
     description: "Modernize ageing codebases for maintainability and performance without disrupting the business running on them.",
+    image: "/code-refactory-image.png",
+    process: [
+      { title: "Audit the Codebase", description: "Identify the riskiest, most brittle parts of the system first." },
+      { title: "Prioritize", description: "Rank refactoring work by business risk and effort, not just code smell." },
+      { title: "Refactor Incrementally", description: "Improve the code in small, safe steps that never break production." },
+      { title: "Regression Test", description: "Verify nothing that worked before stops working now." },
+      { title: "Deploy Safely", description: "Ship changes with a rollback plan, so improvements never become incidents." },
+    ],
+    faqs: [
+      {
+        question: "Will refactoring break my production system?",
+        answer:
+          "No — changes are made incrementally with regression testing at every step, so the system keeps working throughout.",
+      },
+      {
+        question: "How do you decide what to refactor first?",
+        answer: "By business risk, not code aesthetics — the parts most likely to cause an outage or block new features go first.",
+      },
+      {
+        question: "Do you need full access to our codebase?",
+        answer: "Yes, along with context from whoever knows it best — access and a short handover call get us moving quickly.",
+      },
+      {
+        question: "Can this run alongside active feature development?",
+        answer: "Yes — refactoring is usually staged so your team can keep shipping features in parallel.",
+      },
+    ],
   },
   {
+    slug: "software-code-audit",
     category: "Modernize & Maintain",
     title: "Software Code Audit",
     description: "A thorough technical assessment of your codebase's quality, security, and scalability, with a clear action plan.",
+    image: "/audit-img.png",
+    process: [
+      { title: "Technical Review", description: "Examine the codebase for architecture, quality, and maintainability issues." },
+      { title: "Security & Performance Check", description: "Look for vulnerabilities, bottlenecks, and scalability risks." },
+      { title: "Findings Report", description: "Document what's working, what's not, and why it matters." },
+      { title: "Action Plan", description: "Prioritize a clear, practical roadmap for fixing what matters most." },
+      { title: "Follow-Up Review", description: "Check back in after fixes ship to confirm the issues are actually resolved." },
+    ],
+    faqs: [
+      {
+        question: "What do I actually get at the end of the audit?",
+        answer:
+          "A written report covering code quality, security, and scalability, plus a prioritized action plan — not just a list of problems.",
+      },
+      {
+        question: "How long does an audit take?",
+        answer: "Most audits take 2–5 days depending on codebase size, with a follow-up review once fixes are underway.",
+      },
+      {
+        question: "Is the audit specific to one language or framework?",
+        answer: "No — we audit across common web and mobile stacks; let us know what you're running and we'll scope accordingly.",
+      },
+      {
+        question: "Do you also implement the fixes?",
+        answer: "We can, or hand the report to your team — whichever fits how you want to move forward.",
+      },
+    ],
   },
   {
+    slug: "systems-integration",
     category: "Modernize & Maintain",
     title: "Systems Integration",
     description: "Connect the tools your business already relies on so data moves between them without manual work.",
+    image: "/system-integration-image.png",
+    process: [
+      { title: "Map Current Systems", description: "Understand what tools you use today and how data is supposed to move between them." },
+      { title: "Define Data Flow", description: "Design exactly what syncs, when, and in what direction." },
+      { title: "Build the Integration", description: "Connect your tools with reliable, monitored data pipelines." },
+      { title: "Test End-to-End", description: "Verify data moves correctly across every connected system." },
+      { title: "Monitor & Support", description: "Keep an eye on the integration after launch and fix issues before you notice them." },
+    ],
+    faqs: [
+      {
+        question: "What kinds of tools can you connect?",
+        answer: "Most systems with an API or webhook support — CRMs, payment processors, internal tools, and custom software alike.",
+      },
+      {
+        question: "What happens if a connected system changes its API?",
+        answer:
+          "Integrations are built to be monitored, so breaking changes get caught and fixed before they cause silent data issues.",
+      },
+      {
+        question: "Can data sync in real time?",
+        answer: "Yes, when the source system supports it — otherwise we set up a sync interval that fits how the data is actually used.",
+      },
+      {
+        question: "Do you handle authentication and security for the integration?",
+        answer: "Yes — credentials and data in transit are handled following each platform's recommended security practices.",
+      },
+    ],
   },
   {
+    slug: "cloud-migration",
     category: "Modernize & Maintain",
     title: "Cloud Migration",
     description: "Move applications and data to the cloud with minimal downtime and a plan for cost and performance after launch.",
+    image: "/cloude-migration-img.png",
+    process: [
+      { title: "Assess & Plan", description: "Audit your current environment and define a migration path with minimal downtime." },
+      { title: "Prepare the Environment", description: "Set up the target cloud infrastructure before anything moves." },
+      { title: "Migrate Workloads", description: "Move data and applications in a controlled, staged sequence." },
+      { title: "Validate & Test", description: "Confirm everything works correctly in the new environment." },
+      { title: "Optimize & Handover", description: "Tune for cost and performance, then hand over a fully documented setup." },
+    ],
+    faqs: [
+      {
+        question: "How much downtime should I expect?",
+        answer: "Migrations are planned to minimize downtime, often to a small maintenance window rather than a full outage.",
+      },
+      {
+        question: "Which cloud provider do you work with?",
+        answer: "Most commonly AWS, Azure, and Vercel-hosted stacks — we'll recommend the right fit for your workload.",
+      },
+      {
+        question: "Will this reduce our hosting costs?",
+        answer: "Often, yes — part of the process includes reviewing usage and right-sizing infrastructure, not just lifting and shifting.",
+      },
+      {
+        question: "What happens if something goes wrong during migration?",
+        answer: "Every migration has a rollback plan, so we can revert to the original environment if something doesn't validate correctly.",
+      },
+    ],
   },
 ];
+
+export function getExpertiseArea(slug: string) {
+  return expertiseAreas.find((area) => area.slug === slug);
+}
 
 export type Industry = {
   title: string;

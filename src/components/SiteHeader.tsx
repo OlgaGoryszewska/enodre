@@ -14,7 +14,13 @@ type NavItem =
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Industries", items: industries.map((industry) => ({ label: industry.title, href: "/#industries" })) },
-  { label: "Services", items: expertiseAreas.map((area) => ({ label: area.title, href: "/#services" })) },
+  {
+    label: "Services",
+    items: [
+      { label: "All Services", href: "/services" },
+      ...expertiseAreas.map((area) => ({ label: area.title, href: `/services/${area.slug}` })),
+    ],
+  },
   { label: "Technologies", items: technologies.map((tech) => ({ label: tech, href: "/#stack" })) },
   { label: "Cases", href: "/products" },
   { label: "FAQ", href: "/faq" },
