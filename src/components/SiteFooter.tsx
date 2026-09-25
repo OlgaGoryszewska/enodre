@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUp, DoorOpen } from "lucide-react";
+import { ArrowRight, ArrowUp, DoorOpen } from "lucide-react";
+import { FaLinkedin } from "react-icons/fa";
 import { expertiseAreas, industries, technologies } from "@/lib/content";
 
 const COMPANY_LINKS = [
@@ -69,6 +70,19 @@ export function SiteFooter() {
               </li>
             ))}
           </ul>
+
+          <div className="mt-8 flex justify-center">
+            <a
+              href="https://www.linkedin.com/company/enodre/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-background/80 transition hover:text-background"
+            >
+              <FaLinkedin className="h-4 w-4" aria-hidden="true" />
+              <span>LinkedIn</span>
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </a>
+          </div>
         </div>
       </div>
 

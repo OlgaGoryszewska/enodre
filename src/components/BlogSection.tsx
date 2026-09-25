@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { blogPosts } from "@/lib/blog";
-import { BlogCoverArt } from "@/components/blog/BlogCoverArt";
+import { BlogCover } from "@/components/blog/BlogCover";
 import { Reveal } from "@/components/motion/Reveal";
 
 function formatDate(iso: string) {
@@ -35,7 +35,7 @@ export function BlogSection() {
                 href={`/blog/${post.slug}`}
                 className="flex h-full flex-col overflow-hidden rounded-[24px] bg-card shadow-[0_24px_48px_-20px_rgba(30,30,60,0.35)] transition-all duration-200 ease-out hover:-translate-y-1"
               >
-                <BlogCoverArt variant={post.coverVariant} className="aspect-[16/9] w-full flex-none" />
+                <BlogCover post={post} className="aspect-[16/9] w-full flex-none" />
                 <div className="flex flex-1 flex-col p-6">
                   <p className="text-xs font-semibold uppercase tracking-widest text-[#9EA5C3]">{post.category}</p>
                   <h3 className="mt-3 text-lg font-semibold leading-tight tracking-tighter text-[#1D1D1F]">{post.title}</h3>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { blogPosts, getBlogPost } from "@/lib/blog";
 import { getExpertiseArea } from "@/lib/content";
-import { BlogCoverArt } from "@/components/blog/BlogCoverArt";
+import { BlogCover } from "@/components/blog/BlogCover";
 import { BlogBody } from "@/components/blog/BlogBody";
 import { Reveal } from "@/components/motion/Reveal";
 
@@ -45,6 +45,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const relatedServices = post.relatedServiceSlugs
     .map((slug) => getExpertiseArea(slug))
     .filter((area): area is NonNullable<typeof area> => Boolean(area));
+
+  const relatedPosts = post.relatedPostSlugs
+    .map((slug) => getBlogPost(slug))
+    .filter((p): p is NonNullable<typeof p> => Boolean(p));
 
   const articleJsonLd = {
     "@context": "https://schema.org",
@@ -92,7 +96,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         </Reveal>
 
         <Reveal delay={0.08}>
-          <BlogCoverArt variant={post.coverVariant} className="mt-12 aspect-[21/9] w-full rounded-[28px]" />
+          <BlogCover post={post} className="mt-12 aspect-[21/9] w-full rounded-[28px]" priority />
         </Reveal>
 
         <div className="mt-12 max-w-2xl">
@@ -140,11 +144,38 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           </Reveal>
         )}
 
+        {relatedPosts.length > 0 && (
+          <Reveal>
+            <div className="mt-14">
+              <p className="text-sm font-semibold text-ink-muted">Related reading</p>
+              <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                {relatedPosts.map((related) => (
+                  <Link
+                    key={related.slug}
+                    href={`/blog/${related.slug}`}
+                    className="flex items-center gap-4 overflow-hidden rounded-[20px] border border-black/10 bg-card p-3 transition hover:border-black/20"
+                  >
+                    <BlogCover post={related} className="h-16 w-24 flex-none rounded-[12px]" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-[#9EA5C3]">{related.category}</p>
+                      <p className="mt-1 truncate text-sm font-semibold text-foreground">{related.title}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </Reveal>
+        )}
+
         <Reveal>
           <div className="mt-14 flex flex-col items-start gap-4 rounded-[28px] bg-foreground p-10 text-background sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xl font-semibold tracking-tight">Dealing with this on your own codebase?</p>
-              <p className="font-poppins mt-2 text-sm text-background/70">Book a short call and we&apos;ll talk through what an audit would actually find.</p>
+              <p className="text-xl font-semibold tracking-tight">
+                {post.ctaHeading ?? "Dealing with this on your own codebase?"}
+              </p>
+              <p className="font-poppins mt-2 text-sm text-background/70">
+                {post.ctaBody ?? "Book a short call and we'll talk through what an audit would actually find."}
+              </p>
             </div>
             <Link
               href="/#get-in-touch"

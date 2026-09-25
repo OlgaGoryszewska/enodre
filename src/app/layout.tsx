@@ -62,6 +62,7 @@ const organizationJsonLd = {
     "@type": "Person",
     name: "Olga",
   },
+  sameAs: ["https://www.linkedin.com/company/enodre/"],
 };
 
 export default function RootLayout({
