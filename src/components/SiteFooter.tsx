@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ArrowUp, DoorOpen } from "lucide-react";
-import { FaLinkedin } from "react-icons/fa";
+import { ArrowRight, ArrowUp, DoorOpen, Mail } from "lucide-react";
+import { FaLinkedin, FaWhatsapp } from "react-icons/fa";
 import { expertiseAreas, industries, technologies } from "@/lib/content";
+
+const WHATSAPP_LINK = "https://wa.me/4748338779";
 
 const COMPANY_LINKS = [
   { href: "/", label: "Home" },
