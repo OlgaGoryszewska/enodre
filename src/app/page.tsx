@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
-import { Quote } from "lucide-react";
+import { ArrowRight, Quote } from "lucide-react";
 import { expertiseAreas, industries, products, stackGroups, teamMembers } from "@/lib/content";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
 import { LeadOffersSection } from "@/components/LeadOffersSection";
@@ -17,6 +17,8 @@ import { PerformanceSection } from "@/components/PerformanceSection";
 import { ParallaxImage } from "@/components/motion/ParallaxImage";
 import { Reveal } from "@/components/motion/Reveal";
 import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
+
+const SERVICE_CATEGORIES = Array.from(new Set(expertiseAreas.map((area) => area.category)));
 
 const heroContainer: Variants = {
   hidden: {},
@@ -140,25 +142,45 @@ export default function Home() {
 
       <LeadOffersSection />
 
-      <section id="services" className="border-y border-black/10 bg-card py-16">
+      <section id="services" className="border-y border-black/10 bg-card py-20">
         <div className="shell">
           <Reveal>
-            <p className="text-sm font-semibold text-ink-muted">
-              Also available — sold as part of the offers above, or on their own
+            <p className="eyebrow">Also available</p>
+            <p className="font-funnel-display mt-4 max-w-2xl text-2xl font-normal tracking-tight text-foreground sm:text-3xl">
+              Sold as part of the offers above, or on their own.
             </p>
           </Reveal>
-          <div className="mt-5 flex flex-wrap gap-3">
-            {expertiseAreas.map((area, index) => (
-              <Reveal key={area.title} delay={index * 0.03} className="inline-block">
-                <Link
-                  href={`/services/${area.slug}`}
-                  className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-background px-5 py-2.5 text-sm font-medium text-foreground transition hover:border-black/20 hover:-translate-y-0.5"
-                >
-                  <span>{area.title}</span>
-                  <span aria-hidden="true">→</span>
-                </Link>
-              </Reveal>
-            ))}
+
+          <div className="mt-10 grid grid-cols-1 gap-px overflow-hidden rounded-[24px] bg-black/10 sm:grid-cols-2">
+            {SERVICE_CATEGORIES.map((category) => {
+              const categoryItems = expertiseAreas.filter((area) => area.category === category);
+              return (
+                <div key={category} className="min-w-0 bg-background">
+                  <p className="px-6 pt-6 text-xs font-semibold uppercase tracking-widest text-[#9EA5C3] sm:px-8 sm:pt-8">
+                    {category}
+                  </p>
+                  <div className="mt-3">
+                    {categoryItems.map((area, index) => (
+                      <Reveal key={area.title} delay={index * 0.03} className="min-w-0">
+                        <Link
+                          href={`/services/${area.slug}`}
+                          className="group flex min-w-0 items-center justify-between gap-6 border-t border-black/5 px-6 py-4 transition hover:bg-foreground/[0.03] sm:px-8"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-foreground">{area.title}</p>
+                            <p className="font-poppins mt-1 truncate text-xs text-ink-muted">{area.description}</p>
+                          </div>
+                          <ArrowRight
+                            className="h-4 w-4 flex-none text-ink-muted transition group-hover:translate-x-0.5 group-hover:text-foreground"
+                            aria-hidden="true"
+                          />
+                        </Link>
+                      </Reveal>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
