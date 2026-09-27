@@ -5,11 +5,11 @@ import { SiteFooter } from "@/components/SiteFooter";
 import "./globals.css";
 
 const title = {
-  default: "Enodre — Digital workflows for growing businesses",
+  default: "Enodre — AI Workflow Systems & AI-Code Audits",
   template: "%s | Enodre",
 };
 const description =
-  "We design and build digital workflows that turn paper trails and spreadsheets into clear, working systems.";
+  "We build AI-powered workflow systems for operations-heavy businesses, and run fixed-price AI-code audits for products that outgrew how fast they were built.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://enodre.com"),
@@ -19,10 +19,11 @@ export const metadata: Metadata = {
     "custom software development",
     "MVP development",
     "web development agency",
-    "SaaS development",
+    "vertical SaaS development",
     "mobile app development",
     "UI UX design",
-    "software development studio",
+    "legacy system modernization",
+    "fractional CTO",
   ],
   alternates: {
     canonical: "/",

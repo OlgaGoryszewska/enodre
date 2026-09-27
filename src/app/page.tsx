@@ -7,6 +7,7 @@ import { motion, type Variants } from "framer-motion";
 import { Quote } from "lucide-react";
 import { expertiseAreas, industries, products, stackGroups, teamMembers } from "@/lib/content";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
+import { LeadOffersSection } from "@/components/LeadOffersSection";
 import { ProcessSection } from "@/components/ProcessSection";
 import { TeamSection } from "@/components/TeamSection";
 import { BlogSection } from "@/components/BlogSection";
@@ -29,28 +30,6 @@ const heroItem: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } },
 };
 
-const SERVICE_CATEGORIES = Array.from(new Set(expertiseAreas.map((area) => area.category)));
-
-const EXPERTISE_CARD_STYLES: { title: string; number: string; gradient: string }[] = [
-  { title: "Custom Software Development", number: "01", gradient: "linear-gradient(135deg, #E9F1FF 0%, #FFFFFF 100%)" },
-  { title: "MVP Development", number: "02", gradient: "linear-gradient(135deg, #ECEEF5 0%, #FFFFFF 100%)" },
-  { title: "Web Development", number: "03", gradient: "linear-gradient(135deg, #EFEFF4 0%, #FFFFFF 100%)" },
-  { title: "Mobile App Development", number: "05", gradient: "linear-gradient(135deg, #F5F1FF 0%, #FFFFFF 100%)" },
-  { title: "UI & UX Design", number: "08", gradient: "linear-gradient(135deg, #FFF0F6 0%, #FFFFFF 100%)" },
-  { title: "Legacy Code Refactoring", number: "09", gradient: "linear-gradient(135deg, #F0F0F2 0%, #FFFFFF 100%)" },
-  { title: "Software Code Audit", number: "10", gradient: "linear-gradient(135deg, #EAFBF1 0%, #FFFFFF 100%)" },
-  { title: "Systems Integration", number: "11", gradient: "linear-gradient(135deg, #DFF5F1 0%, #FFFFFF 100%)" },
-  { title: "Cloud Migration", number: "13", gradient: "linear-gradient(135deg, #F1F0FF 0%, #FFFFFF 100%)" },
-];
-
-function ExpertiseCardBody({ area }: { area: (typeof expertiseAreas)[number] }) {
-  return (
-    <>
-      <h3 className="text-[22px] font-semibold leading-tight tracking-tighter text-[#1D1D1F]">{area.title}</h3>
-      <p className="font-poppins mt-2 text-sm leading-6 text-ink-muted">{area.description}</p>
-    </>
-  );
-}
 
 const testimonials = [
   {
@@ -81,7 +60,7 @@ const testimonials = [
     role: "FuelFlo",
     avatar: "/avatars/Robert-avatar.png",
     slug: "fuelflo",
-    quote: "Is nothing as capable as we have developed.",
+    quote: "There's nothing else out there as capable as what they built for us.",
   },
 ];
 
@@ -113,11 +92,11 @@ export default function Home() {
               variants={heroItem}
               className="font-funnel-display text-6xl font-normal tracking-tight text-foreground sm:text-7xl"
             >
-              Digital Studio
+              We untangle how your business runs.
             </motion.h1>
             <motion.p variants={heroItem} className="font-poppins mt-3 pb-3 text-center tracking-normal text-base text-black sm:mt-4">
-              Build the right product, from the start. <span className="font-bold">Senior product engineering</span> for founders, backed by 9+ years of
-              experience
+              Then we build the software for it. <span className="font-bold">AI-powered workflow systems</span> for operations-heavy businesses, and
+              <span className="font-bold"> AI-code audits</span> for products that outgrew how fast they were built.
             </motion.p>
             <motion.div variants={heroItem} className="relative mx-auto mt-10 w-[50vw]">
               <div
@@ -159,50 +138,27 @@ export default function Home() {
 
       <StackSection groups={stackGroups} />
 
-      <section id="services" className="border-y border-black/10 bg-card py-20">
-        <div className="shell flex flex-col gap-10">
+      <LeadOffersSection />
+
+      <section id="services" className="border-y border-black/10 bg-card py-16">
+        <div className="shell">
           <Reveal>
-            <p className="font-funnel-display text-3xl font-normal tracking-tight text-foreground sm:text-4xl">Services we offer</p>
-            <ScrollRevealHeading
-              text="Full-cycle development teams ready to turn your vision into a working, scalable product."
-              className="font-poppins mt-4 max-w-2xl text-sm font-normal"
-            />
+            <p className="text-sm font-semibold text-ink-muted">
+              Also available — sold as part of the offers above, or on their own
+            </p>
           </Reveal>
-          <div className="min-w-0">
-            {SERVICE_CATEGORIES.map((category, categoryIndex) => {
-              const categoryItems = expertiseAreas.filter((area) => area.category === category);
-              return (
-              <div key={category} className={`min-w-0${categoryIndex > 0 ? " mt-8" : ""}`}>
-                <p className="text-xs font-semibold uppercase tracking-widest text-[#9EA5C3]">{category}</p>
-                <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                  {categoryItems.map((area, index) => {
-                    const cardStyle = EXPERTISE_CARD_STYLES.find((card) => card.title === area.title)!;
-                    return (
-                      <Reveal key={area.title} delay={index * 0.05}>
-                        <Link
-                          href={`/services/${area.slug}`}
-                          className="relative flex h-full min-h-[380px] w-full flex-col overflow-hidden rounded-[24px] bg-background shadow-[0_24px_48px_-20px_rgba(30,30,60,0.35)] transition-all duration-200 ease-out hover:-translate-y-1"
-                        >
-                          <div className="relative h-[170px] w-full flex-none">
-                            <Image
-                              src={area.image}
-                              alt={`${area.title} preview`}
-                              fill
-                              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                              className="object-cover"
-                            />
-                          </div>
-                          <div className="flex-1 p-6" style={{ background: cardStyle.gradient }}>
-                            <ExpertiseCardBody area={area} />
-                          </div>
-                        </Link>
-                      </Reveal>
-                    );
-                  })}
-                </div>
-              </div>
-              );
-            })}
+          <div className="mt-5 flex flex-wrap gap-3">
+            {expertiseAreas.map((area, index) => (
+              <Reveal key={area.title} delay={index * 0.03} className="inline-block">
+                <Link
+                  href={`/services/${area.slug}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-background px-5 py-2.5 text-sm font-medium text-foreground transition hover:border-black/20 hover:-translate-y-0.5"
+                >
+                  <span>{area.title}</span>
+                  <span aria-hidden="true">→</span>
+                </Link>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>

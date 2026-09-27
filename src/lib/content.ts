@@ -38,7 +38,7 @@ export const expertiseAreas: ExpertiseArea[] = [
     slug: "custom-software-development",
     category: "Product Development",
     title: "Custom Software Development",
-    description: "Tailored software built around how your business actually operates, not a one-size-fits-all template.",
+    description: "Software shaped around how your business actually runs — not bent to fit a template.",
     image: "/custome-software-img.png",
     process: [
       { title: "Discovery", description: "Audit your current workflows and pin down exactly what the software needs to do." },
@@ -101,7 +101,7 @@ export const expertiseAreas: ExpertiseArea[] = [
     slug: "mvp-development",
     category: "Product Development",
     title: "MVP Development",
-    description: "Go from idea to a working product fast, scoped tightly around the riskiest assumptions worth testing first.",
+    description: "The fastest path from a messy idea to a working product real users can test — scoped around the one assumption that actually matters.",
     image: "/mvp-image.png",
     process: [
       { title: "Riskiest Assumption", description: "Identify the one thing that has to be true for the product to work, and build to test it." },
@@ -163,7 +163,7 @@ export const expertiseAreas: ExpertiseArea[] = [
     slug: "web-development",
     category: "Product Development",
     title: "Web Development",
-    description: "From high-converting marketing websites to powerful internal platforms, we create fast, modern experiences.",
+    description: "A site that does its job — clear, fast, built around how people actually decide to book or buy.",
     image: "/web-devel-img.png",
     process: [
       { title: "Discovery & Sitemap", description: "Map the pages, content, and user journeys the site needs to support." },
@@ -224,7 +224,7 @@ export const expertiseAreas: ExpertiseArea[] = [
     slug: "ui-ux-design",
     category: "Product Development",
     title: "UI & UX Design",
-    description: "User research, information architecture, and interface design that make complex products feel simple.",
+    description: "Research, structure, and interface design that turns a complicated product into something that feels obvious to use.",
     image: "/ux-design.png",
     process: [
       { title: "Research", description: "Understand your users, their goals, and where the current experience breaks down." },
@@ -284,7 +284,7 @@ export const expertiseAreas: ExpertiseArea[] = [
     slug: "mobile-app-development",
     category: "Product Development",
     title: "Mobile App Development",
-    description: "Native and cross-platform iOS and Android experiences that keep your business connected wherever work happens.",
+    description: "A mobile app built around how your team or customers actually work — not a shrunk-down version of your website.",
     image: "/mobile-app-image.png",
     process: [
       { title: "Discovery & Planning", description: "Define the platforms, core features, and technical approach." },
@@ -345,7 +345,7 @@ export const expertiseAreas: ExpertiseArea[] = [
     slug: "legacy-code-refactoring",
     category: "Modernize & Maintain",
     title: "Legacy Code Refactoring",
-    description: "Modernize ageing codebases for maintainability and performance without disrupting the business running on them.",
+    description: "We untangle an ageing codebase and modernize it in place, without stopping the business that depends on it.",
     image: "/code-refactory-image.png",
     process: [
       { title: "Audit the Codebase", description: "Identify the riskiest, most brittle parts of the system first." },
@@ -406,7 +406,7 @@ export const expertiseAreas: ExpertiseArea[] = [
     slug: "software-code-audit",
     category: "Modernize & Maintain",
     title: "Software Code Audit",
-    description: "A thorough technical assessment of your codebase's quality, security, and scalability, with a clear action plan.",
+    description: "A clear-eyed look at what's actually going on in your codebase — quality, security, scale — and a straight plan for fixing what matters.",
     image: "/audit-img.png",
     process: [
       { title: "Technical Review", description: "Examine the codebase for architecture, quality, and maintainability issues." },
@@ -467,7 +467,7 @@ export const expertiseAreas: ExpertiseArea[] = [
     slug: "systems-integration",
     category: "Modernize & Maintain",
     title: "Systems Integration",
-    description: "Connect the tools your business already relies on so data moves between them without manual work.",
+    description: "The tools your business already relies on, finally talking to each other — no more copying data by hand.",
     image: "/system-integration-image.png",
     process: [
       { title: "Map Current Systems", description: "Understand what tools you use today and how data is supposed to move between them." },
@@ -529,7 +529,7 @@ export const expertiseAreas: ExpertiseArea[] = [
     slug: "cloud-migration",
     category: "Modernize & Maintain",
     title: "Cloud Migration",
-    description: "Move applications and data to the cloud with minimal downtime and a plan for cost and performance after launch.",
+    description: "Infrastructure untangled from whatever pricing model it outgrew, moved and right-sized with a plan for what comes after.",
     image: "/cloude-migration-img.png",
     process: [
       { title: "Assess & Plan", description: "Audit your current environment and define a migration path with minimal downtime." },
@@ -725,11 +725,11 @@ export type Founder = {
 
 export const founder: Founder = {
   name: "Olga",
-  role: "Fullstack Developer & CEO",
+  role: "Fullstack Developer",
   image: "/profile-olga_goryszewska_enodre-portfolio-image.png",
   imageAlt: "Portrait of Olga Goryszewska",
   bio: [
-    "Olga is a Fullstack Developer and CEO who believes great software begins with understanding people, not just technology. With a background spanning UX strategy, product design, and modern web development, she helps businesses untangle complex workflows and turn them into intuitive digital experiences that are both elegant and practical.",
+    "Olga is a Fullstack Developer who believes great software begins with understanding people, not just technology. With a background spanning UX strategy, product design, and modern web development, she helps businesses untangle complex workflows and turn them into intuitive digital experiences that are both elegant and practical.",
     "She specializes in designing dashboards, business applications, workflow automation, AI-powered solutions, and high-performance websites. Every project starts with one question: What's really slowing this business down? From there, she works closely with clients to uncover opportunities, simplify processes, and build software that delivers measurable results.",
     "Olga's approach is collaborative, detail-oriented, and focused on long-term value. Rather than building features for the sake of technology, she creates solutions that improve efficiency, reduce friction, and help businesses grow with confidence.",
     "Whether partnering with startups, growing companies, or enterprise teams, her goal remains the same: to design software that feels effortless to use and makes everyday work better.",
@@ -738,12 +738,12 @@ export const founder: Founder = {
 
 export const nick: Founder = {
   name: "Nick",
-  role: "Technical Lead & CEO",
+  role: "Technical Lead",
   image: "/nick-enodre.png",
   imageAlt: "Portrait of Nick Chaudhari",
   linkedin: "https://www.linkedin.com/in/nikhilesh-chaudhari/",
   bio: [
-    "Nick is a Technical Lead and CEO with 9+ years of experience across startups, consultancies, and enterprise environments, with a track record of designing and shipping scalable full-stack platforms across SaaS, retail technology, cybersecurity, insurance, and sports tech.",
+    "Nick is a Technical Lead with 9+ years of experience across startups, consultancies, and enterprise environments, with a track record of designing and shipping scalable full-stack platforms across SaaS, retail technology, cybersecurity, insurance, and sports tech.",
     "Most recently, he's led the architecture of an integrations platform and an agentic AI system for Australian accounting firms, building resilient, event-driven workflows with Python, Django, React, and AWS. Before that, he spent two years at Splunk as a Senior Forward Deployed Software Engineer, and three years at Kangatech scaling the KT360 sports-science platform as an early engineer.",
     "He's earned recognition along the way, including Splunk's MVP of the Year in 2024, and holds a Master of Information Technology from Monash University. Beyond the code, he's known for mentoring engineers and setting the standards — CI/CD, testing, observability — that keep platforms reliable as they scale.",
   ],
@@ -969,7 +969,7 @@ export const faqs: Faq[] = [
   {
     question: "Will I get an estimate before the project starts?",
     answer:
-      "Yes. Once we understand the scope, you'll get a fixed price and timeline before any work begins — no open-ended hourly billing on project work. Most engagements land somewhere between a focused landing page (around $900) and a full product build spanning web, mobile, and backend (from $8,500).",
+      "Yes. Once we understand the scope, you'll get a fixed price and timeline before any work begins — no open-ended hourly billing on project work. Engagements range from a focused landing page up to a full product build spanning web, mobile, and backend, so the number depends entirely on what you're trying to ship.",
   },
   {
     question: "How will I receive updates on my project?",
