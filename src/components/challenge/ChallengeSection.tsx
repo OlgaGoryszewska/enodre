@@ -3,8 +3,11 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { FileText, LayoutGrid, Phone, Rocket } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa";
 import { ChallengeForm } from "@/components/challenge/ChallengeForm";
 import { founder } from "@/lib/content";
+
+const WHATSAPP_LINK = "https://wa.me/4748338779";
 
 const steps = [
   { icon: Phone, label: "Discovery Call" },
@@ -73,6 +76,16 @@ export function ChallengeSection() {
                   info@enodre.com
                 </a>
               </p>
+
+              <a
+                href={WHATSAPP_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-background underline underline-offset-2 hover:text-background/80"
+              >
+                <FaWhatsapp className="h-4 w-4" aria-hidden="true" />
+                <span>Message us on WhatsApp</span>
+              </a>
             </div>
           </div>
 

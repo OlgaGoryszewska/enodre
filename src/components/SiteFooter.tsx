@@ -14,6 +14,12 @@ const COMPANY_LINKS = [
   { href: "/faq", label: "FAQ" },
 ];
 
+const CONTACT_LINKS = [
+  { href: "https://www.linkedin.com/company/enodre/", label: "LinkedIn", icon: FaLinkedin, external: true },
+  { href: WHATSAPP_LINK, label: "WhatsApp", icon: FaWhatsapp, external: true },
+  { href: "mailto:info@enodre.com", label: "Email", icon: Mail, external: false },
+];
+
 export function SiteFooter() {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -71,29 +77,26 @@ export function SiteFooter() {
             ))}
           </ul>
 
-          <div className="mt-8 flex justify-center">
-            <a
-              href="https://www.linkedin.com/company/enodre/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-background/80 transition hover:text-background"
-            >
-              <FaLinkedin className="h-4 w-4" aria-hidden="true" />
-              <span>LinkedIn</span>
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </a>
+          <div className="mt-8 flex flex-col items-center gap-3">
+            {CONTACT_LINKS.map(({ href, label, icon: Icon, external }) => (
+              <a
+                key={label}
+                href={href}
+                {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-background/80 transition hover:text-background"
+              >
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                <span>{label}</span>
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </a>
+            ))}
           </div>
         </div>
       </div>
 
       <div className="border-t border-background/10">
         <div className="shell flex flex-col gap-4 py-6 text-sm text-background/60 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
-            <p>© {new Date().getFullYear()} Enodre. All rights reserved.</p>
-            <a href="mailto:info@enodre.com" className="transition hover:text-background">
-              info@enodre.com
-            </a>
-          </div>
+          <p>© {new Date().getFullYear()} Enodre. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <Link href="/login" aria-label="Admin" className="transition hover:text-background">
               <DoorOpen className="h-5 w-5" aria-hidden="true" />
