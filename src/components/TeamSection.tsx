@@ -12,7 +12,7 @@ interface TeamMemberProps {
   reverse?: boolean;
 }
 
-function TeamMember({ member, reverse }: TeamMemberProps) {
+function TeamMember({ member, reverse, locale = "en" }: TeamMemberProps & { locale?: "en" | "pl" }) {
   const [expanded, setExpanded] = useState(false);
   const [intro, ...rest] = member.bio;
   const initials = member.name
@@ -79,7 +79,7 @@ function TeamMember({ member, reverse }: TeamMemberProps) {
             aria-expanded={expanded}
             className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-accent transition hover:opacity-80"
           >
-            <span>{expanded ? "Read less" : "Read more"}</span>
+            <span>{expanded ? (locale === "pl" ? "Czytaj mniej" : "Read less") : locale === "pl" ? "Czytaj więcej" : "Read more"}</span>
             <ChevronDown
               className={`h-4 w-4 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
               aria-hidden="true"
@@ -94,19 +94,20 @@ function TeamMember({ member, reverse }: TeamMemberProps) {
 interface TeamSectionProps {
   members: Founder[];
   ctaHref: string;
+  locale?: "en" | "pl";
 }
 
-export function TeamSection({ members, ctaHref }: TeamSectionProps) {
+export function TeamSection({ members, ctaHref, locale = "en" }: TeamSectionProps) {
   return (
     <section id="about" className="border-y border-black/10 bg-card py-20 sm:py-28">
       <div className="shell mb-14">
         <p className="font-funnel-display text-3xl font-normal tracking-tight text-foreground sm:text-4xl">
-          Meet our team
+          {locale === "pl" ? "Poznaj nasz zespół" : "Meet our team"}
         </p>
       </div>
       <div className="shell grid gap-20">
         {members.map((member, index) => (
-          <TeamMember key={member.name} member={member} reverse={index % 2 === 1} />
+          <TeamMember key={member.name} member={member} reverse={index % 2 === 1} locale={locale} />
         ))}
       </div>
 
@@ -116,7 +117,7 @@ export function TeamSection({ members, ctaHref }: TeamSectionProps) {
           href={ctaHref}
         >
           <span aria-hidden="true" className="h-2 w-2 rounded-full bg-background" />
-          <span>Send us a message</span>
+          <span>{locale === "pl" ? "Napisz do nas" : "Send us a message"}</span>
         </Link>
       </div>
     </section>

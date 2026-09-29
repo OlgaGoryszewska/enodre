@@ -29,7 +29,13 @@ import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
 
 interface StackSectionProps {
   groups: StackGroup[];
+  locale?: "en" | "pl";
 }
+
+const HEADING_PL: Record<string, string> = {
+  "Tools we use": "Narzędzia, których używamy",
+  "Stack we use": "Technologie, których używamy",
+};
 
 type Icon = ComponentType<{ className?: string }>;
 
@@ -104,14 +110,16 @@ function PillGroup({ items }: { items: string[] }) {
   );
 }
 
-export function StackSection({ groups }: StackSectionProps) {
+export function StackSection({ groups, locale = "en" }: StackSectionProps) {
+  const heading = (text: string) => (locale === "pl" ? HEADING_PL[text] ?? text : text);
+
   return (
     <section id="stack" className="bg-foreground py-20 text-background sm:py-28">
       <div className="shell">
         <Reveal className="text-center">
-          <p className="eyebrow">Tools & stack</p>
+          <p className="eyebrow">{locale === "pl" ? "Narzędzia i technologie" : "Tools & stack"}</p>
           <ScrollRevealHeading
-            text={groups[0]?.heading ?? ""}
+            text={heading(groups[0]?.heading ?? "")}
             className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
           />
         </Reveal>
@@ -121,7 +129,7 @@ export function StackSection({ groups }: StackSectionProps) {
         {groups.slice(1).map((group) => (
           <div key={group.heading} className="mt-16 text-center">
             <Reveal>
-              <h3 className="text-xl font-semibold tracking-tight">{group.heading}</h3>
+              <h3 className="text-xl font-semibold tracking-tight">{heading(group.heading)}</h3>
             </Reveal>
             <PillGroup items={group.items} />
           </div>

@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, DoorOpen, X } from "lucide-react";
 import { expertiseAreas, industries, technologies } from "@/lib/content";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 type NavItem =
   | { label: string; href: string }
@@ -167,6 +168,7 @@ export function SiteHeader() {
               </Link>
             )
           )}
+          <LanguageSwitcher />
           <Link
             href="/#get-in-touch"
             className="rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background transition hover:opacity-90"
@@ -237,6 +239,7 @@ export function SiteHeader() {
               >
                 Contact Us
               </Link>
+              <LanguageSwitcher className="mt-6 self-center" />
             </motion.nav>
 
             <Link

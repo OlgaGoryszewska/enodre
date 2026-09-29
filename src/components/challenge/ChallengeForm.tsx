@@ -14,7 +14,51 @@ import { challengeFormSchema, type ChallengeFormValues } from "@/lib/challenge-s
 
 type ContactTab = "email" | "call";
 
-export function ChallengeForm() {
+const T = {
+  en: {
+    thanksTitle: "Thank you — we've got it.",
+    thanksBody: "A real person will read what you shared and get back to you.",
+    sendAnother: "Send another message",
+    tabEmail: "Send Email",
+    tabCall: "Book a Call",
+    calendarPlaceholder: "Calendar booking isn't connected yet — add a scheduling link (Calendly, Cal.com, etc.) to enable this tab.",
+    fullName: "Full Name",
+    email: "Email",
+    message: "Message",
+    messagePlaceholder: "Tell us a bit about what you need.",
+    uploadPlaceholder: "Drag and drop or upload file",
+    agree: "Yes, I understand and agree with the",
+    and: "and",
+    terms: "Terms & Conditions",
+    privacy: "Privacy Policy",
+    error: "Something went wrong sending your message. Please try again, or email us directly.",
+    sending: "Sending...",
+    send: "Send a Message",
+  },
+  pl: {
+    thanksTitle: "Dziękujemy — otrzymaliśmy wiadomość.",
+    thanksBody: "Prawdziwa osoba przeczyta to, co napisałeś/-aś, i się odezwie.",
+    sendAnother: "Wyślij kolejną wiadomość",
+    tabEmail: "Wyślij e-mail",
+    tabCall: "Umów rozmowę",
+    calendarPlaceholder: "Rezerwacja terminu nie jest jeszcze podłączona — dodaj link do kalendarza (Calendly, Cal.com itp.), aby włączyć tę zakładkę.",
+    fullName: "Imię i nazwisko",
+    email: "E-mail",
+    message: "Wiadomość",
+    messagePlaceholder: "Opowiedz nam w kilku słowach, czego potrzebujesz.",
+    uploadPlaceholder: "Przeciągnij i upuść lub prześlij plik",
+    agree: "Tak, rozumiem i akceptuję",
+    and: "oraz",
+    terms: "Regulamin",
+    privacy: "Politykę Prywatności",
+    error: "Coś poszło nie tak podczas wysyłania wiadomości. Spróbuj ponownie lub napisz do nas bezpośrednio.",
+    sending: "Wysyłanie...",
+    send: "Wyślij wiadomość",
+  },
+};
+
+export function ChallengeForm({ locale = "en" }: { locale?: "en" | "pl" }) {
+  const t = T[locale];
   const [tab, setTab] = useState<ContactTab>("email");
   const [submitState, setSubmitState] = useState<"idle" | "success" | "error">("idle");
   const [agreed, setAgreed] = useState(false);
@@ -76,17 +120,15 @@ export function ChallengeForm() {
             <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-2xl font-semibold tracking-tight">Thank you — we&apos;ve got it.</h3>
-            <p className="mx-auto max-w-sm leading-7 text-ink-muted">
-              A real person will read what you shared and get back to you.
-            </p>
+            <h3 className="text-2xl font-semibold tracking-tight">{t.thanksTitle}</h3>
+            <p className="mx-auto max-w-sm leading-7 text-ink-muted">{t.thanksBody}</p>
           </div>
           <button
             type="button"
             onClick={() => setSubmitState("idle")}
             className="text-sm font-semibold text-accent transition hover:underline"
           >
-            Send another message
+            {t.sendAnother}
           </button>
         </motion.div>
       ) : (
@@ -100,7 +142,7 @@ export function ChallengeForm() {
                 tab === "email" ? "bg-background text-foreground shadow-sm" : "text-ink-muted"
               )}
             >
-              Send Email
+              {t.tabEmail}
             </button>
             <button
               type="button"
@@ -110,15 +152,14 @@ export function ChallengeForm() {
                 tab === "call" ? "bg-background text-foreground shadow-sm" : "text-ink-muted"
               )}
             >
-              Book a Call
+              {t.tabCall}
               <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
           </div>
 
           {tab === "call" ? (
             <p className="rounded-xl border border-dashed border-black/15 p-6 text-center text-sm text-ink-muted">
-              Calendar booking isn&apos;t connected yet — add a scheduling link (Calendly, Cal.com, etc.) to enable
-              this tab.
+              {t.calendarPlaceholder}
             </p>
           ) : (
             <form
@@ -134,10 +175,10 @@ export function ChallengeForm() {
               </div>
 
               <div className="grid gap-6 sm:grid-cols-2">
-                <FormField id="fullName" label="Full Name" required error={errors.fullName?.message}>
+                <FormField id="fullName" label={t.fullName} required error={errors.fullName?.message}>
                   <Input id="fullName" placeholder="John Smith" autoComplete="name" {...register("fullName")} />
                 </FormField>
-                <FormField id="email" label="Email" required error={errors.email?.message}>
+                <FormField id="email" label={t.email} required error={errors.email?.message}>
                   <Input
                     id="email"
                     type="email"
@@ -148,11 +189,11 @@ export function ChallengeForm() {
                 </FormField>
               </div>
 
-              <FormField id="challenge" label="Message" required error={errors.challenge?.message}>
+              <FormField id="challenge" label={t.message} required error={errors.challenge?.message}>
                 <Textarea
                   id="challenge"
                   rows={5}
-                  placeholder="Tell us a bit about what you need."
+                  placeholder={t.messagePlaceholder}
                   {...register("challenge")}
                 />
               </FormField>
@@ -166,7 +207,7 @@ export function ChallengeForm() {
                   onChange={(event) => setFileName(event.target.files?.[0]?.name ?? null)}
                 />
                 <FileIcon className="h-4 w-4" aria-hidden="true" />
-                <span>{fileName ?? "Drag and drop or upload file"}</span>
+                <span>{fileName ?? t.uploadPlaceholder}</span>
               </label>
 
               <label className="flex items-start gap-3 text-sm text-ink-muted">
@@ -177,8 +218,8 @@ export function ChallengeForm() {
                   className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
                 />
                 <span>
-                  Yes, I understand and agree with the <span className="underline">Terms &amp; Conditions</span> and{" "}
-                  <span className="underline">Privacy Policy</span>.
+                  {t.agree} <span className="underline">{t.terms}</span> {t.and}{" "}
+                  <span className="underline">{t.privacy}</span>.
                 </span>
               </label>
 
@@ -193,7 +234,7 @@ export function ChallengeForm() {
                     className="flex items-center gap-2 overflow-hidden rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger"
                   >
                     <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-                    <span>Something went wrong sending your message. Please try again, or email us directly.</span>
+                    <span>{t.error}</span>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -206,10 +247,10 @@ export function ChallengeForm() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                    <span>Sending...</span>
+                    <span>{t.sending}</span>
                   </>
                 ) : (
-                  <span>Send a Message</span>
+                  <span>{t.send}</span>
                 )}
               </button>
             </form>

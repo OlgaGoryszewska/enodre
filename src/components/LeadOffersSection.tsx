@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 
-const LEAD_OFFERS = [
+const LEAD_OFFERS_EN = [
   {
     image: "/ai-image.png",
     imageAlt: "A robotic hand touching a laptop keyboard, representing AI handling data entry and processing.",
@@ -41,16 +41,57 @@ const LEAD_OFFERS = [
   },
 ];
 
-export function LeadOffersSection() {
+const LEAD_OFFERS_PL = [
+  {
+    image: "/ai-image.png",
+    imageAlt: "Robotyczna dłoń dotykająca klawiatury laptopa — symbol AI obsługującego wprowadzanie i przetwarzanie danych.",
+    color: "#3661C4",
+    eyebrow: "Oferta wiodąca 01",
+    title: "Systemy pracy oparte na AI — od terenu do biura",
+    description:
+      "Zastępujemy papier, arkusze kalkulacyjne i grupowe czaty jednym połączonym systemem — AI zajmuje się ekstrakcją danych, weryfikacją i raportowaniem, więc nic nie trzeba przepisywać ręcznie.",
+    bullets: [
+      "Dane z terenu wprowadzane raz, automatycznie weryfikowane",
+      "AI wyodrębnia i sprawdza dane zamiast Twojego zespołu",
+      "Raporty, które kiedyś zajmowały godziny, gotowe w kilka sekund",
+    ],
+    proof: "FuelFlo — zbudowaliśmy dokładnie taki system dla firm z branży zasilania tymczasowego i paliw",
+    proofHref: "/products/fuelflo",
+    pricing: "Opłata za wdrożenie, a potem stały abonament",
+    cta: { label: "Zobacz, jak działa FuelFlo", href: "/products/fuelflo" },
+  },
+  {
+    image: "/audit-img.png",
+    imageAlt: "Dwoje inżynierów analizujących pulpit audytu kodu na monitorze, z oznaczonymi problemami o priorytecie krytycznym, wysokim, średnim i niskim.",
+    color: "#B0512E",
+    eyebrow: "Oferta wiodąca 02",
+    title: "Audyt i ratowanie kodu AI",
+    description:
+      "Audyt w stałej cenie dla founderów i firm, których produkt zbudowany z pomocą AI ma już realnych użytkowników — przegląd bezpieczeństwa, wzmocnienie kodu i jasny plan, co naprawić najpierw.",
+    bullets: [
+      "Przegląd bezpieczeństwa i architektury tego, co faktycznie trafiło na produkcję",
+      "Wzmocnienie kodu w miejscach, które naprawdę stanowią ryzyko",
+      "Plan naprawy w stałej cenie, uszeregowany według priorytetów",
+    ],
+    proof: "Poparte doświadczeniem w bezpieczeństwie ze Splunk oraz naszymi własnymi badaniami nad ryzykiem kodu generowanego przez AI",
+    proofHref: "/blog/vibe-coded-mvp-real-users",
+    pricing: "Audyt w stałej cenie, a potem płatna naprawa",
+    cta: { label: "Przeczytaj, co pęka najpierw", href: "/blog/vibe-coded-mvp-real-users" },
+  },
+];
+
+export function LeadOffersSection({ locale = "en" }: { locale?: "en" | "pl" }) {
+  const LEAD_OFFERS = locale === "pl" ? LEAD_OFFERS_PL : LEAD_OFFERS_EN;
+
   return (
     <section className="py-20 sm:py-28">
       <div className="shell">
-        <p className="eyebrow">What we do</p>
+        <p className="eyebrow">{locale === "pl" ? "Czym się zajmujemy" : "What we do"}</p>
         <p className="font-funnel-display mt-4 max-w-2xl text-3xl font-normal tracking-tight text-foreground sm:text-4xl">
-          Two things we do better than almost anyone.
+          {locale === "pl" ? "Dwie rzeczy, na których się skupiamy." : "Two things we focus on."}
         </p>
         <p className="font-poppins mt-4 max-w-2xl text-sm font-normal text-ink-muted">
-          Everything else we build feeds into one of these.
+          {locale === "pl" ? "Wszystko inne, co budujemy, wpisuje się w jedną z tych ofert." : "Everything else we build feeds into one of these."}
         </p>
 
         <div className="mt-12 grid gap-6 lg:grid-cols-2">

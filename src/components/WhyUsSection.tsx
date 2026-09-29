@@ -3,7 +3,7 @@
 import { Eye, Puzzle, Shield, Users, Zap } from "lucide-react";
 import { Reveal } from "@/components/motion/Reveal";
 
-const BENEFITS = [
+const BENEFITS_EN = [
   {
     icon: Zap,
     title: "A Thoughtful, Fast Start",
@@ -45,17 +45,62 @@ const BENEFITS = [
   },
 ];
 
-export function WhyUsSection() {
+const BENEFITS_PL = [
+  {
+    icon: Zap,
+    title: "Przemyślany, szybki start",
+    description:
+      "Bez zbędnych opóźnień. Praktyczne podejście oznacza, że właściwe pytania padają na samym początku, dzięki czemu możemy od razu ruszyć z pracą — sprawnie i skutecznie.",
+    bg: "linear-gradient(135deg, #C7DBFF 0%, #E9F1FF 100%)",
+    color: "#3661C4",
+  },
+  {
+    icon: Eye,
+    title: "Pełna przejrzystość",
+    description:
+      "Zawsze wiesz, czego się spodziewać. Jasny, uporządkowany plan z dobrze określonymi etapami sprawia, że proces przebiega płynnie i przewidywalnie.",
+    bg: "linear-gradient(135deg, #DFD1FF 0%, #F3EEFF 100%)",
+    color: "#6D3FC7",
+  },
+  {
+    icon: Users,
+    title: "Skalowanie bez ograniczeń",
+    description: "Potrzebujesz dodatkowej wiedzy eksperckiej? Angażujemy właściwe osoby, aby Twój projekt zawsze miał potrzebne kompetencje.",
+    bg: "linear-gradient(135deg, #BEF0D3 0%, #E9FBF1 100%)",
+    color: "#1B9159",
+  },
+  {
+    icon: Puzzle,
+    title: "Rozwiązania dopasowane do Ciebie",
+    description:
+      "Każdy projekt jest inny. Niezależnie od tego, czy masz jasną wizję, czy potrzebujesz eksperckiego wsparcia, dopasowujemy produkt do Twoich potrzeb.",
+    bg: "linear-gradient(135deg, #FFDDB0 0%, #FFF3E8 100%)",
+    color: "#B5680F",
+  },
+  {
+    icon: Shield,
+    title: "Bezpieczeństwo, na którym można polegać",
+    description:
+      "Twój kod, dane i pomysły pozostają Twoje. Umowy NDA są standardem, a każdy produkt od pierwszego dnia powstaje zgodnie z bezpiecznymi praktykami klasy produkcyjnej.",
+    bg: "linear-gradient(135deg, #FFC2DE 0%, #FFF0F6 100%)",
+    color: "#C23E85",
+  },
+];
+
+export function WhyUsSection({ locale = "en" }: { locale?: "en" | "pl" }) {
+  const BENEFITS = locale === "pl" ? BENEFITS_PL : BENEFITS_EN;
+
   return (
     <section className="border-y border-black/10 bg-card py-20 sm:py-28">
       <div className="shell">
         <Reveal>
           <p className="font-funnel-display text-3xl font-normal tracking-tight text-foreground sm:text-4xl">
-            Benefits of working with us
+            {locale === "pl" ? "Zalety współpracy z nami" : "Benefits of working with us"}
           </p>
           <p className="font-poppins mt-4 max-w-2xl text-sm font-normal text-ink-muted">
-            At Enodre, we focus on speed, clarity, and efficiency — helping you turn ideas into reality without
-            unnecessary complexity. Collaboration is key to building something truly impactful.
+            {locale === "pl"
+              ? "W Enodre stawiamy na szybkość, przejrzystość i efektywność — pomagamy zamieniać pomysły w rzeczywistość bez zbędnej komplikacji. Współpraca jest kluczem do zbudowania czegoś naprawdę wartościowego."
+              : "At Enodre, we focus on speed, clarity, and efficiency — helping you turn ideas into reality without unnecessary complexity. Collaboration is key to building something truly impactful."}
           </p>
         </Reveal>
 

@@ -9,14 +9,22 @@ import { founder } from "@/lib/content";
 
 const WHATSAPP_LINK = "https://wa.me/4748338779";
 
-const steps = [
+const STEPS_EN = [
   { icon: Phone, label: "Discovery Call" },
   { icon: LayoutGrid, label: "Analyze Your Requirements" },
   { icon: FileText, label: "Get a Detailed Proposal" },
   { icon: Rocket, label: "Kick Off Your Project" },
 ];
 
-export function ChallengeSection() {
+const STEPS_PL = [
+  { icon: Phone, label: "Rozmowa wstępna" },
+  { icon: LayoutGrid, label: "Analiza Twoich potrzeb" },
+  { icon: FileText, label: "Szczegółowa propozycja" },
+  { icon: Rocket, label: "Start projektu" },
+];
+
+export function ChallengeSection({ locale = "en" }: { locale?: "en" | "pl" }) {
+  const steps = locale === "pl" ? STEPS_PL : STEPS_EN;
   return (
     <section id="get-in-touch" className="border-t border-black/10 bg-card py-20 sm:py-28">
       <div className="shell">
@@ -34,9 +42,19 @@ export function ChallengeSection() {
             />
             <div className="relative">
               <h2 className="font-funnel-display text-3xl leading-tight sm:text-4xl">
-                Get in Touch
-                <br />
-                to Start the Discussion
+                {locale === "pl" ? (
+                  <>
+                    Skontaktuj się z nami
+                    <br />
+                    i zacznijmy rozmowę
+                  </>
+                ) : (
+                  <>
+                    Get in Touch
+                    <br />
+                    to Start the Discussion
+                  </>
+                )}
               </h2>
 
               <div className="mt-10 overflow-hidden rounded-2xl bg-white/5">
@@ -71,7 +89,7 @@ export function ChallengeSection() {
               </div>
 
               <p className="mt-6 text-sm text-background/70">
-                Or email us directly at{" "}
+                {locale === "pl" ? "Lub napisz bezpośrednio na" : "Or email us directly at"}{" "}
                 <a href="mailto:info@enodre.com" className="font-medium text-background underline underline-offset-2 hover:text-background/80">
                   info@enodre.com
                 </a>
@@ -84,13 +102,13 @@ export function ChallengeSection() {
                 className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-background underline underline-offset-2 hover:text-background/80"
               >
                 <FaWhatsapp className="h-4 w-4" aria-hidden="true" />
-                <span>Message us on WhatsApp</span>
+                <span>{locale === "pl" ? "Napisz do nas na WhatsApp" : "Message us on WhatsApp"}</span>
               </a>
             </div>
           </div>
 
           <div className="bg-card p-6 sm:p-10">
-            <ChallengeForm />
+            <ChallengeForm locale={locale} />
           </div>
         </motion.div>
       </div>

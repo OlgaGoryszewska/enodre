@@ -4,11 +4,11 @@ import { blogPosts } from "@/lib/blog";
 import { BlogCover } from "@/components/blog/BlogCover";
 import { Reveal } from "@/components/motion/Reveal";
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+function formatDate(iso: string, locale: "en" | "pl") {
+  return new Date(iso).toLocaleDateString(locale === "pl" ? "pl-PL" : "en-US", { year: "numeric", month: "long", day: "numeric" });
 }
 
-export function BlogSection() {
+export function BlogSection({ locale = "en" }: { locale?: "en" | "pl" }) {
   const posts = blogPosts.slice(0, 3);
 
   return (
@@ -17,13 +17,13 @@ export function BlogSection() {
         <Reveal>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="eyebrow">From the blog</p>
+              <p className="eyebrow">{locale === "pl" ? "Z naszego bloga" : "From the blog"}</p>
               <p className="font-funnel-display mt-4 text-3xl font-normal tracking-tight text-foreground sm:text-4xl">
-                Notes on software quality
+                {locale === "pl" ? "Notatki o jakości oprogramowania" : "Notes on software quality"}
               </p>
             </div>
             <Link href="/blog" className="text-sm font-semibold text-foreground underline underline-offset-4 hover:text-ink-muted">
-              View all articles →
+              {locale === "pl" ? "Zobacz wszystkie artykuły →" : "View all articles →"}
             </Link>
           </div>
         </Reveal>
@@ -54,7 +54,7 @@ export function BlogSection() {
                     <div className="text-xs text-ink-muted">
                       <span className="font-semibold text-foreground">{post.author.name}</span>
                       {" · "}
-                      {formatDate(post.publishedAt)}
+                      {formatDate(post.publishedAt, locale)}
                     </div>
                   </div>
                 </div>

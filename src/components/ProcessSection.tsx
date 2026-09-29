@@ -28,15 +28,18 @@ const TILE_HOVER =
 
 const steps = processPhases.flatMap((phase) => phase.subSteps);
 
-export function ProcessSection() {
+export function ProcessSection({ locale = "en" }: { locale?: "en" | "pl" }) {
   return (
     <section className="py-20 sm:py-28">
       <div className="shell">
         <Reveal>
-          <p className="font-funnel-display text-3xl font-normal tracking-tight text-foreground sm:text-4xl">Our working process</p>
+          <p className="font-funnel-display text-3xl font-normal tracking-tight text-foreground sm:text-4xl">
+            {locale === "pl" ? "Jak pracujemy" : "Our working process"}
+          </p>
           <p className="font-poppins mt-4 max-w-2xl text-sm font-normal text-ink-muted">
-            Great products start with a bold strategy. We dissect every phase, refine for efficiency, and push
-            boundaries to build a product that exceeds the highest standards.
+            {locale === "pl"
+              ? "Dobre produkty zaczynają się od przemyślanej strategii. Analizujemy każdy etap, dopracowujemy pod kątem efektywności i nie idziemy na kompromisy, by zbudować produkt spełniający najwyższe standardy."
+              : "Great products start with a bold strategy. We dissect every phase, refine for efficiency, and push boundaries to build a product that exceeds the highest standards."}
           </p>
         </Reveal>
 
