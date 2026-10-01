@@ -593,53 +593,180 @@ export function getExpertiseArea(slug: string) {
 }
 
 export type Industry = {
+  slug: string;
   title: string;
   description: string;
   image?: string;
+  metaDescription: string;
+  intro: string;
+  capabilities: string[];
+  caseStudySlugs: string[];
 };
 
 export const industries: Industry[] = [
   {
+    slug: "healthcare",
     title: "Healthcare",
     description: "Patient-facing and clinical tools, including EHR/EMR and telemedicine platforms.",
     image: "/healthcare-img.png",
+    metaDescription:
+      "Patient-facing and clinical software built for compliance and reliability — EHR/EMR integrations, telemedicine, and scheduling tools.",
+    intro:
+      "Healthcare software has to work the first time, every time — for patients who are stressed and clinicians who are busy. We build patient-facing and clinical tools that hold up under real usage, with the data handling and reliability the sector demands.",
+    capabilities: [
+      "Patient portals and telemedicine platforms",
+      "EHR/EMR integrations and data pipelines",
+      "Appointment scheduling and intake systems",
+      "HIPAA-aware data handling and access controls",
+      "Clinician-facing dashboards and reporting",
+    ],
+    caseStudySlugs: [],
   },
   {
+    slug: "fintech",
     title: "Fintech",
     description: "Products handling payments, transactions, and financial data at production-grade reliability.",
     image: "/azure-img.png",
+    metaDescription:
+      "Software for payments, transactions, and financial data at production-grade reliability, engineered for accuracy and audit trails.",
+    intro:
+      "Money moving through your product means no room for silent failures. We build fintech software with the accuracy, auditability, and uptime that payments and financial data demand.",
+    capabilities: [
+      "Payment processing and checkout flows",
+      "Transaction ledgers and reconciliation tools",
+      "Financial dashboards and reporting",
+      "Secure data handling and audit trails",
+      "Integrations with banking and payment APIs",
+    ],
+    caseStudySlugs: [],
   },
   {
+    slug: "ecommerce",
     title: "eCommerce",
     description: "Storefronts, checkout flows, and back-office tools built to convert and scale.",
     image: "/nick/nick-front.jpg",
+    metaDescription:
+      "Storefronts, checkout flows, and back-office tools built to convert and scale — see how we built a trade-focused storefront for Nick Whittaker Imagery.",
+    intro:
+      "An online store lives or dies on how fast someone can go from browsing to buying. We build storefronts, checkout flows, and the back-office tools that keep them running, tuned for conversion and built to scale with demand.",
+    capabilities: [
+      "Storefronts and product catalogs",
+      "Checkout flows and payment integration",
+      "Inventory and order management",
+      "Customer accounts and order history",
+      "Performance and SEO tuning for organic traffic",
+    ],
+    caseStudySlugs: ["nick-whittaker-imagery"],
   },
   {
+    slug: "education",
     title: "Education",
     description: "Learning management systems and platforms for course delivery and student engagement.",
     image: "/Education-image.png",
+    metaDescription: "Learning management systems and platforms for course delivery and student engagement.",
+    intro:
+      "Whether it's a course platform or a full LMS, education software has to keep learners engaged and instructors in control. We build platforms for content delivery, progress tracking, and the workflows that keep a course running.",
+    capabilities: [
+      "Learning management systems (LMS)",
+      "Course delivery and content platforms",
+      "Student progress tracking and reporting",
+      "Cohort and enrollment management",
+      "Engagement tools — quizzes, discussions, notifications",
+    ],
+    caseStudySlugs: [],
   },
   {
+    slug: "retail",
     title: "Retail",
     description: "Inventory, point-of-sale, and customer-facing systems for physical and online retail.",
     image: "/sas-image.png",
+    metaDescription: "Inventory, point-of-sale, and customer-facing systems for physical and online retail.",
+    intro:
+      "Retail software has to work across the counter and the browser at once — inventory that's accurate everywhere, and a customer experience that doesn't fall apart under real traffic. We build the systems that hold that together.",
+    capabilities: [
+      "Point-of-sale and inventory systems",
+      "Customer-facing storefronts and apps",
+      "Multi-location stock synchronization",
+      "Reporting and sales dashboards",
+      "Integrations with suppliers and fulfillment",
+    ],
+    caseStudySlugs: [],
   },
   {
+    slug: "media-entertainment",
     title: "Media & Entertainment",
     description: "Content platforms and applications built for audience reach and engagement at scale.",
     image: "/media-img.png",
+    metaDescription: "Content platforms and applications built for audience reach and engagement at scale.",
+    intro:
+      "Content platforms live and die on how well they handle scale — traffic spikes, media delivery, and an audience that expects things to just work. We build the platforms and applications that carry that load.",
+    capabilities: [
+      "Content platforms and media delivery",
+      "Audience engagement and personalization features",
+      "Subscription and access management",
+      "Media storage and CDN integration",
+      "Analytics and audience reporting",
+    ],
+    caseStudySlugs: [],
   },
   {
+    slug: "human-resources",
     title: "Human Resources",
     description: "Recruiting, onboarding, and workforce management tools that simplify HR operations.",
     image: "/ai-image.png",
+    metaDescription: "Recruiting, onboarding, and workforce management tools that simplify HR operations.",
+    intro:
+      "HR software is where a company's operations meet its people — recruiting, onboarding, and the day-to-day tools that keep a workforce running smoothly. We build the systems that simplify that work instead of adding another spreadsheet.",
+    capabilities: [
+      "Recruiting and applicant tracking",
+      "Onboarding workflows and document handling",
+      "Workforce and scheduling management",
+      "Employee self-service portals",
+      "Reporting for HR and people ops",
+    ],
+    caseStudySlugs: [],
   },
   {
+    slug: "wellness-fitness",
     title: "Wellness & Fitness",
     description: "Mental health, fitness, and wellness apps designed around everyday habits and routines.",
     image: "/lotos/Screenshot-bialy-lotos-desktop-01.png",
+    metaDescription:
+      "Mental health, fitness, and wellness apps designed around everyday habits and routines — see how we built a content-driven booking site for Biały Lotos.",
+    intro:
+      "Wellness products succeed when they fit into someone's routine instead of fighting it. We build fitness, mental health, and wellness apps designed around real daily habits — and the booking and content systems that keep clients coming back.",
+    capabilities: [
+      "Booking and scheduling systems",
+      "Content-driven treatment or program pages",
+      "Client progress and habit tracking",
+      "Membership and subscription management",
+      "Mobile-first, habit-friendly design",
+    ],
+    caseStudySlugs: ["bialy-lotos"],
+  },
+  {
+    slug: "industrial",
+    title: "Industrial",
+    description: "Field operations software for oil, gas, and industrial power — from fuel delivery tracking to equipment monitoring.",
+    image: "/industrial-software-solutions-enodre.png",
+    metaDescription:
+      "Field-to-office software for oil, gas, and industrial power operations — fuel tracking, equipment monitoring, and offline-first field apps. See how we built FuelFlo.",
+    intro:
+      "Industrial operations run on equipment and fuel moving through the field, often with no signal and no room for lost paperwork. We build the field-to-office systems that turn that into verified, reportable data — the same approach behind FuelFlo, our fuel-operations platform for the oil and gas sector in Saudi Arabia.",
+    capabilities: [
+      "Offline-first field apps for remote sites",
+      "Fuel and equipment tracking with GPS and photo evidence",
+      "Field-to-office reporting and dashboards",
+      "Generator and temporary power monitoring",
+      "Integration with existing operations systems",
+    ],
+    caseStudySlugs: ["fuelflo"],
   },
 ];
+
+export function getIndustry(slug: string) {
+  return industries.find((industry) => industry.slug === slug);
+}
 
 export type Product = {
   slug: string;
@@ -664,7 +791,7 @@ export const products: Product[] = [
     location: "Saudi Arabia",
     description: "A field-to-report system that turns every fuel delivery into verified, timestamped, photo-backed evidence for generator and temporary power companies in Saudi Arabia.",
     outcome: "Built and pilot-ready: every fuel action verified with GPS, timestamp, and photo evidence — client-ready reports generated in seconds instead of hours.",
-    stack: ["React Native", "Web dashboard (PWA)", "Supabase", "Offline-first sync", "GPS + photo capture"],
+    stack: ["Native mobile app (field)", "Web dashboard (office)", "Supabase", "Offline-first sync", "GPS + photo capture"],
     url: "https://fuelflo.app",
     image: "/fuelflo-offline.png",
     imageAlt: "FuelFlo mobile app showing a device field-readiness check, with local database, evidence storage, camera permission, GPS capture, and API sync all marked ready for offline use.",

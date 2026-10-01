@@ -11,8 +11,8 @@ const COMPANY_LINKS = [
   { href: "/", label: "Home" },
   { href: "/services", label: "Services" },
   { href: "/products", label: "Case studies" },
-  { href: "/blog", label: "Blog" },
   { href: "/#get-in-touch", label: "Contact" },
+  { href: "/blog", label: "Blog" },
   { href: "/faq", label: "FAQ" },
 ];
 
@@ -47,8 +47,8 @@ export function SiteFooter() {
           <p className="text-xs font-semibold uppercase tracking-widest text-background/50">Industries</p>
           <ul className="mt-6 grid gap-3 text-sm">
             {industries.map((industry) => (
-              <li key={industry.title}>
-                <Link href="/#industries" className="text-background/80 transition hover:text-background">
+              <li key={industry.slug}>
+                <Link href={`/industries/${industry.slug}`} className="text-background/80 transition hover:text-background">
                   {industry.title}
                 </Link>
               </li>

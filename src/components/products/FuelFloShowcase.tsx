@@ -87,7 +87,7 @@ const outcomeChips = ["GPS-verified", "Timestamped", "Photo-backed", "Seconds, n
 
 const impactPoints = [
   "Designed, built, and shipped end to end by Enodre — from field UX to offline sync.",
-  "Two connected surfaces: an offline-first technician app and a web-based hire desk dashboard.",
+  "Two connected surfaces: a native offline-first technician app for the field, and a separate web dashboard for the office.",
   "Offline-first from day one — the app is fully usable with no signal.",
   "GPS, timestamp, and photo evidence tied to every fuel action.",
   "Client-ready PDF reporting, generated in seconds.",

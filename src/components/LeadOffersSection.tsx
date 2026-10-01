@@ -16,9 +16,6 @@ const LEAD_OFFERS_EN = [
       "AI extracts and checks it instead of your team re-typing it",
       "Reports that used to take hours are ready in seconds",
     ],
-    proof: "FuelFlo — built exactly this for temporary power & fuel operations",
-    proofHref: "/products/fuelflo",
-    pricing: "Build fee, then an ongoing retainer",
     cta: { label: "See how FuelFlo works", href: "/products/fuelflo" },
   },
   {
@@ -34,9 +31,6 @@ const LEAD_OFFERS_EN = [
       "A hardening pass on what's genuinely at risk",
       "A fixed-price plan for remediation, in priority order",
     ],
-    proof: "Backed by a security background from Splunk, and our own research on AI-code risk",
-    proofHref: "/blog/vibe-coded-mvp-real-users",
-    pricing: "Fixed-price audit, then paid remediation",
     cta: { label: "Read what breaks first", href: "/blog/vibe-coded-mvp-real-users" },
   },
 ];
@@ -55,9 +49,6 @@ const LEAD_OFFERS_PL = [
       "AI wyodrębnia i sprawdza dane zamiast Twojego zespołu",
       "Raporty, które kiedyś zajmowały godziny, gotowe w kilka sekund",
     ],
-    proof: "FuelFlo — zbudowaliśmy dokładnie taki system dla firm z branży zasilania tymczasowego i paliw",
-    proofHref: "/products/fuelflo",
-    pricing: "Opłata za wdrożenie, a potem stały abonament",
     cta: { label: "Zobacz, jak działa FuelFlo", href: "/products/fuelflo" },
   },
   {
@@ -73,9 +64,6 @@ const LEAD_OFFERS_PL = [
       "Wzmocnienie kodu w miejscach, które naprawdę stanowią ryzyko",
       "Plan naprawy w stałej cenie, uszeregowany według priorytetów",
     ],
-    proof: "Poparte doświadczeniem w bezpieczeństwie ze Splunk oraz naszymi własnymi badaniami nad ryzykiem kodu generowanego przez AI",
-    proofHref: "/blog/vibe-coded-mvp-real-users",
-    pricing: "Audyt w stałej cenie, a potem płatna naprawa",
     cta: { label: "Przeczytaj, co pęka najpierw", href: "/blog/vibe-coded-mvp-real-users" },
   },
 ];
@@ -128,19 +116,9 @@ export function LeadOffersSection({ locale = "en" }: { locale?: "en" | "pl" }) {
                   ))}
                 </ul>
 
-                <div className="mt-8 border-t border-black/10 pt-6">
-                  <p className="text-xs font-semibold text-foreground">{offer.pricing}</p>
-                  <Link
-                    href={offer.proofHref}
-                    className="font-poppins mt-2 block text-xs text-ink-muted underline underline-offset-2 hover:text-foreground"
-                  >
-                    {offer.proof}
-                  </Link>
-                </div>
-
                 <Link
                   href={offer.cta.href}
-                  className="mt-6 inline-flex items-center gap-2 self-start rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background transition hover:opacity-90"
+                  className="mt-8 inline-flex items-center gap-2 self-start rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background transition hover:opacity-90"
                 >
                   <span>{offer.cta.label}</span>
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />

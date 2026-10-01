@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { MotionConfig } from "framer-motion";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { FloatingCta } from "@/components/FloatingCta";
 import "./globals.css";
 
 const title = {
@@ -34,12 +35,15 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icon0.svg", type: "image/svg+xml" },
-      { url: "/icon1.png", type: "image/png", sizes: "96x96" },
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
+      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon-48x48.png", type: "image/png", sizes: "48x48" },
     ],
     shortcut: "/favicon.ico",
-    apple: "/apple-icon.png",
+    apple: "/apple-touch-icon.png",
   },
+  manifest: "/site.webmanifest",
   openGraph: {
     type: "website",
     url: "/",
@@ -83,6 +87,7 @@ export default function RootLayout({
           <SiteHeader />
           <main className="flex-1">{children}</main>
           <SiteFooter />
+          <FloatingCta />
         </MotionConfig>
       </body>
     </html>

@@ -8,15 +8,16 @@ import { ArrowRight, Quote } from "lucide-react";
 import { expertiseAreas, industries, products, stackGroups, teamMembers } from "@/lib/content";
 import { ChallengeSection } from "@/components/challenge/ChallengeSection";
 import { LeadOffersSection } from "@/components/LeadOffersSection";
+import { PackagesSection } from "@/components/PackagesSection";
 import { TeamSection } from "@/components/TeamSection";
 import { BlogSection } from "@/components/BlogSection";
 import { StackSection } from "@/components/StackSection";
-import { PerformanceSection } from "@/components/PerformanceSection";
 import { ParallaxImage } from "@/components/motion/ParallaxImage";
 import { Reveal } from "@/components/motion/Reveal";
 import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
 
 const SERVICE_CATEGORIES = Array.from(new Set(expertiseAreas.map((area) => area.category)));
+const FEATURED_INDUSTRIES = industries.filter((industry) => industry.caseStudySlugs.length > 0).slice(0, 3);
 
 const heroContainer: Variants = {
   hidden: {},
@@ -140,6 +141,8 @@ export default function Home() {
 
       <LeadOffersSection />
 
+      <PackagesSection />
+
       <section id="services" className="border-y border-black/10 bg-card py-20">
         <div className="shell">
           <Reveal>
@@ -235,8 +238,6 @@ export default function Home() {
         </div>
       </section>
 
-      <PerformanceSection />
-
       <section id="industries" className="py-20 sm:py-28">
         <div className="shell">
           <Reveal>
@@ -246,10 +247,13 @@ export default function Home() {
               className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em]"
             />
           </Reveal>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {industries.map((industry, index) => (
-              <Reveal key={industry.title} delay={index * 0.06}>
-                <div className="h-full overflow-hidden rounded-2xl border border-black/10 bg-card transition duration-300 hover:-translate-y-1 hover:shadow-lg">
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURED_INDUSTRIES.map((industry, index) => (
+              <Reveal key={industry.slug} delay={index * 0.06}>
+                <Link
+                  href={`/industries/${industry.slug}`}
+                  className="group block h-full overflow-hidden rounded-2xl border border-black/10 bg-card transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+                >
                   {industry.image && (
                     <div className="relative h-32 w-full">
                       <Image
@@ -264,10 +268,20 @@ export default function Home() {
                   <div className="p-6">
                     <h3 className="text-base font-semibold tracking-tight">{industry.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-ink-muted">{industry.description}</p>
+                    <p className="mt-4 text-sm font-semibold text-foreground group-hover:underline">Explore →</p>
                   </div>
-                </div>
+                </Link>
               </Reveal>
             ))}
+          </div>
+          <div className="mt-10 flex justify-center">
+            <Link
+              href="/industries"
+              className="font-poppins inline-flex items-center gap-2 rounded-full border border-black/10 bg-background px-5 py-2.5 text-sm font-medium transition hover:bg-foreground/5"
+            >
+              <span>All industries</span>
+              <span aria-hidden="true">→</span>
+            </Link>
           </div>
         </div>
       </section>

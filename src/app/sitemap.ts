@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { expertiseAreas, products } from "@/lib/content";
+import { expertiseAreas, industries, products } from "@/lib/content";
 import { blogPosts } from "@/lib/blog";
 
 const BASE_URL = "https://enodre.com";
@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/pl`, changeFrequency: "weekly", priority: 1 },
     { url: `${BASE_URL}/products`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE_URL}/services`, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${BASE_URL}/industries`, changeFrequency: "weekly", priority: 0.7 },
     { url: `${BASE_URL}/blog`, changeFrequency: "weekly", priority: 0.7 },
     { url: `${BASE_URL}/faq`, changeFrequency: "monthly", priority: 0.6 },
   ];
@@ -32,5 +33,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...productRoutes, ...serviceRoutes, ...blogRoutes];
+  const industryRoutes: MetadataRoute.Sitemap = industries.map((industry) => ({
+    url: `${BASE_URL}/industries/${industry.slug}`,
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
+  return [...staticRoutes, ...productRoutes, ...serviceRoutes, ...industryRoutes, ...blogRoutes];
 }
