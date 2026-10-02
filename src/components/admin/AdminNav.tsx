@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Briefcase, CalendarDays, HeartPulse, LayoutDashboard, Target, Users, type LucideIcon } from "lucide-react";
+import { Briefcase, CalendarDays, HeartPulse, Inbox, LayoutDashboard, Target, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin", label: "Inbound", icon: Inbox },
   { href: "/admin/people", label: "People", icon: Users },
   { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/admin/health", label: "Health", icon: HeartPulse },

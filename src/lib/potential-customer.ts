@@ -10,6 +10,19 @@ export const potentialCustomerStatusLabels: Record<PotentialCustomerStatus, stri
   not_interested: "Not interested",
 };
 
+// Phase 2: once a lead responds, `attitude` tracks how they're coming
+// across in the conversation — separate from `status`, which keeps tracking
+// the overall pipeline stage.
+export const POTENTIAL_CUSTOMER_ATTITUDE_VALUES = ["positive", "neutral", "negative"] as const;
+
+export type PotentialCustomerAttitude = (typeof POTENTIAL_CUSTOMER_ATTITUDE_VALUES)[number];
+
+export const potentialCustomerAttitudeLabels: Record<PotentialCustomerAttitude, string> = {
+  positive: "Positive",
+  neutral: "Neutral",
+  negative: "Negative",
+};
+
 export type PotentialCustomer = {
   id: string;
   created_at: string;
@@ -20,5 +33,9 @@ export type PotentialCustomer = {
   phone: string | null;
   source: string | null;
   status: PotentialCustomerStatus;
+  message_sent: boolean;
+  call_made: boolean;
+  responded: boolean;
+  attitude: PotentialCustomerAttitude | null;
   notes: string | null;
 };

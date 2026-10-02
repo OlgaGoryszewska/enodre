@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { AdminNav } from "@/components/admin/AdminNav";
+import Link from "next/link";
 import { PotentialCustomersTable } from "@/components/admin/PotentialCustomersTable";
 import { MarketingKanbanBoard } from "@/components/admin/MarketingKanbanBoard";
+import { ContactsTable } from "@/components/admin/ContactsTable";
 import { CustomerFilesSection } from "@/components/admin/CustomerFilesSection";
 import { StickyNotesBoard } from "@/components/admin/StickyNotesBoard";
 import { createClient } from "@/lib/supabase/server";
@@ -9,6 +11,10 @@ import {
   addPotentialCustomer,
   deletePotentialCustomer,
   setPotentialCustomerStatus,
+  setPotentialCustomerMessageSent,
+  setPotentialCustomerCallMade,
+  setPotentialCustomerResponded,
+  setPotentialCustomerAttitude,
   updatePotentialCustomerNote,
 } from "@/app/admin/marketing/potential-customers-actions";
 import { BUSINESS_PROFILE_NAME } from "@/lib/business-profile";
@@ -16,6 +22,7 @@ import type { PotentialCustomer } from "@/lib/potential-customer";
 import type { MarketingTask } from "@/lib/marketing-task";
 import type { CustomerFile, CustomerFileWithUrl } from "@/lib/customer-file";
 import type { StickyNote } from "@/lib/customer-sticky-note";
+import type { Contact } from "@/lib/contact";
 
 const BUCKET = "customer-files";
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24;
@@ -60,11 +67,13 @@ export default async function MarketingPage() {
 
   const [
     { data: leadsData, error: leadsError },
+    { data: inboundData, error: inboundError },
     { data: marketingTasksData, error: marketingTasksError },
     { data: filesData, error: filesError },
     { data: notesData, error: notesError },
   ] = await Promise.all([
     supabase.from("potential_customers").select("*").order("created_at", { ascending: false }),
+    supabase.from("contacts").select("*").order("created_at", { ascending: false }),
     supabase.from("marketing_tasks").select("*").order("position", { ascending: true }),
     businessProfileId
       ? supabase.from("customer_files").select("*").eq("customer_id", businessProfileId).order("created_at", { ascending: false })
@@ -77,6 +86,9 @@ export default async function MarketingPage() {
   if (leadsError) {
     console.error("Failed to load potential customers:", leadsError);
   }
+  if (inboundError) {
+    console.error("Failed to load inbound contacts:", inboundError);
+  }
   if (marketingTasksError) {
     console.error("Failed to load marketing tasks:", marketingTasksError);
   }
@@ -88,6 +100,7 @@ export default async function MarketingPage() {
   }
 
   const leads = (leadsData ?? []) as PotentialCustomer[];
+  const inboundContacts = (inboundData ?? []) as Contact[];
   const marketingTasks = (marketingTasksData ?? []) as MarketingTask[];
   const files = (filesData ?? []) as CustomerFile[];
   const stickyNotes = (notesData ?? []) as StickyNote[];
@@ -118,16 +131,35 @@ export default async function MarketingPage() {
       </div>
 
       <div className="mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
-        <h2 className="text-lg font-semibold tracking-tight">Potential customers</h2>
-        <p className="mt-1 text-sm text-ink-muted">Leads you're pursuing — a separate list from People, not a filtered view of it.</p>
+        <h2 className="text-lg font-semibold tracking-tight">Leads pipeline</h2>
+        <p className="mt-1 text-sm text-ink-muted">A separate list from People, not a filtered view of it.</p>
         <div className="mt-6">
           <PotentialCustomersTable
             leads={leads}
             onAdd={addPotentialCustomer}
             onDelete={deletePotentialCustomer}
             onSetStatus={setPotentialCustomerStatus}
+            onSetMessageSent={setPotentialCustomerMessageSent}
+            onSetCallMade={setPotentialCustomerCallMade}
+            onSetResponded={setPotentialCustomerResponded}
+            onSetAttitude={setPotentialCustomerAttitude}
             onUpdateNote={updatePotentialCustomerNote}
           />
+        </div>
+      </div>
+
+      <div className="mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Customers who reached us</h2>
+            <p className="mt-1 text-sm text-ink-muted">Inbound — submitted the site's contact form, rather than us reaching out.</p>
+          </div>
+          <Link href="/admin" className="text-sm font-semibold text-accent hover:underline">
+            Open full inbox →
+          </Link>
+        </div>
+        <div className="mt-6">
+          <ContactsTable contacts={inboundContacts} />
         </div>
       </div>
 
