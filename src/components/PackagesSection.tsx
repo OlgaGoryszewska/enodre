@@ -7,7 +7,6 @@ type Tier = {
   tagline: string;
   description: string;
   features: string[];
-  price: string;
   cta: { label: string; href: string };
   highlighted?: boolean;
 };
@@ -18,7 +17,6 @@ const TIERS_EN: Tier[] = [
     tagline: "Get your business online properly.",
     description: "For businesses that need a modern, high-converting digital presence.",
     features: ["UX/UI design", "Premium responsive website", "CMS", "SEO foundations", "Analytics", "Contact/lead forms", "Performance optimisation"],
-    price: "From $2,500",
     cta: { label: "Build my website", href: "/#get-in-touch" },
   },
   {
@@ -34,7 +32,6 @@ const TIERS_EN: Tier[] = [
       "Customer/admin portals",
       "Reporting",
     ],
-    price: "From $6,900",
     cta: { label: "Automate my business", href: "/#get-in-touch" },
     highlighted: true,
   },
@@ -53,7 +50,6 @@ const TIERS_EN: Tier[] = [
       "Cloud deployment",
       "Ongoing support",
     ],
-    price: "From $14,000",
     cta: { label: "Build my platform", href: "/#get-in-touch" },
   },
 ];
@@ -64,7 +60,6 @@ const TIERS_PL: Tier[] = [
     tagline: "Zaistniej online tak, jak trzeba.",
     description: "Dla firm, które potrzebują nowoczesnej strony budującej zaufanie i konwersje.",
     features: ["Projekt UX/UI", "Responsywna strona premium", "CMS", "Podstawy SEO", "Analityka", "Formularze kontaktowe/leadowe", "Optymalizacja wydajności"],
-    price: "Od 9 900 zł",
     cta: { label: "Zbuduj moją stronę", href: "/#get-in-touch" },
   },
   {
@@ -80,7 +75,6 @@ const TIERS_PL: Tier[] = [
       "Portale klienta/administratora",
       "Raportowanie",
     ],
-    price: "Od 26 000 zł",
     cta: { label: "Zautomatyzuj moją firmę", href: "/#get-in-touch" },
     highlighted: true,
   },
@@ -99,29 +93,75 @@ const TIERS_PL: Tier[] = [
       "Wdrożenie w chmurze",
       "Stałe wsparcie",
     ],
-    price: "Od 54 000 zł",
     cta: { label: "Zbuduj moją platformę", href: "/#get-in-touch" },
   },
 ];
 
-export function PackagesSection({ locale = "en" }: { locale?: "en" | "pl" }) {
-  const TIERS = locale === "pl" ? TIERS_PL : TIERS_EN;
+const TIERS_NO: Tier[] = [
+  {
+    name: "Launch",
+    tagline: "Kom skikkelig på nett.",
+    description: "For bedrifter som trenger en moderne, konverterende digital tilstedeværelse.",
+    features: ["UX/UI-design", "Premium responsiv nettside", "CMS", "SEO-grunnmur", "Analyse", "Kontakt-/leadskjemaer", "Ytelsesoptimalisering"],
+    cta: { label: "Bygg nettsiden min", href: "/#get-in-touch" },
+  },
+  {
+    name: "Grow",
+    tagline: "Gjør manuelt arbeid til en digital arbeidsflyt.",
+    description: "For bedrifter som taper tid på regneark, e-post og usammenhengende verktøy.",
+    features: [
+      "Alt i Launch",
+      "Analyse av forretningsprosesser",
+      "Skreddersydd dashbord",
+      "Automatisering av arbeidsflyt",
+      "API-/integrasjonsutvikling",
+      "Kunde-/adminportaler",
+      "Rapportering",
+    ],
+    cta: { label: "Automatiser bedriften min", href: "/#get-in-touch" },
+    highlighted: true,
+  },
+  {
+    name: "Scale",
+    tagline: "Bygg programvaren bedriften din faktisk trenger.",
+    description: "For selskaper som har vokst fra hyllevare-programvare.",
+    features: [
+      "Produktstrategi",
+      "UX/UI",
+      "Skreddersydd webapplikasjon",
+      "Database og backend",
+      "Brukerautentisering",
+      "Integrasjoner",
+      "AI-/automatiseringsmuligheter",
+      "Skydistribusjon",
+      "Løpende support",
+    ],
+    cta: { label: "Bygg plattformen min", href: "/#get-in-touch" },
+  },
+];
+
+export function PackagesSection({ locale = "en" }: { locale?: "en" | "pl" | "no" }) {
+  const TIERS = locale === "pl" ? TIERS_PL : locale === "no" ? TIERS_NO : TIERS_EN;
 
   return (
     <section className="border-y border-black/10 bg-card py-20 sm:py-28">
       <div className="shell">
         <Reveal>
-          <p className="eyebrow">{locale === "pl" ? "Pakiety" : "Packages"}</p>
+          <p className="eyebrow">{locale === "pl" ? "Pakiety" : locale === "no" ? "Pakker" : "Packages"}</p>
           <p className="font-funnel-display mt-4 max-w-2xl text-3xl font-normal tracking-tight text-foreground sm:text-4xl">
             {locale === "pl"
               ? "Twoja firma rośnie. Twoja technologia powinna rosnąć razem z nią."
-              : "Your business is growing. Your technology should grow with it."}
+              : locale === "no"
+                ? "Bedriften din vokser. Teknologien bør vokse med den."
+                : "Your business is growing. Your technology should grow with it."}
           </p>
           <p className="font-poppins mt-4 max-w-2xl text-sm font-normal text-ink-muted">
-            {locale === "pl" ? "Launch → Grow → Scale — " : "Launch → Grow → Scale — "}
+            {"Launch → Grow → Scale — "}
             {locale === "pl"
               ? "od strony, która sprzedaje, po kompletną platformę biznesową, Enodre buduje rozwiązania dopasowane do tego, jak działa Twoja firma."
-              : "from a high-performing website to a complete business platform, Enodre builds digital solutions around the way your business works."}
+              : locale === "no"
+                ? "fra en nettside som presterer til en komplett forretningsplattform — Enodre bygger digitale løsninger rundt måten bedriften din jobber på."
+                : "from a high-performing website to a complete business platform, Enodre builds digital solutions around the way your business works."}
           </p>
         </Reveal>
 
@@ -135,7 +175,7 @@ export function PackagesSection({ locale = "en" }: { locale?: "en" | "pl" }) {
               >
                 {tier.highlighted && (
                   <span className="mb-4 inline-flex w-fit items-center rounded-full bg-accent px-3 py-1 text-xs font-semibold text-background">
-                    {locale === "pl" ? "Najpopularniejszy" : "Most popular"}
+                    {locale === "pl" ? "Najpopularniejszy" : locale === "no" ? "Mest populær" : "Most popular"}
                   </span>
                 )}
                 <p className="font-funnel-display text-2xl font-normal tracking-tight">{tier.name}</p>
@@ -156,7 +196,9 @@ export function PackagesSection({ locale = "en" }: { locale?: "en" | "pl" }) {
                   ))}
                 </ul>
 
-                <p className="mt-8 text-lg font-semibold">{tier.price}</p>
+                <p className="mt-8 text-lg font-semibold">
+                  {locale === "pl" ? "Bezpłatna konsultacja" : locale === "no" ? "Få gratis konsultasjon" : "Get free consultation"}
+                </p>
 
                 <Link
                   href={tier.cta.href}

@@ -5,6 +5,7 @@ import { MentorsSection } from "@/components/admin/MentorsSection";
 import { SignOutButton } from "@/components/admin/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
 import { addCustomer, deleteCustomer } from "@/app/admin/people/actions";
+import { BUSINESS_PROFILE_NAME } from "@/lib/business-profile";
 import type { Customer } from "@/lib/customer";
 
 export const metadata: Metadata = {
@@ -23,7 +24,7 @@ export default async function CustomersPage() {
     console.error("Failed to load customers:", error);
   }
 
-  const customers = (data ?? []) as Customer[];
+  const customers = ((data ?? []) as Customer[]).filter((customer) => customer.name !== BUSINESS_PROFILE_NAME);
   const mentors = customers.filter((customer) => customer.roles.includes("mentor_advisor"));
 
   return (

@@ -121,6 +121,7 @@ export async function addCustomerFileRecord(
   if (error) throw error;
 
   revalidatePath(`/admin/people/${customerId}`);
+  revalidatePath("/admin/marketing");
   return data;
 }
 
@@ -134,6 +135,7 @@ export async function updateCustomerFileNote(customerId: string, fileId: string,
   if (error) throw error;
 
   revalidatePath(`/admin/people/${customerId}`);
+  revalidatePath("/admin/marketing");
 }
 
 export async function deleteCustomerFile(customerId: string, fileId: string) {
@@ -153,4 +155,5 @@ export async function deleteCustomerFile(customerId: string, fileId: string) {
   if (error) throw error;
 
   revalidatePath(`/admin/people/${customerId}`);
+  revalidatePath("/admin/marketing");
 }

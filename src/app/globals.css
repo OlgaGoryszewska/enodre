@@ -8,12 +8,15 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #030212;
+  --foreground: #07022e;
   --muted: #5b6b82;
   --accent: #bababa;
   --card: #ffffff;
   --border: rgba(15, 82, 186, 0.14);
   --danger: #d3455b;
+  /* Soft sage used only behind /admin pages — calmer and a bit darker than
+     the public site's white, without going full dark mode. */
+  --admin-background: #edf5fa;
 }
 
 @theme inline {
@@ -24,6 +27,7 @@
   --color-card: var(--card);
   --color-border: var(--border);
   --color-danger: var(--danger);
+  --color-admin-background: var(--admin-background);
   --font-sans: "Satoshi", Arial, Helvetica, sans-serif;
   --font-display: "Cabinet Grotesk", "Satoshi", Arial, Helvetica, sans-serif;
   --font-ui: "Manrope", "Satoshi", Arial, Helvetica, sans-serif;

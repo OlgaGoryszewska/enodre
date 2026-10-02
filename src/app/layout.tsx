@@ -10,7 +10,7 @@ const title = {
   template: "%s | Enodre",
 };
 const description =
-  "We build AI-powered workflow systems for operations-heavy businesses, and run fixed-price AI-code audits for products that outgrew how fast they were built.";
+  "Enodre: AI-powered workflow systems for operations-heavy businesses, and fixed-price AI-code audits for products that outgrew how fast they were built.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://enodre.com"),
@@ -31,6 +31,7 @@ export const metadata: Metadata = {
     languages: {
       en: "/",
       pl: "/pl",
+      no: "/no",
     },
   },
   icons: {

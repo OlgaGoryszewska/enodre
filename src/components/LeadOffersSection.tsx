@@ -68,18 +68,55 @@ const LEAD_OFFERS_PL = [
   },
 ];
 
-export function LeadOffersSection({ locale = "en" }: { locale?: "en" | "pl" }) {
-  const LEAD_OFFERS = locale === "pl" ? LEAD_OFFERS_PL : LEAD_OFFERS_EN;
+const LEAD_OFFERS_NO = [
+  {
+    image: "/ai-image.png",
+    imageAlt: "En robothånd som berører et tastatur, som representerer AI som håndterer datainntasting og -behandling.",
+    color: "#3661C4",
+    eyebrow: "Hovedtilbud 01",
+    title: "AI-drevne systemer fra felt til kontor",
+    description:
+      "Erstatt papir, regneark og gruppechatter med ett samlet system — AI står for uttrekk, kontroll og rapportering, så ingenting må skrives inn på nytt for hånd.",
+    bullets: [
+      "Feltdata registreres én gang, verifiseres automatisk",
+      "AI trekker ut og sjekker dataene i stedet for at teamet ditt taster dem inn på nytt",
+      "Rapporter som tidligere tok timer, er klare på sekunder",
+    ],
+    cta: { label: "Se hvordan FuelFlo fungerer", href: "/products/fuelflo" },
+  },
+  {
+    image: "/audit-img.png",
+    imageAlt: "To ingeniører som analyserer et kodeaudit-dashbord på en skjerm, med problemer merket kritisk, høy, middels og lav alvorlighetsgrad.",
+    color: "#B0512E",
+    eyebrow: "Hovedtilbud 02",
+    title: "AI-kodeaudit og redning",
+    description:
+      "En fastpris-audit for gründere og selskaper hvis AI-bygde produkt nå har reelle brukere — sikkerhetsgjennomgang, herding og en klar plan for hva som bør fikses først.",
+    bullets: [
+      "Sikkerhets- og arkitekturgjennomgang av det som faktisk er lansert",
+      "En herdingsrunde på det som faktisk er utsatt",
+      "En fastprisplan for utbedring, i prioritert rekkefølge",
+    ],
+    cta: { label: "Les hva som ryker først", href: "/blog/vibe-coded-mvp-real-users" },
+  },
+];
+
+export function LeadOffersSection({ locale = "en" }: { locale?: "en" | "pl" | "no" }) {
+  const LEAD_OFFERS = locale === "pl" ? LEAD_OFFERS_PL : locale === "no" ? LEAD_OFFERS_NO : LEAD_OFFERS_EN;
 
   return (
     <section className="py-20 sm:py-28">
       <div className="shell">
-        <p className="eyebrow">{locale === "pl" ? "Czym się zajmujemy" : "What we do"}</p>
+        <p className="eyebrow">{locale === "pl" ? "Czym się zajmujemy" : locale === "no" ? "Hva vi gjør" : "What we do"}</p>
         <p className="font-funnel-display mt-4 max-w-2xl text-3xl font-normal tracking-tight text-foreground sm:text-4xl">
-          {locale === "pl" ? "Dwie rzeczy, na których się skupiamy." : "Two things we focus on."}
+          {locale === "pl" ? "Dwie rzeczy, na których się skupiamy." : locale === "no" ? "To ting vi fokuserer på." : "Two things we focus on."}
         </p>
         <p className="font-poppins mt-4 max-w-2xl text-sm font-normal text-ink-muted">
-          {locale === "pl" ? "Wszystko inne, co budujemy, wpisuje się w jedną z tych ofert." : "Everything else we build feeds into one of these."}
+          {locale === "pl"
+            ? "Wszystko inne, co budujemy, wpisuje się w jedną z tych ofert."
+            : locale === "no"
+              ? "Alt annet vi bygger, går inn i en av disse."
+              : "Everything else we build feeds into one of these."}
         </p>
 
         <div className="mt-12 grid gap-6 lg:grid-cols-2">

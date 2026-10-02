@@ -29,12 +29,17 @@ import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
 
 interface StackSectionProps {
   groups: StackGroup[];
-  locale?: "en" | "pl";
+  locale?: "en" | "pl" | "no";
 }
 
 const HEADING_PL: Record<string, string> = {
   "Tools we use": "Narzędzia, których używamy",
   "Stack we use": "Technologie, których używamy",
+};
+
+const HEADING_NO: Record<string, string> = {
+  "Tools we use": "Verktøy vi bruker",
+  "Stack we use": "Teknologier vi bruker",
 };
 
 type Icon = ComponentType<{ className?: string }>;
@@ -111,13 +116,16 @@ function PillGroup({ items }: { items: string[] }) {
 }
 
 export function StackSection({ groups, locale = "en" }: StackSectionProps) {
-  const heading = (text: string) => (locale === "pl" ? HEADING_PL[text] ?? text : text);
+  const heading = (text: string) =>
+    locale === "pl" ? HEADING_PL[text] ?? text : locale === "no" ? HEADING_NO[text] ?? text : text;
 
   return (
     <section id="stack" className="bg-foreground py-20 text-background sm:py-28">
       <div className="shell">
         <Reveal className="text-center">
-          <p className="eyebrow">{locale === "pl" ? "Narzędzia i technologie" : "Tools & stack"}</p>
+          <p className="eyebrow">
+            {locale === "pl" ? "Narzędzia i technologie" : locale === "no" ? "Verktøy og teknologi" : "Tools & stack"}
+          </p>
           <ScrollRevealHeading
             text={heading(groups[0]?.heading ?? "")}
             className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"

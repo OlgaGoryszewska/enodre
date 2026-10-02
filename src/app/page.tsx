@@ -93,11 +93,11 @@ export default function Home() {
               variants={heroItem}
               className="font-funnel-display text-6xl font-normal tracking-tight text-foreground sm:text-7xl"
             >
-              We untangle how your business runs.
+              We fix how your business runs.
             </motion.h1>
             <motion.p variants={heroItem} className="font-poppins mt-3 pb-3 text-center tracking-normal text-base text-black sm:mt-4">
-              Then we build the software for it. <span className="font-bold">AI-powered workflow systems</span> for operations-heavy businesses, and
-              <span className="font-bold"> AI-code audits</span> for products that outgrew how fast they were built.
+              <span className="font-bold">AI-powered workflow systems</span> for operations-heavy businesses.{" "}
+              <span className="font-bold">AI-code audits</span> for products that outgrew their code.
             </motion.p>
             <motion.div variants={heroItem} className="relative mx-auto mt-10 w-[50vw]">
               <div
@@ -351,9 +351,9 @@ export default function Home() {
 
       <TeamSection members={teamMembers} ctaHref="#get-in-touch" />
 
-      <BlogSection />
-
       <ChallengeSection />
+
+      <BlogSection />
     </>
   );
 }

@@ -19,32 +19,32 @@ import { ScrollRevealHeading } from "@/components/motion/ScrollRevealHeading";
 const SERVICE_CATEGORIES = Array.from(new Set(expertiseAreas.map((area) => area.category)));
 const FEATURED_INDUSTRIES = industries.filter((industry) => industry.caseStudySlugs.length > 0).slice(0, 3);
 
-const CATEGORY_LABELS_PL: Record<string, string> = {
-  "Product Development": "Rozwój produktu",
-  "Modernize & Maintain": "Modernizacja i utrzymanie",
+const CATEGORY_LABELS_NO: Record<string, string> = {
+  "Product Development": "Produktutvikling",
+  "Modernize & Maintain": "Modernisering og vedlikehold",
 };
 
-const PRODUCTS_PL: Record<string, { category: string; location: string; tagline: string }> = {
+const PRODUCTS_NO: Record<string, { category: string; location: string; tagline: string }> = {
   fuelflo: {
-    category: "Tymczasowe zasilanie i operacje paliwowe",
-    location: "Arabia Saudyjska",
-    tagline: "Warstwa potwierdzeń stojąca za operacjami paliwowymi.",
+    category: "Midlertidig kraft og drivstoffoperasjoner",
+    location: "Saudi-Arabia",
+    tagline: "Bevislaget bak drivstoffoperasjoner.",
   },
   "nick-whittaker-imagery": {
-    category: "Galeria fotografii B2B",
-    location: "Nowa Zelandia",
+    category: "B2B-fotogalleri",
+    location: "New Zealand",
     tagline:
-      "Internetowa galeria, która pokazuje projektantom wnętrz i branży hotelarskiej dokładnie, jak dzieło będzie wyglądać w pomieszczeniu.",
+      "Et nettgalleri som viser interiørarkitekter og hotell- og restaurantbransjen nøyaktig hvordan kunsten vil se ut i rommet.",
   },
   "bialy-lotos": {
-    category: "Strona dla salonu kosmetycznego",
-    location: "Polska",
-    tagline: "Strona salonu oparta na treści, która zamienia potrzebę klientki w odpowiedni zabieg, cenę i link do rezerwacji.",
+    category: "Nettside for skjønnhet og kosmetologi",
+    location: "Polen",
+    tagline: "En innholdsdrevet salongside som gjør en kundes behov om til riktig behandling, pris og bestillingslenke.",
   },
   "ceylons-house": {
-    category: "Marka i strona dla obiektu hotelarskiego",
+    category: "Merkevare og nettside for hotell/restaurant",
     location: "Hikkaduwa, Sri Lanka",
-    tagline: "Tropikalna, luksusowa identyfikacja marki i strona internetowa dla butikowego hotelu i restauracji na dachu na Sri Lance.",
+    tagline: "En tropisk luksus merkevareidentitet og nettside for et boutiquehotell og takrestaurant på Sri Lanka.",
   },
 };
 
@@ -67,14 +67,14 @@ const testimonials = [
     avatar: "/avatars/Sylwia-avatar.png",
     slug: "bialy-lotos",
     quote:
-      "Jestem bardzo zadowolona z efektów, szczególnie z estetyki i SEO. Strona jest responsywna i reprezentacyjna. Współpraca z Enodre była sprawna i szybka — zdecydowanie polecam.",
+      "Jeg er veldig fornøyd med resultatet, spesielt estetikken og SEO. Siden er responsiv og representativ. Samarbeidet med Enodre var smidig og raskt — jeg anbefaler dem definitivt.",
   },
   {
     name: "Nick",
     role: "Nick Whittaker Imagery",
     avatar: "/avatars/Nick-avatar.png",
     slug: "nick-whittaker-imagery",
-    quote: "Wszystko, o co prosiłem, zostało dostarczone na czas. Strona działa świetnie, a estetyka robi wrażenie. Na pewno wrócę.",
+    quote: "Alt jeg ba om, ble levert i tide. Siden fungerer flott og estetikken er sterk. Jeg kommer definitivt tilbake.",
   },
   {
     name: "Boony",
@@ -82,18 +82,18 @@ const testimonials = [
     avatar: "/avatars/Boony-avatar.png",
     slug: null,
     quote:
-      "Mój pomysł nie był standardową stroną — potrzebowaliśmy prototypów 3D, ręcznie dopracowanych detali i luksusowego klimatu dla zamożnych klientów. Wszystko to zostało przemyślanie zrealizowane.",
+      "Ideen min var ikke en standard nettside — vi trengte 3D-prototyper, håndlagde detaljer og en luksuriøs følelse for velstående kunder. Alt dette ble gjennomtenkt ivaretatt.",
   },
   {
     name: "Robert",
     role: "FuelFlo",
     avatar: "/avatars/Robert-avatar.png",
     slug: "fuelflo",
-    quote: "Nie ma na rynku niczego równie skutecznego jak to, co dla nas zbudowali.",
+    quote: "Det finnes ikke noe annet der ute som er like dyktig som det de bygde for oss.",
   },
 ];
 
-export default function HomePL() {
+export default function HomeNO() {
   const testimonialsRef = useRef<HTMLDivElement>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const handleTestimonialsScroll = () => {
@@ -120,11 +120,11 @@ export default function HomePL() {
               variants={heroItem}
               className="font-funnel-display text-6xl font-normal tracking-tight text-foreground sm:text-7xl"
             >
-              Naprawiamy sposób działania Twojej firmy.
+              Vi fikser hvordan bedriften din fungerer.
             </motion.h1>
             <motion.p variants={heroItem} className="font-poppins mt-3 pb-3 text-center tracking-normal text-base text-black sm:mt-4">
-              <span className="font-bold">Systemy pracy oparte na AI</span> dla firm o rozbudowanych operacjach.{" "}
-              <span className="font-bold">Audyty kodu AI</span> dla produktów, które przerosły swój kod.
+              <span className="font-bold">AI-drevne arbeidsflytsystemer</span> for driftstunge bedrifter.{" "}
+              <span className="font-bold">AI-kodeaudit</span> for produkter som har vokst fra koden sin.
             </motion.p>
             <motion.div variants={heroItem} className="relative mx-auto mt-10 w-[50vw]">
               <div
@@ -134,7 +134,7 @@ export default function HomePL() {
               />
               <Image
                 src="/nick/moc3.png"
-                alt="Panel aplikacji mobilnej zbudowanej przez Enodre"
+                alt="Mobilapp-dashbord bygget av Enodre"
                 width={1277}
                 height={1231}
                 className="relative h-auto w-full mb-6"
@@ -146,7 +146,7 @@ export default function HomePL() {
                   href="#get-in-touch"
                   className="font-poppins flex items-center justify-center rounded-full bg-background px-10 py-3 text-base font-medium text-foreground sm:px-20"
                 >
-                  Skontaktuj się
+                  Ta kontakt
                 </Link>
               </div>
             </motion.div>
@@ -154,7 +154,7 @@ export default function HomePL() {
               variants={heroItem}
               className="font-poppins mt-28 flex items-center justify-center gap-3 text-sm text-ink-muted sm:mt-30"
             >
-              <span>Doradztwo</span>
+              <span>Rådgivning</span>
               <span className="text-black/20">|</span>
               <span>B2B</span>
               <span className="text-black/20">|</span>
@@ -164,18 +164,18 @@ export default function HomePL() {
         </div>
       </section>
 
-      <StackSection groups={stackGroups} locale="pl" />
+      <StackSection groups={stackGroups} locale="no" />
 
-      <LeadOffersSection locale="pl" />
+      <LeadOffersSection locale="no" />
 
-      <PackagesSection locale="pl" />
+      <PackagesSection locale="no" />
 
       <section id="services" className="border-y border-black/10 bg-card py-20">
         <div className="shell">
           <Reveal>
-            <p className="eyebrow">Dostępne również</p>
+            <p className="eyebrow">Også tilgjengelig</p>
             <p className="font-funnel-display mt-4 max-w-2xl text-2xl font-normal tracking-tight text-foreground sm:text-3xl">
-              Sprzedawane w ramach powyższych ofert lub osobno.
+              Selges som en del av tilbudene over, eller alene.
             </p>
           </Reveal>
 
@@ -185,7 +185,7 @@ export default function HomePL() {
               return (
                 <div key={category} className="min-w-0 bg-background">
                   <p className="px-6 pt-6 text-xs font-semibold uppercase tracking-widest text-[#9EA5C3] sm:px-8 sm:pt-8">
-                    {CATEGORY_LABELS_PL[category] ?? category}
+                    {CATEGORY_LABELS_NO[category] ?? category}
                   </p>
                   <div className="mt-3">
                     {categoryItems.map((area, index) => (
@@ -217,15 +217,15 @@ export default function HomePL() {
         <div className="shell">
           <Reveal>
             <div className="mb-10">
-              <p className="font-funnel-display text-3xl font-normal tracking-tight text-foreground sm:text-4xl">Studia przypadków</p>
+              <p className="font-funnel-display text-3xl font-normal tracking-tight text-foreground sm:text-4xl">Kundecase</p>
               <p className="font-poppins mt-4 max-w-2xl text-sm font-normal text-ink-muted">
-                Oprogramowanie, które doprowadziliśmy od pomysłu do wdrożenia.
+                Programvare vi har tatt fra idé til produksjon.
               </p>
             </div>
           </Reveal>
           <div className="grid gap-6">
             {products.slice(0, 3).map((product, index) => {
-              const pl = PRODUCTS_PL[product.slug];
+              const no = PRODUCTS_NO[product.slug];
               return (
                 <Reveal key={product.slug} delay={index * 0.08}>
                   <Link
@@ -245,11 +245,11 @@ export default function HomePL() {
                     )}
                     <div className="flex flex-col justify-center p-8 sm:p-10">
                       <p className="eyebrow">
-                        {pl?.category ?? product.category} · {pl?.location ?? product.location}
+                        {no?.category ?? product.category} · {no?.location ?? product.location}
                       </p>
                       <h3 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-[#1D1D1F]">{product.name}</h3>
-                      <p className="font-poppins mt-2 text-sm font-normal text-ink-muted">{pl?.tagline ?? product.tagline}</p>
-                      <p className="mt-8 text-sm font-semibold text-[#1D1D1F] group-hover:underline">Zobacz {product.name} →</p>
+                      <p className="font-poppins mt-2 text-sm font-normal text-ink-muted">{no?.tagline ?? product.tagline}</p>
+                      <p className="mt-8 text-sm font-semibold text-[#1D1D1F] group-hover:underline">Se {product.name} →</p>
                     </div>
                   </Link>
                 </Reveal>
@@ -261,7 +261,7 @@ export default function HomePL() {
               href="/products"
               className="font-poppins inline-flex items-center gap-2 rounded-full border border-black/10 bg-background px-5 py-2.5 text-sm font-medium transition hover:bg-foreground/5"
             >
-              <span>Wszystkie studia przypadków</span>
+              <span>Alle kundecase</span>
               <span aria-hidden="true">→</span>
             </Link>
           </div>
@@ -271,9 +271,9 @@ export default function HomePL() {
       <section id="industries" className="py-20 sm:py-28">
         <div className="shell">
           <Reveal>
-            <p className="eyebrow">Branże</p>
+            <p className="eyebrow">Bransjer</p>
             <ScrollRevealHeading
-              text="Stworzone dla branż działających w warunkach złożonych operacji."
+              text="Bygget for bransjer som drives av operasjonell kompleksitet."
               className="mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.04em]"
             />
           </Reveal>
@@ -298,7 +298,7 @@ export default function HomePL() {
                   <div className="p-6">
                     <h3 className="text-base font-semibold tracking-tight">{industry.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-ink-muted">{industry.description}</p>
-                    <p className="mt-4 text-sm font-semibold text-foreground group-hover:underline">Zobacz →</p>
+                    <p className="mt-4 text-sm font-semibold text-foreground group-hover:underline">Se →</p>
                   </div>
                 </Link>
               </Reveal>
@@ -309,7 +309,7 @@ export default function HomePL() {
               href="/industries"
               className="font-poppins inline-flex items-center gap-2 rounded-full border border-black/10 bg-background px-5 py-2.5 text-sm font-medium transition hover:bg-foreground/5"
             >
-              <span>Wszystkie branże</span>
+              <span>Alle bransjer</span>
               <span aria-hidden="true">→</span>
             </Link>
           </div>
@@ -319,9 +319,9 @@ export default function HomePL() {
       <section className="border-t border-black/10 bg-card py-20 sm:py-28">
         <div className="shell">
           <Reveal>
-            <p className="font-funnel-display text-3xl font-normal tracking-tight text-foreground sm:text-4xl">Opinie</p>
+            <p className="font-funnel-display text-3xl font-normal tracking-tight text-foreground sm:text-4xl">Kundeuttalelser</p>
             <p className="font-poppins mt-4 max-w-2xl text-sm font-normal text-ink-muted">
-              Co mówią założyciele i inwestorzy, dla których budowaliśmy.
+              Hva grunnleggerne og investorene vi har bygget for, sier.
             </p>
           </Reveal>
           <div
@@ -350,7 +350,7 @@ export default function HomePL() {
                   </div>
                   {testimonial.slug && (
                     <p className="mt-5 text-xs font-semibold text-accent opacity-0 transition group-hover:opacity-100">
-                      Zobacz studium przypadku →
+                      Se kundecase →
                     </p>
                   )}
                 </div>
@@ -368,7 +368,7 @@ export default function HomePL() {
                 key={testimonial.name}
                 type="button"
                 onClick={() => scrollToTestimonial(index)}
-                aria-label={`Przejdź do opinii ${testimonial.name}`}
+                aria-label={`Gå til ${testimonial.name}s uttalelse`}
                 aria-current={activeTestimonial === index}
                 className={`h-2 rounded-full transition-all duration-300 ${
                   activeTestimonial === index ? "w-6 bg-accent" : "w-2 bg-black/15 hover:bg-black/30"
@@ -379,11 +379,11 @@ export default function HomePL() {
         </div>
       </section>
 
-      <TeamSection members={teamMembers} ctaHref="#get-in-touch" locale="pl" />
+      <TeamSection members={teamMembers} ctaHref="#get-in-touch" locale="no" />
 
-      <ChallengeSection locale="pl" />
+      <ChallengeSection locale="no" />
 
-      <BlogSection locale="pl" />
+      <BlogSection locale="no" />
     </>
   );
 }

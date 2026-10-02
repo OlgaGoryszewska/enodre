@@ -4,11 +4,12 @@ import { blogPosts } from "@/lib/blog";
 import { BlogCover } from "@/components/blog/BlogCover";
 import { Reveal } from "@/components/motion/Reveal";
 
-function formatDate(iso: string, locale: "en" | "pl") {
-  return new Date(iso).toLocaleDateString(locale === "pl" ? "pl-PL" : "en-US", { year: "numeric", month: "long", day: "numeric" });
+function formatDate(iso: string, locale: "en" | "pl" | "no") {
+  const localeTag = locale === "pl" ? "pl-PL" : locale === "no" ? "nb-NO" : "en-US";
+  return new Date(iso).toLocaleDateString(localeTag, { year: "numeric", month: "long", day: "numeric" });
 }
 
-export function BlogSection({ locale = "en" }: { locale?: "en" | "pl" }) {
+export function BlogSection({ locale = "en" }: { locale?: "en" | "pl" | "no" }) {
   const posts = blogPosts.slice(0, 3);
 
   return (
@@ -17,13 +18,17 @@ export function BlogSection({ locale = "en" }: { locale?: "en" | "pl" }) {
         <Reveal>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="eyebrow">{locale === "pl" ? "Z naszego bloga" : "From the blog"}</p>
+              <p className="eyebrow">{locale === "pl" ? "Z naszego bloga" : locale === "no" ? "Fra bloggen" : "From the blog"}</p>
               <p className="font-funnel-display mt-4 text-3xl font-normal tracking-tight text-foreground sm:text-4xl">
-                {locale === "pl" ? "Notatki o jakości oprogramowania" : "Notes on software quality"}
+                {locale === "pl"
+                  ? "Notatki o jakości oprogramowania"
+                  : locale === "no"
+                    ? "Notater om programvarekvalitet"
+                    : "Notes on software quality"}
               </p>
             </div>
             <Link href="/blog" className="text-sm font-semibold text-foreground underline underline-offset-4 hover:text-ink-muted">
-              {locale === "pl" ? "Zobacz wszystkie artykuły →" : "View all articles →"}
+              {locale === "pl" ? "Zobacz wszystkie artykuły →" : locale === "no" ? "Se alle artikler →" : "View all articles →"}
             </Link>
           </div>
         </Reveal>

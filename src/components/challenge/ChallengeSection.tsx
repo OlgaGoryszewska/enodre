@@ -23,8 +23,15 @@ const STEPS_PL = [
   { icon: Rocket, label: "Start projektu" },
 ];
 
-export function ChallengeSection({ locale = "en" }: { locale?: "en" | "pl" }) {
-  const steps = locale === "pl" ? STEPS_PL : STEPS_EN;
+const STEPS_NO = [
+  { icon: Phone, label: "Oppstartssamtale" },
+  { icon: LayoutGrid, label: "Vi analyserer behovene dine" },
+  { icon: FileText, label: "Få et detaljert forslag" },
+  { icon: Rocket, label: "Start prosjektet ditt" },
+];
+
+export function ChallengeSection({ locale = "en" }: { locale?: "en" | "pl" | "no" }) {
+  const steps = locale === "pl" ? STEPS_PL : locale === "no" ? STEPS_NO : STEPS_EN;
   return (
     <section id="get-in-touch" className="border-t border-black/10 bg-card py-20 sm:py-28">
       <div className="shell">
@@ -47,6 +54,12 @@ export function ChallengeSection({ locale = "en" }: { locale?: "en" | "pl" }) {
                     Skontaktuj się z nami
                     <br />
                     i zacznijmy rozmowę
+                  </>
+                ) : locale === "no" ? (
+                  <>
+                    Ta kontakt
+                    <br />
+                    for å starte samtalen
                   </>
                 ) : (
                   <>

@@ -644,7 +644,7 @@ export const industries: Industry[] = [
     slug: "ecommerce",
     title: "eCommerce",
     description: "Storefronts, checkout flows, and back-office tools built to convert and scale.",
-    image: "/nick/nick-front.jpg",
+    image: "/e-commerce-solutions-enodre.png",
     metaDescription:
       "Storefronts, checkout flows, and back-office tools built to convert and scale — see how we built a trade-focused storefront for Nick Whittaker Imagery.",
     intro:
@@ -730,7 +730,7 @@ export const industries: Industry[] = [
     slug: "wellness-fitness",
     title: "Wellness & Fitness",
     description: "Mental health, fitness, and wellness apps designed around everyday habits and routines.",
-    image: "/lotos/Screenshot-bialy-lotos-desktop-01.png",
+    image: "/industry-wellness-fittness-application-solition-enodre.png",
     metaDescription:
       "Mental health, fitness, and wellness apps designed around everyday habits and routines — see how we built a content-driven booking site for Biały Lotos.",
     intro:

@@ -2,12 +2,6 @@ import type { Metadata } from "next";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { TodayWidget } from "@/components/admin/TodayWidget";
 import { KanbanBoard } from "@/components/admin/KanbanBoard";
-import { MoodTracker } from "@/components/admin/MoodTracker";
-import { CalorieTracker } from "@/components/admin/CalorieTracker";
-import { WorkoutTracker } from "@/components/admin/WorkoutTracker";
-import { UnicornsTracker } from "@/components/admin/UnicornsTracker";
-import { WeeklySummaryCard } from "@/components/admin/WeeklySummaryCard";
-import { RecentJobsWidget } from "@/components/admin/RecentJobsWidget";
 import { MediaListCard } from "@/components/admin/MediaListCard";
 import { InspiringPeopleCard } from "@/components/admin/InspiringPeopleCard";
 import { LatestPodcast } from "@/components/admin/LatestPodcast";
@@ -28,30 +22,15 @@ import {
   deleteInspiringPerson,
   updateInspiringPersonReason,
 } from "@/app/admin/dashboard/people-actions";
-import { BookOpen, Briefcase, Film, GraduationCap, UserSearch } from "lucide-react";
-import { JobLeadsCard } from "@/components/admin/JobLeadsCard";
-import {
-  addLinkedInJob,
-  deleteLinkedInJob,
-  setLinkedInJobProposalSent,
-  updateLinkedInJobNote,
-} from "@/app/admin/dashboard/linkedin-actions";
-import {
-  addHeadhunter,
-  deleteHeadhunter,
-  setHeadhunterSent,
-  updateHeadhunterNote,
-} from "@/app/admin/dashboard/headhunter-actions";
+import { BookOpen, Film, GraduationCap } from "lucide-react";
 import type { CalendarEvent } from "@/lib/calendar";
 import type { Task } from "@/lib/task";
 import type { MoodEntry } from "@/lib/mood";
 import type { JournalEntry } from "@/lib/journal";
 import type { CalorieEntry } from "@/lib/calorie";
 import type { WorkoutEntry } from "@/lib/workout";
-import type { UnicornEntry } from "@/lib/unicorn";
 import { BOOKS_SELECT, LEARNING_SELECT, WATCH_SELECT, type MediaItem } from "@/lib/media-item";
 import type { InspiringPerson } from "@/lib/inspiring-person";
-import type { JobLead } from "@/lib/job-lead";
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -68,7 +47,6 @@ export default async function AdminDashboardPage() {
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startOfTomorrow = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
-  const sevenDaysAgo = new Date(startOfToday.getTime() - 6 * 24 * 60 * 60 * 1000);
 
   const [
     { data: eventsData, error: eventsError },
@@ -77,13 +55,10 @@ export default async function AdminDashboardPage() {
     { data: journalData, error: journalError },
     { data: calorieData, error: calorieError },
     { data: workoutData, error: workoutError },
-    { data: unicornData, error: unicornError },
     { data: booksData, error: booksError },
     { data: watchData, error: watchError },
     { data: learningData, error: learningError },
     { data: peopleData, error: peopleError },
-    { data: linkedinJobsData, error: linkedinJobsError },
-    { data: headhuntersData, error: headhuntersError },
     episode,
   ] = await Promise.all([
     supabase
@@ -97,13 +72,10 @@ export default async function AdminDashboardPage() {
     supabase.from("journal_entries").select("*").order("entry_date", { ascending: false }).limit(7),
     supabase.from("calorie_entries").select("*").order("entry_date", { ascending: false }).limit(7),
     supabase.from("workout_entries").select("*").order("entry_date", { ascending: false }).limit(7),
-    supabase.from("unicorn_entries").select("*").order("entry_date", { ascending: false }).limit(7),
     supabase.from("books_to_read").select(BOOKS_SELECT).order("created_at", { ascending: false }),
     supabase.from("things_to_watch").select(WATCH_SELECT).order("created_at", { ascending: false }),
     supabase.from("learning_items").select(LEARNING_SELECT).order("created_at", { ascending: false }),
     supabase.from("inspiring_people").select("*").order("created_at", { ascending: false }),
-    supabase.from("linkedin_jobs").select("*").order("created_at", { ascending: false }),
-    supabase.from("headhunters").select("*").order("created_at", { ascending: false }),
     getLatestOnPurposeEpisode(),
   ]);
 
@@ -125,9 +97,6 @@ export default async function AdminDashboardPage() {
   if (workoutError) {
     console.error("Failed to load workout entries:", workoutError);
   }
-  if (unicornError) {
-    console.error("Failed to load unicorn entries:", unicornError);
-  }
   if (booksError) {
     console.error("Failed to load books:", booksError);
   }
@@ -140,12 +109,6 @@ export default async function AdminDashboardPage() {
   if (peopleError) {
     console.error("Failed to load inspiring people:", peopleError);
   }
-  if (linkedinJobsError) {
-    console.error("Failed to load recent LinkedIn jobs:", linkedinJobsError);
-  }
-  if (headhuntersError) {
-    console.error("Failed to load headhunters:", headhuntersError);
-  }
 
   const events = (eventsData ?? []) as CalendarEvent[];
   const tasks = (tasksData ?? []) as Task[];
@@ -153,21 +116,16 @@ export default async function AdminDashboardPage() {
   const journalEntries = (journalData ?? []) as JournalEntry[];
   const calorieEntries = (calorieData ?? []) as CalorieEntry[];
   const workoutEntries = (workoutData ?? []) as WorkoutEntry[];
-  const unicornEntries = (unicornData ?? []) as UnicornEntry[];
   const books = (booksData ?? []) as unknown as MediaItem[];
   const watchList = (watchData ?? []) as unknown as MediaItem[];
   const learningItems = (learningData ?? []) as unknown as MediaItem[];
   const inspiringPeople = (peopleData ?? []) as InspiringPerson[];
-  const linkedinJobs = (linkedinJobsData ?? []) as JobLead[];
-  const recentLinkedinJobs = linkedinJobs.filter((job) => job.created_at >= sevenDaysAgo.toISOString());
-  const headhunters = (headhuntersData ?? []) as JobLead[];
 
   const today = todayKey();
   const todayMood = moodEntries.find((entry) => entry.entry_date === today) ?? null;
   const todayJournal = journalEntries.find((entry) => entry.entry_date === today) ?? null;
   const todayCalories = calorieEntries.find((entry) => entry.entry_date === today) ?? null;
   const todayWorkout = workoutEntries.find((entry) => entry.entry_date === today) ?? null;
-  const todayUnicorns = unicornEntries.find((entry) => entry.entry_date === today) ?? null;
 
   return (
     <AffirmationProvider>
@@ -195,66 +153,6 @@ export default async function AdminDashboardPage() {
 
         <div className="mt-10">
           <KanbanBoard initialTasks={tasks} />
-        </div>
-
-        <div className="mt-10">
-          <MoodTracker entries={moodEntries} journalEntries={journalEntries} />
-        </div>
-
-        <div className="mt-10">
-          <CalorieTracker entries={calorieEntries} />
-        </div>
-
-        <div className="mt-10">
-          <WorkoutTracker entries={workoutEntries} />
-        </div>
-
-        <div className="mt-10">
-          <UnicornsTracker entryDate={today} todayEntry={todayUnicorns} />
-        </div>
-
-        <div className="mt-10">
-          <WeeklySummaryCard
-            moodEntries={moodEntries}
-            calorieEntries={calorieEntries}
-            workoutEntries={workoutEntries}
-            unicornEntries={unicornEntries}
-            tasks={tasks}
-          />
-        </div>
-
-        <div className="mt-10">
-          <RecentJobsWidget linkedinJobs={recentLinkedinJobs} />
-        </div>
-
-        <div className="mt-10">
-          <JobLeadsCard
-            icon={<Briefcase className="h-4 w-4 text-accent" aria-hidden="true" />}
-            heading="LinkedIn jobs"
-            subtitle="Paste in matches you find worth tracking"
-            companyLabel="Company"
-            jobs={linkedinJobs}
-            onAdd={addLinkedInJob}
-            onDelete={deleteLinkedInJob}
-            onSetProposalSent={setLinkedInJobProposalSent}
-            onUpdateNote={updateLinkedInJobNote}
-          />
-        </div>
-
-        <div className="mt-10">
-          <JobLeadsCard
-            icon={<UserSearch className="h-4 w-4 text-accent" aria-hidden="true" />}
-            heading="Headhunters"
-            subtitle="Recruiters you've sent a CV or message to"
-            companyLabel="Agency"
-            titleLabel="Name"
-            titlePlaceholder="Sarah Cohen"
-            jobs={headhunters}
-            onAdd={addHeadhunter}
-            onDelete={deleteHeadhunter}
-            onSetProposalSent={setHeadhunterSent}
-            onUpdateNote={updateHeadhunterNote}
-          />
         </div>
 
         <div className="mt-10">

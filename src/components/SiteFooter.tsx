@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ArrowUp, DoorOpen, Mail } from "lucide-react";
+import { ArrowRight, ArrowUp, Mail } from "lucide-react";
 import { FaLinkedin, FaWhatsapp } from "react-icons/fa";
 import { expertiseAreas, industries, technologies } from "@/lib/content";
 
@@ -100,8 +100,8 @@ export function SiteFooter() {
         <div className="shell flex flex-col gap-4 py-6 text-sm text-background/60 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} Enodre. All rights reserved.</p>
           <div className="flex items-center gap-4">
-            <Link href="/login" aria-label="Admin" className="transition hover:text-background">
-              <DoorOpen className="h-5 w-5" aria-hidden="true" />
+            <Link href="/login" className="text-sm font-medium transition hover:text-background">
+              Admin
             </Link>
             <button
               type="button"

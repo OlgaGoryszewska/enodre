@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 
-const title = "Enodre — Systemy AI i Audyty Kodu AI";
+const title = "Enodre — AI-arbeidsflytsystemer og AI-kodeaudit";
 const description =
-  "Enodre: systemy pracy oparte na AI dla firm o rozbudowanych operacjach oraz audyty kodu AI dla produktów, które przerosły tempo, w jakim powstały.";
+  "Enodre: AI-drevne arbeidsflytsystemer for driftstunge bedrifter, og AI-kodeaudit for produkter som har vokst fra koden sin.";
 
 export const metadata: Metadata = {
   title: { absolute: title },
   description,
   alternates: {
-    canonical: "/pl",
+    canonical: "/no",
     languages: {
       en: "/",
       pl: "/pl",
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    url: "/pl",
+    url: "/no",
     siteName: "Enodre",
     title,
     description,
@@ -31,6 +31,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default function PlLayout({ children }: { children: React.ReactNode }) {
+export default function NoLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }

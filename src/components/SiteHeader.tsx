@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, DoorOpen, X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import { expertiseAreas, industries, technologies } from "@/lib/content";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
@@ -183,24 +183,28 @@ export function SiteHeader() {
           </Link>
         </nav>
 
-        <button
-          ref={toggleRef}
-          type="button"
-          aria-expanded={open}
-          aria-controls={menuId}
-          aria-label={open ? "Close menu" : "Open menu"}
-          onClick={() => setOpen((value) => !value)}
-          className="-mr-2 flex h-10 w-10 items-center justify-center rounded-full text-foreground transition hover:bg-foreground/5 sm:hidden"
-        >
-          {open ? (
-            <X className="h-5 w-5" aria-hidden="true" />
-          ) : (
-            <svg width="26" height="10" viewBox="0 0 26 10" fill="none" aria-hidden="true">
-              <line x1="0" y1="1.25" x2="26" y2="1.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="0" y1="8.75" x2="26" y2="8.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-          )}
-        </button>
+        <div className="flex items-center gap-3 sm:hidden">
+          <LanguageSwitcher />
+
+          <button
+            ref={toggleRef}
+            type="button"
+            aria-expanded={open}
+            aria-controls={menuId}
+            aria-label={open ? "Close menu" : "Open menu"}
+            onClick={() => setOpen((value) => !value)}
+            className="-mr-2 flex h-10 w-10 items-center justify-center rounded-full text-foreground transition hover:bg-foreground/5"
+          >
+            {open ? (
+              <X className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <svg width="26" height="10" viewBox="0 0 26 10" fill="none" aria-hidden="true">
+                <line x1="0" y1="1.25" x2="26" y2="1.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <line x1="0" y1="8.75" x2="26" y2="8.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -239,23 +243,20 @@ export function SiteHeader() {
                 )
               )}
               <Link
+                href="/login"
+                onClick={() => setOpen(false)}
+                className="border-b border-black/10 py-5 text-2xl font-semibold tracking-tight"
+              >
+                Admin
+              </Link>
+              <Link
                 href="/#get-in-touch"
                 onClick={() => setOpen(false)}
                 className="mt-6 inline-flex items-center justify-center rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background"
               >
                 Contact Us
               </Link>
-              <LanguageSwitcher className="mt-6 self-center" />
             </motion.nav>
-
-            <Link
-              href="/login"
-              aria-label="Admin"
-              onClick={() => setOpen(false)}
-              className="absolute bottom-6 right-6 flex h-10 w-10 items-center justify-center rounded-full text-foreground/15 transition hover:text-accent"
-            >
-              <DoorOpen className="h-4 w-4" aria-hidden="true" />
-            </Link>
           </motion.div>
         )}
       </AnimatePresence>

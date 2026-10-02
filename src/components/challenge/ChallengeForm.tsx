@@ -55,9 +55,29 @@ const T = {
     sending: "Wysyłanie...",
     send: "Wyślij wiadomość",
   },
+  no: {
+    thanksTitle: "Takk — vi har mottatt den.",
+    thanksBody: "Et ekte menneske leser det du har delt, og tar kontakt.",
+    sendAnother: "Send en ny melding",
+    tabEmail: "Send e-post",
+    tabCall: "Bestill en samtale",
+    calendarPlaceholder: "Timebestilling er ikke koblet til ennå — legg til en planleggingslenke (Calendly, Cal.com, osv.) for å aktivere denne fanen.",
+    fullName: "Fullt navn",
+    email: "E-post",
+    message: "Melding",
+    messagePlaceholder: "Fortell oss litt om hva du trenger.",
+    uploadPlaceholder: "Dra og slipp eller last opp fil",
+    agree: "Ja, jeg forstår og godtar",
+    and: "og",
+    terms: "vilkårene",
+    privacy: "personvernerklæringen",
+    error: "Noe gikk galt under sending av meldingen. Prøv igjen, eller send oss en e-post direkte.",
+    sending: "Sender...",
+    send: "Send melding",
+  },
 };
 
-export function ChallengeForm({ locale = "en" }: { locale?: "en" | "pl" }) {
+export function ChallengeForm({ locale = "en" }: { locale?: "en" | "pl" | "no" }) {
   const t = T[locale];
   const [tab, setTab] = useState<ContactTab>("email");
   const [submitState, setSubmitState] = useState<"idle" | "success" | "error">("idle");
