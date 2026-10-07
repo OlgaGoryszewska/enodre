@@ -95,7 +95,7 @@ export default function Home() {
             >
               We fix how your business runs.
             </motion.h1>
-            <motion.p variants={heroItem} className="font-poppins mt-3 pb-3 text-center tracking-normal text-base text-black sm:mt-4">
+            <motion.p variants={heroItem} className="font-poppins mt-3 pb-3 text-center tracking-normal text-base text-foreground sm:mt-4">
               <span className="font-bold">AI-powered workflow systems</span> for operations-heavy businesses.{" "}
               <span className="font-bold">AI-code audits</span> for products that outgrew their code.
             </motion.p>
