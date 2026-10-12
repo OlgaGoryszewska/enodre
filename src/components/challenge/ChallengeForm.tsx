@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertCircle, CheckCircle2, ExternalLink, File as FileIcon, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, File as FileIcon, Loader2 } from "lucide-react";
+import { BookingCalendar } from "@/components/challenge/BookingCalendar";
 import { FormField } from "@/components/challenge/FormField";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,7 +22,6 @@ const T = {
     sendAnother: "Send another message",
     tabEmail: "Send Email",
     tabCall: "Book a Call",
-    calendarPlaceholder: "Calendar booking isn't connected yet — add a scheduling link (Calendly, Cal.com, etc.) to enable this tab.",
     fullName: "Full Name",
     email: "Email",
     message: "Message",
@@ -41,7 +41,6 @@ const T = {
     sendAnother: "Wyślij kolejną wiadomość",
     tabEmail: "Wyślij e-mail",
     tabCall: "Umów rozmowę",
-    calendarPlaceholder: "Rezerwacja terminu nie jest jeszcze podłączona — dodaj link do kalendarza (Calendly, Cal.com itp.), aby włączyć tę zakładkę.",
     fullName: "Imię i nazwisko",
     email: "E-mail",
     message: "Wiadomość",
@@ -61,7 +60,6 @@ const T = {
     sendAnother: "Send en ny melding",
     tabEmail: "Send e-post",
     tabCall: "Bestill en samtale",
-    calendarPlaceholder: "Timebestilling er ikke koblet til ennå — legg til en planleggingslenke (Calendly, Cal.com, osv.) for å aktivere denne fanen.",
     fullName: "Fullt navn",
     email: "E-post",
     message: "Melding",
@@ -173,14 +171,11 @@ export function ChallengeForm({ locale = "en" }: { locale?: "en" | "pl" | "no" }
               )}
             >
               {t.tabCall}
-              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
           </div>
 
           {tab === "call" ? (
-            <p className="rounded-xl border border-dashed border-black/15 p-6 text-center text-sm text-ink-muted">
-              {t.calendarPlaceholder}
-            </p>
+            <BookingCalendar locale={locale} />
           ) : (
             <form
               noValidate

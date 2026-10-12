@@ -122,11 +122,11 @@ export default function HomePL() {
             >
               Naprawiamy sposób działania Twojej firmy.
             </motion.h1>
-            <motion.p variants={heroItem} className="font-poppins mt-3 pb-3 text-center tracking-normal text-base text-black sm:mt-4">
+            <motion.p variants={heroItem} className="font-poppins mx-auto mt-3 max-w-xl pb-3 text-center tracking-normal text-base text-foreground sm:mt-4">
               <span className="font-bold">Systemy pracy oparte na AI</span> dla firm o rozbudowanych operacjach.{" "}
               <span className="font-bold">Audyty kodu AI</span> dla produktów, które przerosły swój kod.
             </motion.p>
-            <motion.div variants={heroItem} className="relative mx-auto mt-10 w-[50vw]">
+            <motion.div variants={heroItem} className="relative mx-auto mt-10 w-[50vw] lg:w-[30vw] lg:max-w-[420px]">
               <div
                 className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[100%] w-[100%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
                 style={{ background: "radial-gradient(circle, #16163C 30%, #7272C7 40%, #ffffff 100%)" }}

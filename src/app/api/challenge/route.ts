@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 import { createClient } from "@supabase/supabase-js";
 import { challengeFormSchema, urgencyLabel } from "@/lib/challenge-schema";
 
-const RECIPIENT = "olga.goryszewska@gmail.com";
+const RECIPIENT = "info@enodre.com";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
