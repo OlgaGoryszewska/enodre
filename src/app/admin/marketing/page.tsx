@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AdminNav } from "@/components/admin/AdminNav";
 import Link from "next/link";
 import { PotentialCustomersTable } from "@/components/admin/PotentialCustomersTable";
+import { LeadAgentPanel } from "@/components/admin/LeadAgentPanel";
 import { MarketingKanbanBoard } from "@/components/admin/MarketingKanbanBoard";
 import { ContactsTable } from "@/components/admin/ContactsTable";
 import { CustomerFilesSection } from "@/components/admin/CustomerFilesSection";
@@ -17,8 +18,15 @@ import {
   setPotentialCustomerAttitude,
   updatePotentialCustomerNote,
 } from "@/app/admin/marketing/potential-customers-actions";
+import {
+  approveLeadCandidate,
+  findLeads,
+  rejectLeadCandidate,
+  researchLeadCandidate,
+} from "@/app/admin/marketing/lead-agent-actions";
 import { BUSINESS_PROFILE_NAME } from "@/lib/business-profile";
 import type { PotentialCustomer } from "@/lib/potential-customer";
+import { startOfMonthIso, type LeadCandidate } from "@/lib/lead-candidate";
 import type { MarketingTask } from "@/lib/marketing-task";
 import type { CustomerFile, CustomerFileWithUrl } from "@/lib/customer-file";
 import type { StickyNote } from "@/lib/customer-sticky-note";
@@ -26,6 +34,9 @@ import type { Contact } from "@/lib/contact";
 
 const BUCKET = "customer-files";
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24;
+
+// Lead research runs Claude with web search — about a minute per company.
+export const maxDuration = 300;
 
 export const metadata: Metadata = {
   title: "Business Plan & Marketing Strategy",
@@ -71,6 +82,8 @@ export default async function MarketingPage() {
     { data: marketingTasksData, error: marketingTasksError },
     { data: filesData, error: filesError },
     { data: notesData, error: notesError },
+    { data: candidatesData, error: candidatesError },
+    { data: researchRunsData, error: researchRunsError },
   ] = await Promise.all([
     supabase.from("potential_customers").select("*").order("created_at", { ascending: false }),
     supabase.from("contacts").select("*").order("created_at", { ascending: false }),
@@ -81,6 +94,8 @@ export default async function MarketingPage() {
     businessProfileId
       ? supabase.from("customer_sticky_notes").select("*").eq("customer_id", businessProfileId).order("created_at", { ascending: true })
       : Promise.resolve({ data: [], error: null }),
+    supabase.from("lead_candidates").select("*").neq("status", "rejected").order("created_at", { ascending: false }),
+    supabase.from("lead_research_runs").select("cost_usd").gte("created_at", startOfMonthIso()),
   ]);
 
   if (leadsError) {
@@ -99,7 +114,20 @@ export default async function MarketingPage() {
     console.error("Failed to load marketing sticky notes:", notesError);
   }
 
+  if (candidatesError) {
+    console.error("Failed to load lead candidates:", candidatesError);
+  }
+  if (researchRunsError) {
+    console.error("Failed to load lead research spend:", researchRunsError);
+  }
+
   const leads = (leadsData ?? []) as PotentialCustomer[];
+  const leadCandidates = (candidatesData ?? []) as LeadCandidate[];
+  // If spend can't be loaded, show the budget as used up rather than unknown —
+  // the server action re-checks it anyway.
+  const researchSpendThisMonth = researchRunsError
+    ? Number.POSITIVE_INFINITY
+    : (researchRunsData ?? []).reduce((sum, row) => sum + Number(row.cost_usd), 0);
   const inboundContacts = (inboundData ?? []) as Contact[];
   const marketingTasks = (marketingTasksData ?? []) as MarketingTask[];
   const files = (filesData ?? []) as CustomerFile[];
@@ -144,6 +172,24 @@ export default async function MarketingPage() {
             onSetResponded={setPotentialCustomerResponded}
             onSetAttitude={setPotentialCustomerAttitude}
             onUpdateNote={updatePotentialCustomerNote}
+          />
+        </div>
+      </div>
+
+      <div className="mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
+        <h2 className="text-lg font-semibold tracking-tight">Lead finder agents</h2>
+        <p className="mt-1 text-sm text-ink-muted">
+          Find companies in the public register, research each one with Claude, then approve the good ones into the
+          pipeline. Nothing is sent automatically.
+        </p>
+        <div className="mt-6">
+          <LeadAgentPanel
+            candidates={leadCandidates}
+            monthSpendUsd={researchSpendThisMonth}
+            onFind={findLeads}
+            onResearch={researchLeadCandidate}
+            onApprove={approveLeadCandidate}
+            onReject={rejectLeadCandidate}
           />
         </div>
       </div>
