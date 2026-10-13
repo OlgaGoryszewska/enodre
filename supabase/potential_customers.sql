@@ -48,3 +48,35 @@ alter table public.potential_customers add column if not exists attitude text;
 alter table public.potential_customers drop constraint if exists potential_customers_attitude_check;
 alter table public.potential_customers add constraint potential_customers_attitude_check
   check (attitude in ('positive', 'neutral', 'negative'));
+
+-- GTM fields (Oct 2026) — the categories the GTM plan decides on: fit,
+-- contact channel, opener, discovery answers and first-contact date.
+-- Idempotent, no-ops if already added. Keep check values in sync with
+-- src/lib/potential-customer.ts.
+alter table public.potential_customers add column if not exists segment text;
+alter table public.potential_customers add column if not exists employees integer;
+alter table public.potential_customers add column if not exists location text;
+alter table public.potential_customers add column if not exists org_number text;
+alter table public.potential_customers add column if not exists website text;
+alter table public.potential_customers add column if not exists best_channel text;
+alter table public.potential_customers add column if not exists opener_fact text;
+alter table public.potential_customers add column if not exists opener_source text;
+alter table public.potential_customers add column if not exists accounting_system text;
+alter table public.potential_customers add column if not exists admin_hours_per_week numeric(5, 1);
+alter table public.potential_customers add column if not exists main_pain text;
+alter table public.potential_customers add column if not exists first_contacted_on date;
+
+alter table public.potential_customers drop constraint if exists potential_customers_segment_check;
+alter table public.potential_customers add constraint potential_customers_segment_check
+  check (segment in ('F', 'A', 'B', 'C'));
+alter table public.potential_customers drop constraint if exists potential_customers_best_channel_check;
+alter table public.potential_customers add constraint potential_customers_best_channel_check
+  check (best_channel in ('linkedin', 'phone', 'email', 'contact_form', 'in_person'));
+alter table public.potential_customers drop constraint if exists potential_customers_accounting_system_check;
+alter table public.potential_customers add constraint potential_customers_accounting_system_check
+  check (accounting_system in ('tripletex', 'fiken', 'poweroffice', 'visma', 'other'));
+
+-- fit_score was briefly part of the GTM fields; removed 14 Oct 2026.
+alter table public.potential_customers drop column if exists fit_score;
+
+notify pgrst, 'reload schema';

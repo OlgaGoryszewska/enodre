@@ -1,7 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { potentialCustomerFormSchema } from "@/lib/potential-customer-schema";
+import {
+  potentialCustomerDetailsSchema,
+  potentialCustomerFormSchema,
+  type PotentialCustomerDetails,
+} from "@/lib/potential-customer-schema";
 import {
   POTENTIAL_CUSTOMER_STATUS_VALUES,
   POTENTIAL_CUSTOMER_ATTITUDE_VALUES,
@@ -119,6 +123,20 @@ export async function updatePotentialCustomerNote(id: string, notes: string) {
 export async function deletePotentialCustomer(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from(TABLE).delete().eq("id", id);
+
+  if (error) throw error;
+
+  revalidatePath("/admin/marketing");
+}
+
+export async function updatePotentialCustomerDetails(id: string, details: PotentialCustomerDetails) {
+  const values = potentialCustomerDetailsSchema.parse(details);
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from(TABLE)
+    .update({ ...values, updated_at: new Date().toISOString() })
+    .eq("id", id);
 
   if (error) throw error;
 

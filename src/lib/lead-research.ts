@@ -1,9 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
-import {
-  leadResearchSchema,
-  type LeadResearch,
-} from "@/lib/lead-research-schema";
+import { leadResearchSchema, type LeadResearch } from "@/lib/lead-research-schema";
 import { RESEARCH_BUDGET, isFuelFloSimilar } from "@/lib/lead-candidate";
 
 // Server-only: imported from server actions. Needs ANTHROPIC_API_KEY.
@@ -117,9 +114,7 @@ export class LeadResearchError extends Error {
   }
 }
 
-export async function researchLead(
-  input: LeadResearchInput,
-): Promise<LeadResearchResult> {
+export async function researchLead(input: LeadResearchInput): Promise<LeadResearchResult> {
   const client = new Anthropic();
 
   const registerData = [
@@ -131,8 +126,7 @@ export async function researchLead(
     input.address && `Address: ${input.address}`,
     input.founded && `Founded: ${input.founded}`,
     input.website && `Website (register): ${input.website}`,
-    input.contactName &&
-      `Contact: ${input.contactName}${input.contactRole ? ` (${input.contactRole})` : ""}`,
+    input.contactName && `Contact: ${input.contactName}${input.contactRole ? ` (${input.contactRole})` : ""}`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -190,10 +184,7 @@ export async function researchLead(
         messages,
       });
     } catch (error) {
-      throw new LeadResearchError(
-        error instanceof Error ? error.message : "Claude API request failed.",
-        usage,
-      );
+      throw new LeadResearchError(error instanceof Error ? error.message : "Claude API request failed.", usage);
     }
 
     const responseUsage = response.usage;
@@ -202,10 +193,8 @@ export async function researchLead(
     usage.outputTokens += responseUsage.output_tokens;
     usage.cacheReadTokens += responseUsage.cache_read_input_tokens ?? 0;
     usage.cacheWriteTokens += responseUsage.cache_creation_input_tokens ?? 0;
-    usage.webSearchRequests +=
-      responseUsage.server_tool_use?.web_search_requests ?? 0;
-    usage.webFetchRequests +=
-      responseUsage.server_tool_use?.web_fetch_requests ?? 0;
+    usage.webSearchRequests += responseUsage.server_tool_use?.web_search_requests ?? 0;
+    usage.webFetchRequests += responseUsage.server_tool_use?.web_fetch_requests ?? 0;
     usage.costUsd =
       usage.inputTokens * PRICE.input +
       usage.outputTokens * PRICE.output +
@@ -219,33 +208,24 @@ export async function researchLead(
         throw new LeadResearchError(
           `Stopped: passed the $${RESEARCH_BUDGET.perCompanyUsd.toFixed(2)} per-company cap.`,
           usage,
-          true,
+          true
         );
       }
       messages.push({ role: "assistant", content: response.content });
       continue;
     }
     if (response.stop_reason === "refusal") {
-      throw new LeadResearchError(
-        "Claude declined to research this company.",
-        usage,
-      );
+      throw new LeadResearchError("Claude declined to research this company.", usage);
     }
     if (response.stop_reason === "max_tokens") {
       throw new LeadResearchError("Research was cut off (max_tokens).", usage);
     }
     if (!response.parsed_output) {
-      throw new LeadResearchError(
-        "Research finished without a valid structured result.",
-        usage,
-      );
+      throw new LeadResearchError("Research finished without a valid structured result.", usage);
     }
 
     return { research: response.parsed_output, usage };
   }
 
-  throw new LeadResearchError(
-    "Research didn't finish after the allowed continuations.",
-    usage,
-  );
+  throw new LeadResearchError("Research didn't finish after the allowed continuations.", usage);
 }

@@ -9,8 +9,18 @@ import { Input } from "@/components/ui/input";
 import { buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { potentialCustomerFormSchema, type PotentialCustomerFormValues } from "@/lib/potential-customer-schema";
 import {
+  potentialCustomerFormSchema,
+  type PotentialCustomerDetails,
+  type PotentialCustomerFormValues,
+} from "@/lib/potential-customer-schema";
+import { LeadDetailsDialog } from "@/components/admin/LeadDetailsDialog";
+import {
+  SEGMENT_VALUES,
+  WEEK_4_BAR_HOURS,
+  followUpDue,
+  segmentLabels,
+  type Segment,
   POTENTIAL_CUSTOMER_STATUS_VALUES,
   potentialCustomerStatusLabels,
   POTENTIAL_CUSTOMER_ATTITUDE_VALUES,
@@ -30,6 +40,7 @@ interface PotentialCustomersTableProps {
   onSetResponded: (id: string, responded: boolean) => Promise<void>;
   onSetAttitude: (id: string, attitude: string | null) => Promise<void>;
   onUpdateNote: (id: string, notes: string) => Promise<void>;
+  onUpdateDetails: (id: string, details: PotentialCustomerDetails) => Promise<void>;
 }
 
 type TriFilter = "all" | "yes" | "no";
@@ -76,7 +87,61 @@ const attitudeStyles: Record<PotentialCustomerAttitude, string> = {
 };
 
 function formatDate(value: string) {
-  return new Date(value).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  return new Date(value).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatDay(value: string) {
+  return new Date(`${value}T00:00:00Z`).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+const segmentStyles: Record<Segment, string> = {
+  F: "bg-[#EDE7FE] text-[#6C4CD6]",
+  A: "bg-[#E3F3E6] text-[#1B8A3A]",
+  B: "bg-accent/10 text-accent",
+  C: "bg-black/5 text-ink-muted",
+};
+
+function SegmentCell({ lead }: { lead: PotentialCustomer }) {
+  if (!lead.segment) return <span className="text-ink-muted">—</span>;
+  return (
+    <span
+      title={segmentLabels[lead.segment]}
+      className={cn("whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold", segmentStyles[lead.segment])}
+    >
+      {lead.segment}
+    </span>
+  );
+}
+
+function FollowUpCell({ lead, today }: { lead: PotentialCustomer; today: string }) {
+  if (!lead.first_contacted_on) return <span className="text-xs text-ink-muted">Not contacted</span>;
+  if (lead.responded) return <span className="text-xs text-ink-muted">Replied</span>;
+  const due = followUpDue(lead.first_contacted_on);
+  const overdue = due < today;
+  return (
+    <span className={cn("whitespace-nowrap text-xs", overdue ? "font-semibold text-danger" : "text-ink-muted")}>
+      {overdue ? "Overdue · " : due === today ? "Due today · " : "Due "}
+      {formatDay(due)}
+    </span>
+  );
+}
+
+function Week4Cell({ lead }: { lead: PotentialCustomer }) {
+  if (lead.admin_hours_per_week == null) return <span className="text-xs text-ink-muted">Not asked</span>;
+  const meets = lead.admin_hours_per_week >= WEEK_4_BAR_HOURS;
+  return (
+    <span className={cn("whitespace-nowrap text-xs font-semibold", meets ? "text-[#1B8A3A]" : "text-ink-muted")}>
+      {lead.admin_hours_per_week} h/wk {meets ? "· meets bar" : "· below bar"}
+    </span>
+  );
 }
 
 function NoteInput({
@@ -129,6 +194,7 @@ interface LeadsTableProps {
   onToggleCallMade: (id: string, value: boolean) => void;
   onToggleResponded: (id: string, value: boolean) => void;
   onUpdateNote: (id: string, notes: string) => Promise<void>;
+  onUpdateDetails: (id: string, details: PotentialCustomerDetails) => Promise<void>;
   onDelete: (id: string) => void;
   deletingId: string | null;
 }
@@ -146,9 +212,11 @@ function LeadsTable({
   onToggleCallMade,
   onToggleResponded,
   onUpdateNote,
+  onUpdateDetails,
   onDelete,
   deletingId,
 }: LeadsTableProps) {
+  const today = new Date().toISOString().slice(0, 10);
   return (
     <div>
       <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
@@ -161,11 +229,18 @@ function LeadsTable({
       ) : (
         <div className="mt-4 overflow-hidden rounded-2xl border border-black/10">
           <div className="overflow-x-auto">
-            <table className={cn("w-full border-collapse text-left text-sm", showAttitude ? "min-w-[1180px]" : "min-w-[1020px]")}>
+            <table
+              className={cn(
+                "w-full border-collapse text-left text-sm",
+                showAttitude ? "min-w-[1500px]" : "min-w-[1380px]"
+              )}
+            >
               <thead>
                 <tr className="border-b border-black/10 bg-card text-xs uppercase tracking-widest text-ink-muted">
                   <th className="px-5 py-3 font-medium">Name</th>
                   <th className="px-5 py-3 font-medium">Company</th>
+                  <th className="px-5 py-3 font-medium">Segment</th>
+                  <th className="px-5 py-3 font-medium">Where</th>
                   <th className="px-5 py-3 font-medium">Email</th>
                   <th className="px-5 py-3 font-medium">Phone</th>
                   <th className="px-5 py-3 font-medium">Source</th>
@@ -174,7 +249,11 @@ function LeadsTable({
                   <th className="px-5 py-3 font-medium">Message</th>
                   <th className="px-5 py-3 font-medium">Call</th>
                   <th className="px-5 py-3 font-medium">Responded</th>
+                  <th className="px-5 py-3 font-medium">{showAttitude ? "Week-4 bar" : "Follow-up"}</th>
                   <th className="px-5 py-3 font-medium">Note</th>
+                  <th className="px-5 py-3 font-medium">
+                    <span className="sr-only">Details</span>
+                  </th>
                   <th className="px-5 py-3 font-medium">Added</th>
                   <th className="px-5 py-3 font-medium">
                     <span className="sr-only">Delete</span>
@@ -185,7 +264,23 @@ function LeadsTable({
                 {leads.map((lead) => (
                   <tr key={lead.id} className="border-b border-black/10 last:border-b-0 hover:bg-card">
                     <td className="px-5 py-4 font-semibold">{lead.name}</td>
-                    <td className="px-5 py-4 text-ink-muted">{lead.company || "—"}</td>
+                    <td className="px-5 py-4 text-ink-muted">
+                      {lead.website ? (
+                        <a href={lead.website} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                          {lead.company || lead.website}
+                        </a>
+                      ) : (
+                        lead.company || "—"
+                      )}
+                    </td>
+                    <td className="px-5 py-4">
+                      <SegmentCell lead={lead} />
+                    </td>
+                    <td className="px-5 py-4 text-xs text-ink-muted">
+                      {[lead.location, lead.employees != null && `${lead.employees} empl.`]
+                        .filter(Boolean)
+                        .join(" · ") || "—"}
+                    </td>
                     <td className="px-5 py-4 text-ink-muted">{lead.email || "—"}</td>
                     <td className="px-5 py-4 text-ink-muted">{lead.phone || "—"}</td>
                     <td className="px-5 py-4 text-ink-muted">{lead.source || "—"}</td>
@@ -251,7 +346,13 @@ function LeadsTable({
                       />
                     </td>
                     <td className="px-5 py-4">
+                      {showAttitude ? <Week4Cell lead={lead} /> : <FollowUpCell lead={lead} today={today} />}
+                    </td>
+                    <td className="px-5 py-4">
                       <NoteInput leadId={lead.id} initialNote={lead.notes} onUpdateNote={onUpdateNote} />
+                    </td>
+                    <td className="px-5 py-4">
+                      <LeadDetailsDialog lead={lead} onSave={onUpdateDetails} />
                     </td>
                     <td className="px-5 py-4 text-ink-muted">{formatDate(lead.created_at)}</td>
                     <td className="px-5 py-4 text-right">
@@ -286,6 +387,7 @@ export function PotentialCustomersTable({
   onSetResponded,
   onSetAttitude,
   onUpdateNote,
+  onUpdateDetails,
 }: PotentialCustomersTableProps) {
   const [leads, setLeads] = useState(initialLeads);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -294,6 +396,7 @@ export function PotentialCustomersTable({
   const [statusFilter, setStatusFilter] = useState<PotentialCustomerStatus | "all">("all");
   const [messageFilter, setMessageFilter] = useState<TriFilter>("all");
   const [callFilter, setCallFilter] = useState<TriFilter>("all");
+  const [segmentFilter, setSegmentFilter] = useState<Segment | "all">("all");
 
   const {
     register,
@@ -330,6 +433,18 @@ export function PotentialCustomersTable({
         responded: false,
         attitude: null,
         notes: null,
+        segment: null,
+        employees: null,
+        location: null,
+        org_number: null,
+        website: null,
+        best_channel: null,
+        opener_fact: null,
+        opener_source: null,
+        accounting_system: null,
+        admin_hours_per_week: null,
+        main_pain: null,
+        first_contacted_on: null,
       },
       ...current,
     ]);
@@ -406,17 +521,27 @@ export function PotentialCustomersTable({
     }
   }
 
+  async function handleUpdateDetails(id: string, details: PotentialCustomerDetails) {
+    await onUpdateDetails(id, details);
+    // Mirror the server's normalisation: trimmed text, empty -> null.
+    const normalised = Object.fromEntries(
+      Object.entries(details).map(([key, value]) => [key, typeof value === "string" ? value.trim() || null : value])
+    ) as Partial<PotentialCustomer>;
+    setLeads((current) => current.map((lead) => (lead.id === id ? { ...lead, ...normalised } : lead)));
+  }
+
   const filteredLeads = useMemo(
     () =>
       leads.filter((lead) => {
         if (statusFilter !== "all" && lead.status !== statusFilter) return false;
+        if (segmentFilter !== "all" && lead.segment !== segmentFilter) return false;
         if (messageFilter === "yes" && !lead.message_sent) return false;
         if (messageFilter === "no" && lead.message_sent) return false;
         if (callFilter === "yes" && !lead.call_made) return false;
         if (callFilter === "no" && lead.call_made) return false;
         return true;
       }),
-    [leads, statusFilter, messageFilter, callFilter]
+    [leads, statusFilter, segmentFilter, messageFilter, callFilter]
   );
 
   const pendingLeads = filteredLeads.filter((lead) => !lead.responded);
@@ -456,6 +581,18 @@ export function PotentialCustomersTable({
             <option value="yes">Call: made</option>
             <option value="no">Call: not made</option>
           </select>
+          <select
+            value={segmentFilter}
+            onChange={(event) => setSegmentFilter(event.target.value as Segment | "all")}
+            className="rounded-full border border-black/10 bg-background px-3 py-1.5 text-xs font-semibold text-ink-muted focus:outline-none focus:ring-2 focus:ring-accent/40"
+          >
+            <option value="all">All segments</option>
+            {SEGMENT_VALUES.map((segment) => (
+              <option key={segment} value={segment}>
+                {segmentLabels[segment]}
+              </option>
+            ))}
+          </select>
         </div>
 
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
@@ -489,8 +626,16 @@ export function PotentialCustomersTable({
                 <Input id="lead-source" placeholder="LinkedIn, referral, cold outreach..." {...register("source")} />
               </FormField>
 
-              <button type="submit" disabled={isSubmitting} className={cn(buttonVariants({ variant: "primary" }), "mt-1 w-full")}>
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : "Add potential customer"}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={cn(buttonVariants({ variant: "primary" }), "mt-1 w-full")}
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  "Add potential customer"
+                )}
               </button>
             </form>
           </DialogContent>
@@ -504,13 +649,17 @@ export function PotentialCustomersTable({
           leads={pendingLeads}
           emptyLabel="No potential customers match these filters."
           showAttitude={false}
-          respondedToggleLabels={{ active: "Responded", inactive: "No response yet" }}
+          respondedToggleLabels={{
+            active: "Responded",
+            inactive: "No response yet",
+          }}
           onStatusChange={handleStatusChange}
           onAttitudeChange={handleAttitudeChange}
           onToggleMessageSent={handleToggleMessageSent}
           onToggleCallMade={handleToggleCallMade}
           onToggleResponded={handleToggleResponded}
           onUpdateNote={onUpdateNote}
+          onUpdateDetails={handleUpdateDetails}
           onDelete={handleDelete}
           deletingId={deletingId}
         />
@@ -530,6 +679,7 @@ export function PotentialCustomersTable({
           onToggleCallMade={handleToggleCallMade}
           onToggleResponded={handleToggleResponded}
           onUpdateNote={onUpdateNote}
+          onUpdateDetails={handleUpdateDetails}
           onDelete={handleDelete}
           deletingId={deletingId}
         />

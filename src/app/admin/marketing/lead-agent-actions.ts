@@ -208,7 +208,6 @@ export async function approveLeadCandidate(id: string) {
   const notes = [
     candidate.research?.summary,
     candidate.website && `Website: ${candidate.website}`,
-    candidate.research && `Fit ${candidate.research.fit_score}/5 — ${candidate.research.fit_reason}`,
     candidate.research && `Likely pain: ${candidate.research.likely_pain}`,
     candidate.research && ["Message:", candidate.research.message_no].join("\n"),
   ]
@@ -224,6 +223,13 @@ export async function approveLeadCandidate(id: string) {
       source: "brreg-agent",
       status: "new",
       notes,
+      segment: LEAD_INDUSTRIES.find((industry) => industry.code === candidate.industry_code)?.priority ?? null,
+      employees: candidate.employees,
+      location: candidate.municipality,
+      org_number: candidate.org_number,
+      website: candidate.website ?? candidate.research?.website ?? null,
+      opener_fact: candidate.research?.facts[0]?.fact ?? null,
+      opener_source: candidate.research?.facts[0]?.source_url ?? null,
     })
     .select("id")
     .single();

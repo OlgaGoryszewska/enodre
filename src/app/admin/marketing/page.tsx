@@ -3,6 +3,8 @@ import { AdminNav } from "@/components/admin/AdminNav";
 import Link from "next/link";
 import { PotentialCustomersTable } from "@/components/admin/PotentialCustomersTable";
 import { LeadAgentPanel } from "@/components/admin/LeadAgentPanel";
+import { GtmPlanCard } from "@/components/admin/GtmPlanCard";
+import { addGtmTasksToBoard } from "@/app/admin/marketing/gtm-actions";
 import { MarketingKanbanBoard } from "@/components/admin/MarketingKanbanBoard";
 import { ContactsTable } from "@/components/admin/ContactsTable";
 import { CustomerFilesSection } from "@/components/admin/CustomerFilesSection";
@@ -17,6 +19,7 @@ import {
   setPotentialCustomerResponded,
   setPotentialCustomerAttitude,
   updatePotentialCustomerNote,
+  updatePotentialCustomerDetails,
 } from "@/app/admin/marketing/potential-customers-actions";
 import {
   approveLeadCandidate,
@@ -158,6 +161,8 @@ export default async function MarketingPage() {
         <h1 className="page-title text-2xl">Business Plan & Marketing Strategy</h1>
       </div>
 
+      <GtmPlanCard marketingTasks={marketingTasks} onAddTasks={addGtmTasksToBoard} />
+
       <div className="mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
         <h2 className="text-lg font-semibold tracking-tight">Leads pipeline</h2>
         <p className="mt-1 text-sm text-ink-muted">A separate list from People, not a filtered view of it.</p>
@@ -172,6 +177,7 @@ export default async function MarketingPage() {
             onSetResponded={setPotentialCustomerResponded}
             onSetAttitude={setPotentialCustomerAttitude}
             onUpdateNote={updatePotentialCustomerNote}
+            onUpdateDetails={updatePotentialCustomerDetails}
           />
         </div>
       </div>

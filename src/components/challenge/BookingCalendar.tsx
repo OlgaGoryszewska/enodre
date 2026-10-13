@@ -4,24 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  AlertCircle,
-  ArrowLeft,
-  CalendarCheck,
-  Clock,
-  Loader2,
-} from "lucide-react";
+import { AlertCircle, ArrowLeft, CalendarCheck, Clock, Loader2 } from "lucide-react";
 import { FormField } from "@/components/challenge/FormField";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { BookingSlot } from "@/lib/booking";
-import {
-  bookingDetailsSchema,
-  type BookingDetailsValues,
-  type BookingLocale,
-} from "@/lib/booking-schema";
+import { bookingDetailsSchema, type BookingDetailsValues, type BookingLocale } from "@/lib/booking-schema";
 
 const DATE_LOCALE: Record<BookingLocale, string> = {
   en: "en-GB",
@@ -36,11 +26,9 @@ const T = {
     duration: "30-minute call",
     timeZoneNote: "Times are shown in your time zone",
     loading: "Loading available times...",
-    loadError:
-      "We couldn't load the calendar. Please try again, or send us a message instead.",
+    loadError: "We couldn't load the calendar. Please try again, or send us a message instead.",
     retry: "Try again",
-    noSlots:
-      "No free times in the next few weeks. Send us a message and we'll find a time.",
+    noSlots: "No free times in the next few weeks. Send us a message and we'll find a time.",
     back: "Change time",
     fullName: "Full Name",
     email: "Email",
@@ -50,11 +38,9 @@ const T = {
     booking: "Booking...",
     book: "Book the call",
     taken: "Someone just booked that time. Please pick another one.",
-    error:
-      "Something went wrong booking your call. Please try again, or email us directly.",
+    error: "Something went wrong booking your call. Please try again, or email us directly.",
     doneTitle: "You're booked.",
-    doneBody:
-      "We've emailed a confirmation with a calendar invite. A video-call link will follow before the call.",
+    doneBody: "We've emailed a confirmation with a calendar invite. A video-call link will follow before the call.",
     bookAnother: "Book another time",
   },
   pl: {
@@ -63,11 +49,9 @@ const T = {
     duration: "Rozmowa 30-minutowa",
     timeZoneNote: "Godziny w Twojej strefie czasowej",
     loading: "Ładowanie dostępnych terminów...",
-    loadError:
-      "Nie udało się załadować kalendarza. Spróbuj ponownie lub wyślij nam wiadomość.",
+    loadError: "Nie udało się załadować kalendarza. Spróbuj ponownie lub wyślij nam wiadomość.",
     retry: "Spróbuj ponownie",
-    noSlots:
-      "Brak wolnych terminów w najbliższych tygodniach. Napisz do nas, a znajdziemy termin.",
+    noSlots: "Brak wolnych terminów w najbliższych tygodniach. Napisz do nas, a znajdziemy termin.",
     back: "Zmień termin",
     fullName: "Imię i nazwisko",
     email: "E-mail",
@@ -77,11 +61,9 @@ const T = {
     booking: "Rezerwowanie...",
     book: "Zarezerwuj rozmowę",
     taken: "Ktoś właśnie zarezerwował ten termin. Wybierz inny.",
-    error:
-      "Coś poszło nie tak podczas rezerwacji. Spróbuj ponownie lub napisz do nas bezpośrednio.",
+    error: "Coś poszło nie tak podczas rezerwacji. Spróbuj ponownie lub napisz do nas bezpośrednio.",
     doneTitle: "Rozmowa zarezerwowana.",
-    doneBody:
-      "Wysłaliśmy potwierdzenie z zaproszeniem do kalendarza. Link do wideorozmowy prześlemy przed spotkaniem.",
+    doneBody: "Wysłaliśmy potwierdzenie z zaproszeniem do kalendarza. Link do wideorozmowy prześlemy przed spotkaniem.",
     bookAnother: "Zarezerwuj inny termin",
   },
   no: {
@@ -90,11 +72,9 @@ const T = {
     duration: "Samtale på 30 minutter",
     timeZoneNote: "Tidene vises i din tidssone",
     loading: "Henter ledige tider...",
-    loadError:
-      "Vi fikk ikke lastet kalenderen. Prøv igjen, eller send oss en melding.",
+    loadError: "Vi fikk ikke lastet kalenderen. Prøv igjen, eller send oss en melding.",
     retry: "Prøv igjen",
-    noSlots:
-      "Ingen ledige tider de neste ukene. Send oss en melding, så finner vi et tidspunkt.",
+    noSlots: "Ingen ledige tider de neste ukene. Send oss en melding, så finner vi et tidspunkt.",
     back: "Endre tidspunkt",
     fullName: "Fullt navn",
     email: "E-post",
@@ -104,11 +84,9 @@ const T = {
     booking: "Bestiller...",
     book: "Bestill samtalen",
     taken: "Noen bestilte akkurat det tidspunktet. Velg et annet.",
-    error:
-      "Noe gikk galt under bestillingen. Prøv igjen, eller send oss en e-post direkte.",
+    error: "Noe gikk galt under bestillingen. Prøv igjen, eller send oss en e-post direkte.",
     doneTitle: "Samtalen er bestilt.",
-    doneBody:
-      "Vi har sendt en bekreftelse med kalenderinvitasjon. Lenke til videosamtalen kommer før samtalen.",
+    doneBody: "Vi har sendt en bekreftelse med kalenderinvitasjon. Lenke til videosamtalen kommer før samtalen.",
     bookAnother: "Bestill et annet tidspunkt",
   },
 };
@@ -125,10 +103,7 @@ type SubmitState = "idle" | "taken" | "error" | "success";
 
 export function BookingCalendar({ locale = "en" }: { locale?: BookingLocale }) {
   const t = T[locale];
-  const timeZone = useMemo(
-    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
-    [],
-  );
+  const timeZone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [slots, setSlots] = useState<BookingSlot[]>([]);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -143,19 +118,16 @@ export function BookingCalendar({ locale = "en" }: { locale?: BookingLocale }) {
         month: "2-digit",
         day: "2-digit",
       }),
-    [timeZone],
+    [timeZone]
   );
-  const weekdayFormat = useMemo(
-    () => new Intl.DateTimeFormat(DATE_LOCALE[locale], { weekday: "short" }),
-    [locale],
-  );
+  const weekdayFormat = useMemo(() => new Intl.DateTimeFormat(DATE_LOCALE[locale], { weekday: "short" }), [locale]);
   const dayFormat = useMemo(
     () =>
       new Intl.DateTimeFormat(DATE_LOCALE[locale], {
         day: "numeric",
         month: "short",
       }),
-    [locale],
+    [locale]
   );
   const timeFormat = useMemo(
     () =>
@@ -163,7 +135,7 @@ export function BookingCalendar({ locale = "en" }: { locale?: BookingLocale }) {
         hour: "2-digit",
         minute: "2-digit",
       }),
-    [locale],
+    [locale]
   );
   const longFormat = useMemo(
     () =>
@@ -174,7 +146,7 @@ export function BookingCalendar({ locale = "en" }: { locale?: BookingLocale }) {
         hour: "2-digit",
         minute: "2-digit",
       }),
-    [locale],
+    [locale]
   );
 
   // Group slots by the visitor's local date, keeping chronological order.
@@ -198,7 +170,7 @@ export function BookingCalendar({ locale = "en" }: { locale?: BookingLocale }) {
         setSlots(freeSlots);
         setLoadState("ready");
       },
-      () => setLoadState("error"),
+      () => setLoadState("error")
     );
   }, []);
 
@@ -264,15 +236,9 @@ export function BookingCalendar({ locale = "en" }: { locale?: BookingLocale }) {
           <CalendarCheck className="h-7 w-7" aria-hidden="true" />
         </div>
         <div className="space-y-2">
-          <h3 className="text-2xl font-semibold tracking-tight">
-            {t.doneTitle}
-          </h3>
-          <p className="font-medium text-foreground">
-            {longFormat.format(new Date(selectedSlot.start))}
-          </p>
-          <p className="mx-auto max-w-sm leading-7 text-ink-muted">
-            {t.doneBody}
-          </p>
+          <h3 className="text-2xl font-semibold tracking-tight">{t.doneTitle}</h3>
+          <p className="font-medium text-foreground">{longFormat.format(new Date(selectedSlot.start))}</p>
+          <p className="mx-auto max-w-sm leading-7 text-ink-muted">{t.doneBody}</p>
         </div>
         <button
           type="button"
@@ -343,10 +309,7 @@ export function BookingCalendar({ locale = "en" }: { locale?: BookingLocale }) {
         >
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-black/10 bg-black/[0.03] px-4 py-3">
             <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Clock
-                className="h-4 w-4 shrink-0 text-ink-muted"
-                aria-hidden="true"
-              />
+              <Clock className="h-4 w-4 shrink-0 text-ink-muted" aria-hidden="true" />
               {longFormat.format(new Date(selectedSlot.start))}
             </span>
             <button
@@ -363,40 +326,16 @@ export function BookingCalendar({ locale = "en" }: { locale?: BookingLocale }) {
           </div>
 
           {/* Honeypot — same as ChallengeForm. */}
-          <div
-            aria-hidden="true"
-            className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden"
-          >
+          <div aria-hidden="true" className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden">
             <label htmlFor="booking-website">Website</label>
-            <input
-              id="booking-website"
-              type="text"
-              tabIndex={-1}
-              autoComplete="off"
-              {...register("website")}
-            />
+            <input id="booking-website" type="text" tabIndex={-1} autoComplete="off" {...register("website")} />
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2">
-            <FormField
-              id="booking-fullName"
-              label={t.fullName}
-              required
-              error={errors.fullName?.message}
-            >
-              <Input
-                id="booking-fullName"
-                placeholder="John Smith"
-                autoComplete="name"
-                {...register("fullName")}
-              />
+            <FormField id="booking-fullName" label={t.fullName} required error={errors.fullName?.message}>
+              <Input id="booking-fullName" placeholder="John Smith" autoComplete="name" {...register("fullName")} />
             </FormField>
-            <FormField
-              id="booking-email"
-              label={t.email}
-              required
-              error={errors.email?.message}
-            >
+            <FormField id="booking-email" label={t.email} required error={errors.email?.message}>
               <Input
                 id="booking-email"
                 type="email"
@@ -407,29 +346,12 @@ export function BookingCalendar({ locale = "en" }: { locale?: BookingLocale }) {
             </FormField>
           </div>
 
-          <FormField
-            id="booking-company"
-            label={t.company}
-            error={errors.company?.message}
-          >
-            <Input
-              id="booking-company"
-              autoComplete="organization"
-              {...register("company")}
-            />
+          <FormField id="booking-company" label={t.company} error={errors.company?.message}>
+            <Input id="booking-company" autoComplete="organization" {...register("company")} />
           </FormField>
 
-          <FormField
-            id="booking-note"
-            label={t.note}
-            error={errors.note?.message}
-          >
-            <Textarea
-              id="booking-note"
-              rows={3}
-              placeholder={t.notePlaceholder}
-              {...register("note")}
-            />
+          <FormField id="booking-note" label={t.note} error={errors.note?.message}>
+            <Textarea id="booking-note" rows={3} placeholder={t.notePlaceholder} {...register("note")} />
           </FormField>
 
           <AnimatePresence>
@@ -453,7 +375,7 @@ export function BookingCalendar({ locale = "en" }: { locale?: BookingLocale }) {
             disabled={isSubmitting}
             className={cn(
               buttonVariants({ size: "lg" }),
-              "w-full justify-center rounded-full bg-foreground text-background hover:opacity-90",
+              "w-full justify-center rounded-full bg-foreground text-background hover:opacity-90"
             )}
           >
             {isSubmitting ? (
@@ -504,20 +426,13 @@ export function BookingCalendar({ locale = "en" }: { locale?: BookingLocale }) {
                       "flex flex-col items-center rounded-xl border px-2 py-2.5 text-center transition",
                       isActive
                         ? "border-foreground bg-foreground text-background"
-                        : "border-black/10 bg-background text-foreground hover:border-black/30",
+                        : "border-black/10 bg-background text-foreground hover:border-black/30"
                     )}
                   >
-                    <span
-                      className={cn(
-                        "text-xs capitalize",
-                        isActive ? "text-background/70" : "text-ink-muted",
-                      )}
-                    >
+                    <span className={cn("text-xs capitalize", isActive ? "text-background/70" : "text-ink-muted")}>
                       {weekdayFormat.format(date)}
                     </span>
-                    <span className="text-sm font-semibold">
-                      {dayFormat.format(date)}
-                    </span>
+                    <span className="text-sm font-semibold">{dayFormat.format(date)}</span>
                   </button>
                 );
               })}

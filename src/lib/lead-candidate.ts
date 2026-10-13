@@ -43,15 +43,11 @@ export const LEAD_COUNTIES = [
 ] as const;
 
 export function isFuelFloSimilar(industryCode: string | null) {
-  return LEAD_INDUSTRIES.some(
-    (industry) => industry.code === industryCode && industry.priority === "F",
-  );
+  return LEAD_INDUSTRIES.some((industry) => industry.code === industryCode && industry.priority === "F");
 }
 
 export const LEAD_SEARCH_DEFAULTS = {
-  industryCodes: LEAD_INDUSTRIES.filter(
-    (industry) => industry.priority !== "C",
-  ).map((industry) => industry.code),
+  industryCodes: LEAD_INDUSTRIES.filter((industry) => industry.priority !== "C").map((industry) => industry.code),
   countyCodes: ["50", "39", "40"],
   minEmployees: 10,
   maxEmployees: 100,
@@ -68,24 +64,14 @@ export const RESEARCH_BUDGET = {
 
 /** Spend guard: may a new run start, given what's been spent this month? */
 export function canStartResearch(monthSpendUsd: number) {
-  return (
-    monthSpendUsd + RESEARCH_BUDGET.perCompanyUsd <= RESEARCH_BUDGET.monthlyUsd
-  );
+  return monthSpendUsd + RESEARCH_BUDGET.perCompanyUsd <= RESEARCH_BUDGET.monthlyUsd;
 }
 
 export function startOfMonthIso(now = new Date()) {
-  return new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
-  ).toISOString();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
 }
 
-export const LEAD_CANDIDATE_STATUS_VALUES = [
-  "found",
-  "researched",
-  "failed",
-  "approved",
-  "rejected",
-] as const;
+export const LEAD_CANDIDATE_STATUS_VALUES = ["found", "researched", "failed", "approved", "rejected"] as const;
 
 export type LeadCandidateStatus = (typeof LEAD_CANDIDATE_STATUS_VALUES)[number];
 
@@ -114,11 +100,7 @@ export type LeadCandidate = {
   potential_customer_id: string | null;
 };
 
-export function linkedInSearchUrl(
-  candidate: Pick<LeadCandidate, "contact_name" | "company">,
-) {
-  const keywords = [candidate.contact_name, candidate.company]
-    .filter(Boolean)
-    .join(" ");
+export function linkedInSearchUrl(candidate: Pick<LeadCandidate, "contact_name" | "company">) {
+  const keywords = [candidate.contact_name, candidate.company].filter(Boolean).join(" ");
   return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(keywords)}`;
 }
