@@ -4,6 +4,9 @@ import Link from "next/link";
 import { PotentialCustomersTable } from "@/components/admin/PotentialCustomersTable";
 import { LeadAgentPanel } from "@/components/admin/LeadAgentPanel";
 import { GtmPlanCard } from "@/components/admin/GtmPlanCard";
+import { MessageComposer } from "@/components/admin/MessageComposer";
+import { markLeadMessageSent, sendLeadEmail } from "@/app/admin/marketing/outreach-actions";
+import type { LeadMessage } from "@/lib/outreach-templates";
 import { addGtmTasksToBoard } from "@/app/admin/marketing/gtm-actions";
 import { MarketingKanbanBoard } from "@/components/admin/MarketingKanbanBoard";
 import { ContactsTable } from "@/components/admin/ContactsTable";
@@ -87,6 +90,7 @@ export default async function MarketingPage() {
     { data: notesData, error: notesError },
     { data: candidatesData, error: candidatesError },
     { data: researchRunsData, error: researchRunsError },
+    { data: leadMessagesData, error: leadMessagesError },
   ] = await Promise.all([
     supabase.from("potential_customers").select("*").order("created_at", { ascending: false }),
     supabase.from("contacts").select("*").order("created_at", { ascending: false }),
@@ -99,6 +103,7 @@ export default async function MarketingPage() {
       : Promise.resolve({ data: [], error: null }),
     supabase.from("lead_candidates").select("*").neq("status", "rejected").order("created_at", { ascending: false }),
     supabase.from("lead_research_runs").select("cost_usd").gte("created_at", startOfMonthIso()),
+    supabase.from("lead_messages").select("*").order("created_at", { ascending: false }),
   ]);
 
   if (leadsError) {
@@ -120,12 +125,16 @@ export default async function MarketingPage() {
   if (candidatesError) {
     console.error("Failed to load lead candidates:", candidatesError);
   }
+  if (leadMessagesError) {
+    console.error("Failed to load lead messages:", leadMessagesError);
+  }
   if (researchRunsError) {
     console.error("Failed to load lead research spend:", researchRunsError);
   }
 
   const leads = (leadsData ?? []) as PotentialCustomer[];
   const leadCandidates = (candidatesData ?? []) as LeadCandidate[];
+  const leadMessages = (leadMessagesData ?? []) as LeadMessage[];
   // If spend can't be loaded, show the budget as used up rather than unknown —
   // the server action re-checks it anyway.
   const researchSpendThisMonth = researchRunsError
@@ -178,6 +187,22 @@ export default async function MarketingPage() {
             onSetAttitude={setPotentialCustomerAttitude}
             onUpdateNote={updatePotentialCustomerNote}
             onUpdateDetails={updatePotentialCustomerDetails}
+          />
+        </div>
+      </div>
+
+      <div className="mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
+        <h2 className="text-lg font-semibold tracking-tight">Message composer</h2>
+        <p className="mt-1 text-sm text-ink-muted">
+          Draft outreach from a lead&apos;s details. Write the opener yourself from their researched fact, check it, then
+          send it from LinkedIn, email or the phone and mark it as sent here.
+        </p>
+        <div className="mt-6">
+          <MessageComposer
+            leads={leads}
+            messages={leadMessages}
+            onMarkSent={markLeadMessageSent}
+            onSendEmail={sendLeadEmail}
           />
         </div>
       </div>

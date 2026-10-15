@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, Loader2, Plus, Trash2 } from "lucide-react";
+import { Check, Loader2, PenLine, Plus, Trash2 } from "lucide-react";
 import { FormField } from "@/components/challenge/FormField";
 import { Input } from "@/components/ui/input";
 import { buttonVariants } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
   type PotentialCustomerFormValues,
 } from "@/lib/potential-customer-schema";
 import { LeadDetailsDialog } from "@/components/admin/LeadDetailsDialog";
+import { COMPOSE_LEAD_EVENT } from "@/components/admin/MessageComposer";
 import {
   SEGMENT_VALUES,
   WEEK_4_BAR_HOURS,
@@ -352,7 +353,19 @@ function LeadsTable({
                       <NoteInput leadId={lead.id} initialNote={lead.notes} onUpdateNote={onUpdateNote} />
                     </td>
                     <td className="px-5 py-4">
-                      <LeadDetailsDialog lead={lead} onSave={onUpdateDetails} />
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            window.dispatchEvent(new CustomEvent(COMPOSE_LEAD_EVENT, { detail: { leadId: lead.id } }))
+                          }
+                          className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-black/10 px-3 py-1 text-xs font-semibold text-ink-muted transition hover:border-black/25 hover:text-foreground"
+                        >
+                          <PenLine className="h-3.5 w-3.5" aria-hidden="true" />
+                          Write
+                        </button>
+                        <LeadDetailsDialog lead={lead} onSave={onUpdateDetails} />
+                      </div>
                     </td>
                     <td className="px-5 py-4 text-ink-muted">{formatDate(lead.created_at)}</td>
                     <td className="px-5 py-4 text-right">
