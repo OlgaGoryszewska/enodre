@@ -37,7 +37,7 @@ export async function addPotentialCustomer(formData: FormData) {
 
   if (error) throw error;
 
-  revalidatePath("/admin/marketing");
+  revalidatePath("/admin/marketing", "layout");
 }
 
 export async function setPotentialCustomerStatus(id: string, status: string) {
@@ -53,7 +53,7 @@ export async function setPotentialCustomerStatus(id: string, status: string) {
 
   if (error) throw error;
 
-  revalidatePath("/admin/marketing");
+  revalidatePath("/admin/marketing", "layout");
 }
 
 export async function setPotentialCustomerMessageSent(id: string, messageSent: boolean) {
@@ -65,7 +65,7 @@ export async function setPotentialCustomerMessageSent(id: string, messageSent: b
 
   if (error) throw error;
 
-  revalidatePath("/admin/marketing");
+  revalidatePath("/admin/marketing", "layout");
 }
 
 export async function setPotentialCustomerCallMade(id: string, callMade: boolean) {
@@ -77,7 +77,7 @@ export async function setPotentialCustomerCallMade(id: string, callMade: boolean
 
   if (error) throw error;
 
-  revalidatePath("/admin/marketing");
+  revalidatePath("/admin/marketing", "layout");
 }
 
 export async function setPotentialCustomerResponded(id: string, responded: boolean) {
@@ -89,7 +89,7 @@ export async function setPotentialCustomerResponded(id: string, responded: boole
 
   if (error) throw error;
 
-  revalidatePath("/admin/marketing");
+  revalidatePath("/admin/marketing", "layout");
 }
 
 export async function setPotentialCustomerAttitude(id: string, attitude: string | null) {
@@ -105,7 +105,7 @@ export async function setPotentialCustomerAttitude(id: string, attitude: string 
 
   if (error) throw error;
 
-  revalidatePath("/admin/marketing");
+  revalidatePath("/admin/marketing", "layout");
 }
 
 export async function updatePotentialCustomerNote(id: string, notes: string) {
@@ -117,7 +117,7 @@ export async function updatePotentialCustomerNote(id: string, notes: string) {
 
   if (error) throw error;
 
-  revalidatePath("/admin/marketing");
+  revalidatePath("/admin/marketing", "layout");
 }
 
 export async function deletePotentialCustomer(id: string) {
@@ -126,7 +126,7 @@ export async function deletePotentialCustomer(id: string) {
 
   if (error) throw error;
 
-  revalidatePath("/admin/marketing");
+  revalidatePath("/admin/marketing", "layout");
 }
 
 export async function updatePotentialCustomerDetails(id: string, details: PotentialCustomerDetails) {
@@ -140,5 +140,5 @@ export async function updatePotentialCustomerDetails(id: string, details: Potent
 
   if (error) throw error;
 
-  revalidatePath("/admin/marketing");
+  revalidatePath("/admin/marketing", "layout");
 }

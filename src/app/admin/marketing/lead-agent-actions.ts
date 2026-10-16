@@ -19,7 +19,9 @@ const RUNS_TABLE = "lead_research_runs";
 
 const findLeadsSchema = z
   .object({
-    industryCodes: z.array(z.enum(LEAD_INDUSTRIES.map((industry) => industry.code))).min(1, "Pick at least one industry."),
+    industryCodes: z
+      .array(z.enum(LEAD_INDUSTRIES.map((industry) => industry.code)))
+      .min(1, "Pick at least one industry."),
     countyCodes: z.array(z.enum(LEAD_COUNTIES.map((county) => county.code))).min(1, "Pick at least one county."),
     minEmployees: z.number().int().min(0),
     maxEmployees: z.number().int().min(1),
@@ -96,9 +98,7 @@ export async function findLeads(input: FindLeadsInput) {
 
   // Role lookups are one request each — run them in parallel, and treat a
   // failed lookup as "no contact found" rather than failing the batch.
-  const keyPeople = await Promise.all(
-    companies.map((company) => getKeyPerson(company.orgNumber).catch(() => null))
-  );
+  const keyPeople = await Promise.all(companies.map((company) => getKeyPerson(company.orgNumber).catch(() => null)));
 
   if (companies.length > 0) {
     const { error } = await supabase.from(TABLE).upsert(
@@ -196,7 +196,11 @@ export async function researchLeadCandidate(id: string) {
   revalidatePath("/admin/marketing");
 }
 
-/** Copies a researched candidate into the Potential Customers pipeline. */
+/**
+ * Moves a candidate into the Potential Customers pipeline with everything the
+ * finder has on it (register data, plus the research if it was run), then
+ * marks it approved so it leaves the finder queue and isn't found again.
+ */
 export async function approveLeadCandidate(id: string) {
   const supabase = await requireAdmin();
 
@@ -205,11 +209,39 @@ export async function approveLeadCandidate(id: string) {
   const candidate = data as LeadCandidate;
   if (candidate.potential_customer_id) return;
 
+  // Already in the pipeline (added by hand or from another list) — link it
+  // instead of creating a duplicate.
+  const { data: existing, error: existingError } = await supabase
+    .from("potential_customers")
+    .select("id")
+    .eq("org_number", candidate.org_number)
+    .limit(1)
+    .maybeSingle();
+  if (existingError) throw existingError;
+  if (existing) {
+    const { error: linkError } = await supabase
+      .from(TABLE)
+      .update({ status: "approved", potential_customer_id: existing.id, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (linkError) throw linkError;
+    revalidatePath("/admin/marketing");
+    return;
+  }
+
   const notes = [
     candidate.research?.summary,
+    [
+      candidate.industry_label,
+      candidate.contact_name && candidate.contact_role && `${candidate.contact_role}: ${candidate.contact_name}`,
+      candidate.founded && `Founded ${candidate.founded}`,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+    candidate.address && `Address: ${candidate.address}`,
     candidate.website && `Website: ${candidate.website}`,
     candidate.research && `Likely pain: ${candidate.research.likely_pain}`,
     candidate.research && ["Message:", candidate.research.message_no].join("\n"),
+    !candidate.research && "Added from the register without research — find an opener fact before contacting.",
   ]
     .filter(Boolean)
     .join("\n\n");

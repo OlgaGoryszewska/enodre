@@ -41,7 +41,7 @@ export async function markLeadMessageSent(input: SentMessageInput): Promise<Lead
   const values = sentMessageSchema.parse(input);
   const supabase = await createClient();
   const message = await logMessage(supabase, values);
-  revalidatePath("/admin/marketing");
+  revalidatePath("/admin/marketing", "layout");
   return message;
 }
 
@@ -142,6 +142,6 @@ export async function sendLeadEmail(
     console.error("Outreach email sent but not logged:", error);
   }
 
-  revalidatePath("/admin/marketing");
+  revalidatePath("/admin/marketing", "layout");
   return { message, to, logged: message !== null };
 }

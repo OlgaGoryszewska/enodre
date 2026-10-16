@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertCircle, Check, Copy, ExternalLink, Loader2, Search, Sparkles, X } from "lucide-react";
+import { AlertCircle, Check, Copy, ExternalLink, Loader2, Search, Sparkles, UserPlus, X } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -44,7 +44,14 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Something went wrong.";
 }
 
-export function LeadAgentPanel({ candidates, monthSpendUsd, onFind, onResearch, onApprove, onReject }: LeadAgentPanelProps) {
+export function LeadAgentPanel({
+  candidates,
+  monthSpendUsd,
+  onFind,
+  onResearch,
+  onApprove,
+  onReject,
+}: LeadAgentPanelProps) {
   const [industryCodes, setIndustryCodes] = useState<string[]>(LEAD_SEARCH_DEFAULTS.industryCodes);
   const [countyCodes, setCountyCodes] = useState<string[]>(LEAD_SEARCH_DEFAULTS.countyCodes);
   const [minEmployees, setMinEmployees] = useState(LEAD_SEARCH_DEFAULTS.minEmployees);
@@ -191,15 +198,31 @@ export function LeadAgentPanel({ candidates, monthSpendUsd, onFind, onResearch, 
         <div className="grid grid-cols-3 gap-3 sm:max-w-md">
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Min employees</span>
-            <Input type="number" min={0} value={minEmployees} onChange={(event) => setMinEmployees(Number(event.target.value))} />
+            <Input
+              type="number"
+              min={0}
+              value={minEmployees}
+              onChange={(event) => setMinEmployees(Number(event.target.value))}
+            />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="font-medium">Max employees</span>
-            <Input type="number" min={1} value={maxEmployees} onChange={(event) => setMaxEmployees(Number(event.target.value))} />
+            <Input
+              type="number"
+              min={1}
+              value={maxEmployees}
+              onChange={(event) => setMaxEmployees(Number(event.target.value))}
+            />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="font-medium">How many</span>
-            <Input type="number" min={1} max={50} value={limit} onChange={(event) => setLimit(Number(event.target.value))} />
+            <Input
+              type="number"
+              min={1}
+              max={50}
+              value={limit}
+              onChange={(event) => setLimit(Number(event.target.value))}
+            />
           </label>
         </div>
 
@@ -210,7 +233,11 @@ export function LeadAgentPanel({ candidates, monthSpendUsd, onFind, onResearch, 
             disabled={finding || industryCodes.length === 0 || countyCodes.length === 0}
             className={cn(buttonVariants({ variant: "primary" }), "bg-foreground")}
           >
-            {finding ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Search className="h-4 w-4" aria-hidden="true" />}
+            {finding ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Search className="h-4 w-4" aria-hidden="true" />
+            )}
             {finding ? "Searching the register..." : "Find companies"}
           </button>
           {findResult && <p className="text-sm text-ink-muted">{findResult}</p>}
@@ -243,7 +270,10 @@ export function LeadAgentPanel({ candidates, monthSpendUsd, onFind, onResearch, 
         </div>
 
         {actionError && (
-          <div role="alert" className="flex items-center gap-2 rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">
+          <div
+            role="alert"
+            className="flex items-center gap-2 rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger"
+          >
             <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{actionError}</span>
           </div>
@@ -260,7 +290,9 @@ export function LeadAgentPanel({ candidates, monthSpendUsd, onFind, onResearch, 
                     website and public sources, then drafts a message.
                   </p>
                   {!budgetLeft && (
-                    <p className="mt-1 font-semibold text-danger">Monthly budget reached — research resumes on the 1st.</p>
+                    <p className="mt-1 font-semibold text-danger">
+                      Monthly budget reached — research resumes on the 1st.
+                    </p>
                   )}
                 </div>
                 <button
@@ -284,7 +316,7 @@ export function LeadAgentPanel({ candidates, monthSpendUsd, onFind, onResearch, 
               </div>
             )}
             {byStatus.found.length === 0 ? (
-              <EmptyState text="Nothing to research. Find companies above." />
+              <EmptyState text="Nothing here. Find companies above." />
             ) : (
               byStatus.found.map((candidate) => (
                 <div
@@ -295,11 +327,17 @@ export function LeadAgentPanel({ candidates, monthSpendUsd, onFind, onResearch, 
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => void withBusy(candidate.id, () => onResearch(candidate.id))}
-                      disabled={isResearching || !budgetLeft}
+                      onClick={() => void withBusy(candidate.id, () => onApprove(candidate.id))}
+                      disabled={busyIds.has(candidate.id)}
+                      title="Move to Potential customers with all its data, without research"
                       className={cn(buttonVariants({ variant: "outline" }), "px-4 py-2 text-sm")}
                     >
-                      {busyIds.has(candidate.id) ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : "Research"}
+                      {busyIds.has(candidate.id) ? (
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <UserPlus className="h-4 w-4" aria-hidden="true" />
+                      )}
+                      Add to customers
                     </button>
                     <button
                       type="button"
@@ -347,14 +385,30 @@ export function LeadAgentPanel({ candidates, monthSpendUsd, onFind, onResearch, 
                   <CompanyLine candidate={candidate} />
                   <p className="text-xs text-danger">{candidate.error}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => void withBusy(candidate.id, () => onResearch(candidate.id))}
-                  disabled={busyIds.has(candidate.id) || !budgetLeft}
-                  className={cn(buttonVariants({ variant: "outline" }), "px-4 py-2 text-sm")}
-                >
-                  {busyIds.has(candidate.id) ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : "Retry"}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void withBusy(candidate.id, () => onResearch(candidate.id))}
+                    disabled={busyIds.has(candidate.id) || !budgetLeft}
+                    className={cn(buttonVariants({ variant: "outline" }), "px-4 py-2 text-sm")}
+                  >
+                    {busyIds.has(candidate.id) ? (
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    ) : (
+                      "Retry"
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void withBusy(candidate.id, () => onApprove(candidate.id))}
+                    disabled={busyIds.has(candidate.id)}
+                    title="Move to Potential customers with all its data, without research"
+                    className={cn(buttonVariants({ variant: "outline" }), "px-4 py-2 text-sm")}
+                  >
+                    <UserPlus className="h-4 w-4" aria-hidden="true" />
+                    Add to customers
+                  </button>
+                </div>
               </div>
             ))
           ))}
@@ -364,7 +418,10 @@ export function LeadAgentPanel({ candidates, monthSpendUsd, onFind, onResearch, 
             <EmptyState text="Approved companies are copied into the Leads pipeline above." />
           ) : (
             byStatus.approved.map((candidate) => (
-              <div key={candidate.id} className="flex items-center gap-2 rounded-xl border border-black/10 bg-background px-4 py-3">
+              <div
+                key={candidate.id}
+                className="flex items-center gap-2 rounded-xl border border-black/10 bg-background px-4 py-3"
+              >
                 <Check className="h-4 w-4 shrink-0 text-ink-muted" aria-hidden="true" />
                 <CompanyLine candidate={candidate} />
               </div>
@@ -376,7 +433,9 @@ export function LeadAgentPanel({ candidates, monthSpendUsd, onFind, onResearch, 
 }
 
 function EmptyState({ text }: { text: string }) {
-  return <p className="rounded-xl border border-dashed border-black/15 p-6 text-center text-sm text-ink-muted">{text}</p>;
+  return (
+    <p className="rounded-xl border border-dashed border-black/15 p-6 text-center text-sm text-ink-muted">{text}</p>
+  );
 }
 
 function CompanyLine({ candidate }: { candidate: LeadCandidate }) {
@@ -388,7 +447,8 @@ function CompanyLine({ candidate }: { candidate: LeadCandidate }) {
           candidate.industry_label,
           candidate.employees != null && `${candidate.employees} employees`,
           candidate.municipality,
-          candidate.contact_name && `${candidate.contact_name}${candidate.contact_role ? ` (${candidate.contact_role})` : ""}`,
+          candidate.contact_name &&
+            `${candidate.contact_name}${candidate.contact_role ? ` (${candidate.contact_role})` : ""}`,
         ]
           .filter(Boolean)
           .join(" · ")}
@@ -483,28 +543,48 @@ function ReviewCard({
           Evidence ({research.facts.length} facts, {research.signals.length} signals)
         </summary>
         <ul className="mt-2 grid gap-1.5">
-          {[...research.facts.map((f) => ({ text: f.fact, url: f.source_url })), ...research.signals.map((s) => ({ text: s.signal, url: s.source_url }))].map(
-            (item, index) => (
-              <li key={index} className="text-ink-muted">
-                {item.text}{" "}
-                <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-foreground underline underline-offset-2">
-                  source
-                </a>
-              </li>
-            )
-          )}
+          {[
+            ...research.facts.map((f) => ({ text: f.fact, url: f.source_url })),
+            ...research.signals.map((s) => ({ text: s.signal, url: s.source_url })),
+          ].map((item, index) => (
+            <li key={index} className="text-ink-muted">
+              {item.text}{" "}
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-foreground underline underline-offset-2"
+              >
+                source
+              </a>
+            </li>
+          ))}
         </ul>
       </details>
 
       <div className="grid gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Message (check every claim before sending)</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
+            Message (check every claim before sending)
+          </p>
           <div className="flex gap-3 text-xs font-semibold">
-            <button type="button" onClick={() => setShowEnglish((value) => !value)} className="text-ink-muted hover:text-foreground">
+            <button
+              type="button"
+              onClick={() => setShowEnglish((value) => !value)}
+              className="text-ink-muted hover:text-foreground"
+            >
               {showEnglish ? "Show Norwegian" : "Show English"}
             </button>
-            <button type="button" onClick={() => void copyMessage()} className="inline-flex items-center gap-1 hover:underline">
-              {copied ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Copy className="h-3.5 w-3.5" aria-hidden="true" />}
+            <button
+              type="button"
+              onClick={() => void copyMessage()}
+              className="inline-flex items-center gap-1 hover:underline"
+            >
+              {copied ? (
+                <Check className="h-3.5 w-3.5" aria-hidden="true" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
               {copied ? "Copied" : "Copy Norwegian"}
             </button>
           </div>
@@ -531,7 +611,11 @@ function ReviewCard({
             disabled={busy}
             className={cn(buttonVariants({ variant: "primary" }), "bg-foreground px-4 py-2 text-sm")}
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Check className="h-4 w-4" aria-hidden="true" />}
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Check className="h-4 w-4" aria-hidden="true" />
+            )}
             Approve → Leads pipeline
           </button>
         </div>

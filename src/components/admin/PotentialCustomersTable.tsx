@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Loader2, PenLine, Plus, Trash2 } from "lucide-react";
@@ -264,14 +265,21 @@ function LeadsTable({
               <tbody>
                 {leads.map((lead) => (
                   <tr key={lead.id} className="border-b border-black/10 last:border-b-0 hover:bg-card">
-                    <td className="px-5 py-4 font-semibold">{lead.name}</td>
+                    <td className="px-5 py-4 font-semibold">
+                      <Link href={`/admin/marketing/leads/${lead.id}`} className="hover:underline">
+                        {lead.name}
+                      </Link>
+                    </td>
                     <td className="px-5 py-4 text-ink-muted">
-                      {lead.website ? (
-                        <a href={lead.website} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                          {lead.company || lead.website}
-                        </a>
+                      {lead.company ? (
+                        <Link
+                          href={`/admin/marketing/leads/${lead.id}`}
+                          className="hover:text-foreground hover:underline"
+                        >
+                          {lead.company}
+                        </Link>
                       ) : (
-                        lead.company || "—"
+                        "—"
                       )}
                     </td>
                     <td className="px-5 py-4">
@@ -403,6 +411,14 @@ export function PotentialCustomersTable({
   onUpdateDetails,
 }: PotentialCustomersTableProps) {
   const [leads, setLeads] = useState(initialLeads);
+  // Pick up server refreshes (e.g. a company added from the lead finder).
+  // Adjusting state during render is React's recommended way to reset on a
+  // prop change; it replaces optimistic edits only once the server has them.
+  const [syncedLeads, setSyncedLeads] = useState(initialLeads);
+  if (initialLeads !== syncedLeads) {
+    setSyncedLeads(initialLeads);
+    setLeads(initialLeads);
+  }
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
 

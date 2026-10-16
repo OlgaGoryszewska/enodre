@@ -19,6 +19,15 @@
   --admin-background: #edf5fa;
 }
 
+/* Admin pages only: the public accent (#bababa) is too light to read as button
+   or link text (1.9:1 on white). Set on :root rather than the admin wrapper so
+   dialogs, which render in a portal outside it, pick it up too. #3b47e0 is a
+   darker shade of the brand blue in the hero CTA gradient: 6.6:1 on white,
+   6.0:1 on the admin background. */
+:root:has(.admin-theme) {
+  --accent: #3b47e0;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
