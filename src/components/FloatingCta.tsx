@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 
 export function FloatingCta() {
+  const pathname = usePathname();
   const [scrolledPast, setScrolledPast] = useState(false);
   const [targetInView, setTargetInView] = useState(false);
 
@@ -27,7 +29,9 @@ export function FloatingCta() {
     return () => observer.disconnect();
   }, []);
 
-  const visible = scrolledPast && !targetInView;
+  // A sales CTA has no place in the admin dashboard or on the login page.
+  const isInternalPage = pathname.startsWith("/admin") || pathname.startsWith("/login");
+  const visible = scrolledPast && !targetInView && !isInternalPage;
 
   return (
     <AnimatePresence>

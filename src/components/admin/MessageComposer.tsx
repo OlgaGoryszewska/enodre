@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { bestChannelLabels, segmentLabels, type PotentialCustomer } from "@/lib/potential-customer";
 import {
   CONNECTION_NOTE_MAX,
+  EMAILABLE_KINDS,
   MESSAGE_CHANNEL_VALUES,
   MESSAGE_KIND_VALUES,
   OPENER_GAP,
@@ -85,6 +86,8 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
   const [copied, setCopied] = useState(false);
   const [sending, setSending] = useState(false);
   const [confirmingSend, setConfirmingSend] = useState(false);
+  // Who the email goes to — starts as the lead's saved address, any address can be typed.
+  const [recipient, setRecipient] = useState(lead?.email ?? "");
   const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   // Messages sent this session, merged with the server's list until it refreshes.
   const [localMessages, setLocalMessages] = useState<LeadMessage[]>([]);
@@ -103,6 +106,7 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
     if (nextLead) {
       setDraft(buildMessage(nextKind, nextLanguage, nextLead));
       setChannel(defaultChannel(nextKind, nextLead));
+      if (nextLeadId !== leadId) setRecipient(nextLead.email ?? "");
     }
   }
 
@@ -136,11 +140,31 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
   const hasOpenerGap = draft.body.includes(OPENER_GAP.no) || draft.body.includes(OPENER_GAP.en);
   const overLimit = kind === "connection_note" && draft.body.length > CONNECTION_NOTE_MAX;
   const canMarkSent = Boolean(lead) && draft.body.trim() !== "" && !hasOpenerGap && !overLimit && !sending;
-  const canSendEmail = canMarkSent && kind === "email" && Boolean(lead?.email) && Boolean(draft.subject?.trim());
-  const personalAddress = Boolean(lead?.email && lead.name !== lead.company && looksPersonal(lead.email, lead.name, lead.company));
+  const emailable = EMAILABLE_KINDS.includes(kind);
+  const to = recipient.trim();
+  const validRecipient = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to);
+  const canSendEmail = canMarkSent && emailable && validRecipient && Boolean(draft.subject?.trim());
+  // Why Send is unavailable, in plain words — shown under the button.
+  const sendBlocker = !emailable
+    ? kind === "phone_opener"
+      ? "Use this on the call, then log it with Mark as sent."
+      : "Send this on LinkedIn, then log it with Mark as sent."
+    : !to
+      ? "Type an email address to send to — a company address (post@, kontakt@) — or send it on LinkedIn and log it with Mark as sent."
+      : !validRecipient
+        ? "That email address doesn't look complete."
+        : hasOpenerGap
+          ? "Write the opener line first."
+          : !draft.subject?.trim()
+            ? "Add a subject."
+            : null;
+  const personalAddress = Boolean(
+    lead && validRecipient && lead.name !== lead.company && looksPersonal(to, lead.name, lead.company)
+  );
 
   async function copy() {
-    const text = draft.subject ? `${draft.subject}\n\n${draft.body}` : draft.body;
+    // The subject only belongs in the copy for an email; LinkedIn has no subject.
+    const text = kind === "email" && draft.subject ? `${draft.subject}\n\n${draft.body}` : draft.body;
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -181,6 +205,7 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
         leadId: lead.id,
         kind,
         language,
+        to,
         subject: draft.subject ?? "",
         body: draft.body,
       });
@@ -268,7 +293,10 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
 
         {draft.subject !== null && (
           <label className="grid gap-1.5 text-sm">
-            <span className="font-medium">Subject</span>
+            <span className="font-medium">
+              Subject
+              {kind === "email" ? "" : <span className="font-normal text-ink-muted"> · used if you send by email</span>}
+            </span>
             <Input value={draft.subject} onChange={(event) => setDraft({ ...draft, subject: event.target.value })} />
           </label>
         )}
@@ -302,84 +330,113 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
           </p>
         )}
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => void copy()}
-            className={cn(buttonVariants({ variant: "outline" }), "px-4 py-2 text-sm")}
-          >
-            {copied ? (
-              <Check className="h-4 w-4" aria-hidden="true" />
-            ) : (
-              <Copy className="h-4 w-4" aria-hidden="true" />
-            )}
-            {copied ? "Copied" : "Copy"}
-          </button>
-          {lead && (
+        {/* Send */}
+        <div className="grid gap-3 rounded-xl border border-black/10 bg-background p-4">
+          {emailable && (
+            <label className="grid gap-1.5 text-sm">
+              <span className="flex flex-wrap items-baseline justify-between gap-2 font-medium">
+                To
+                {lead?.email && to !== lead.email && (
+                  <button
+                    type="button"
+                    onClick={() => setRecipient(lead.email ?? "")}
+                    className="text-xs font-semibold text-ink-muted hover:text-foreground"
+                  >
+                    Use saved address ({lead.email})
+                  </button>
+                )}
+              </span>
+              <Input
+                type="email"
+                value={recipient}
+                placeholder="post@company.no"
+                onChange={(event) => {
+                  setRecipient(event.target.value);
+                  setConfirmingSend(false);
+                }}
+              />
+              {!lead?.email && validRecipient && (
+                <span className="text-xs text-ink-muted">This lead has no saved email — sending saves this one.</span>
+              )}
+            </label>
+          )}
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
-              onClick={() => select({})}
-              className="inline-flex items-center gap-1.5 px-2 text-sm font-semibold text-ink-muted hover:text-foreground"
+              onClick={() => setConfirmingSend(true)}
+              disabled={!canSendEmail || confirmingSend}
+              className={cn(buttonVariants({ variant: "primary" }), "bg-foreground px-5 py-2.5 text-sm")}
             >
-              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-              Reset to template
+              <Mail className="h-4 w-4" aria-hidden="true" />
+              {validRecipient && emailable ? `Send email to ${to}` : "Send email"}
             </button>
-          )}
-          <div className="ml-auto flex flex-wrap items-center gap-2">
-            <label className="flex items-center gap-2 text-sm text-ink-muted">
-              Sent via
-              <select
-                value={channel}
-                onChange={(event) => setChannel(event.target.value as MessageChannel)}
-                className="h-9 rounded-full border border-black/10 bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/40"
-              >
-                {MESSAGE_CHANNEL_VALUES.map((value) => (
-                  <option key={value} value={value}>
-                    {messageChannelLabels[value]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {kind === "email" && lead?.email && (
+            {sendBlocker && <p className="text-sm text-ink-muted">{sendBlocker}</p>}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 border-t border-black/10 pt-3">
+            <button
+              type="button"
+              onClick={() => void copy()}
+              className={cn(buttonVariants({ variant: "outline" }), "px-4 py-2 text-sm")}
+            >
+              {copied ? (
+                <Check className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Copy className="h-4 w-4" aria-hidden="true" />
+              )}
+              {copied ? "Copied" : "Copy"}
+            </button>
+            {lead && (
               <button
                 type="button"
-                onClick={() => setConfirmingSend(true)}
-                disabled={!canSendEmail || confirmingSend}
-                className={cn(buttonVariants({ variant: "primary" }), "bg-foreground px-4 py-2 text-sm")}
+                onClick={() => select({})}
+                className="inline-flex items-center gap-1.5 px-2 text-sm font-semibold text-ink-muted hover:text-foreground"
               >
-                <Mail className="h-4 w-4" aria-hidden="true" />
-                Send email
+                <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                Reset to template
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => void markSent()}
-              disabled={!canMarkSent}
-              title="Log a message you sent yourself (LinkedIn, phone, your own email)"
-              className={cn(
-                buttonVariants({ variant: kind === "email" && lead?.email ? "outline" : "primary" }),
-                kind === "email" && lead?.email ? "" : "bg-foreground",
-                "px-4 py-2 text-sm"
-              )}
-            >
-              {sending ? (
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <Send className="h-4 w-4" aria-hidden="true" />
-              )}
-              Mark as sent
-            </button>
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <label className="flex items-center gap-2 text-sm text-ink-muted">
+                Sent it yourself via
+                <select
+                  value={channel}
+                  onChange={(event) => setChannel(event.target.value as MessageChannel)}
+                  className="h-9 rounded-full border border-black/10 bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/40"
+                >
+                  {MESSAGE_CHANNEL_VALUES.map((value) => (
+                    <option key={value} value={value}>
+                      {messageChannelLabels[value]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                onClick={() => void markSent()}
+                disabled={!canMarkSent}
+                title="Log a message you sent yourself (LinkedIn, phone, your own email)"
+                className={cn(buttonVariants({ variant: "outline" }), "px-4 py-2 text-sm")}
+              >
+                {sending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Send className="h-4 w-4" aria-hidden="true" />
+                )}
+                Mark as sent
+              </button>
+            </div>
           </div>
         </div>
-        {confirmingSend && lead?.email && (
+        {confirmingSend && validRecipient && (
           <div
             role="alertdialog"
             aria-label="Confirm sending"
             className="grid gap-3 rounded-xl border border-foreground/30 bg-background p-4 text-sm"
           >
             <p>
-              Send this email to <span className="font-semibold">{lead.email}</span> now? It goes out from the
-              site&apos;s Gmail account; replies go to info@enodre.com.
+              Send this email to <span className="font-semibold">{to}</span> now? It goes out from the site&apos;s Gmail
+              account; replies go to info@enodre.com.
             </p>
             {personalAddress && (
               <p className="flex items-start gap-2 font-semibold text-danger">
@@ -504,6 +561,7 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
                       <summary className="cursor-pointer">
                         {formatDateTime(message.created_at)} · {messageKindLabels[message.kind]} ·{" "}
                         {messageChannelLabels[message.channel]}
+                        {message.recipient ? ` · to ${message.recipient}` : ""}
                       </summary>
                       <p className="mt-1 whitespace-pre-line rounded-lg bg-black/[0.03] p-2 text-xs leading-5">
                         {message.subject ? `${message.subject}\n\n` : ""}

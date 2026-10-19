@@ -26,4 +26,8 @@ drop policy if exists "authenticated can manage lead messages" on public.lead_me
 create policy "authenticated can manage lead messages" on public.lead_messages
   for all to authenticated using (true) with check (true);
 
+-- The address an email actually went to (Oct 2026): the To field in the
+-- composer can differ from the lead's saved email. Null for LinkedIn/phone.
+alter table public.lead_messages add column if not exists recipient text;
+
 notify pgrst, 'reload schema';

@@ -29,6 +29,9 @@ export const messageChannelLabels: Record<MessageChannel, string> = {
 export const MESSAGE_LANGUAGE_VALUES = ["no", "en"] as const;
 export type MessageLanguage = (typeof MESSAGE_LANGUAGE_VALUES)[number];
 
+// Kinds that can be sent straight from the composer by email.
+export const EMAILABLE_KINDS: readonly MessageKind[] = ["first_message", "email", "follow_up"];
+
 // LinkedIn's limit for a note on a connection request.
 export const CONNECTION_NOTE_MAX = 300;
 
@@ -43,6 +46,7 @@ export type LeadMessage = {
   language: MessageLanguage;
   subject: string | null;
   body: string;
+  recipient: string | null;
 };
 
 /** The channel a message kind is usually sent through — editable in the composer. */
@@ -125,7 +129,7 @@ export function buildMessage(
         };
       case "follow_up":
         return {
-          subject: null,
+          subject: `Oppfølging: fakturering hos ${company}`,
           body: `Hei igjen${name ? ` ${name}` : ""} – bare en rask påminnelse i tilfelle meldingen druknet. 15 minutter, når det passer deg. Ingen salg.\n\nOlga, Enodre`,
         };
       case "phone_opener":
@@ -136,7 +140,7 @@ export function buildMessage(
       case "first_message":
       case "email":
         return {
-          subject: kind === "email" ? `Kort spørsmål om fakturering hos ${company}` : null,
+          subject: `Kort spørsmål om fakturering hos ${company}`,
           body: [
             `${hi},`,
             opener,
@@ -159,7 +163,7 @@ export function buildMessage(
       };
     case "follow_up":
       return {
-        subject: null,
+        subject: `Following up: invoicing at ${company}`,
         body: `Hi again${name ? ` ${name}` : ""} – just a quick nudge in case my message got buried. 15 minutes, whenever suits you. No sales.\n\nOlga, Enodre`,
       };
     case "phone_opener":
@@ -170,7 +174,7 @@ export function buildMessage(
     case "first_message":
     case "email":
       return {
-        subject: kind === "email" ? `Quick question about invoicing at ${company}` : null,
+        subject: `Quick question about invoicing at ${company}`,
         body: [
           `${hi},`,
           opener,

@@ -40,15 +40,19 @@ type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 export async function markLeadMessageSent(input: SentMessageInput): Promise<LeadMessage> {
   const values = sentMessageSchema.parse(input);
   const supabase = await createClient();
-  const message = await logMessage(supabase, values);
+  const message = await logMessage(supabase, values, null);
   revalidatePath("/admin/marketing", "layout");
   return message;
 }
 
-async function logMessage(supabase: SupabaseClient, values: z.output<typeof sentMessageSchema>) {
+async function logMessage(
+  supabase: SupabaseClient,
+  values: z.output<typeof sentMessageSchema>,
+  recipient: string | null
+) {
   const { data: lead, error: leadError } = await supabase
     .from("potential_customers")
-    .select("status, first_contacted_on")
+    .select("status, first_contacted_on, email")
     .eq("id", values.leadId)
     .single();
   if (leadError) throw leadError;
@@ -62,6 +66,7 @@ async function logMessage(supabase: SupabaseClient, values: z.output<typeof sent
       language: values.language,
       subject: values.subject,
       body: values.body,
+      recipient,
     })
     .select("*")
     .single();
@@ -74,6 +79,8 @@ async function logMessage(supabase: SupabaseClient, values: z.output<typeof sent
       ...(values.channel === "phone" ? { call_made: true } : { message_sent: true }),
       first_contacted_on: lead.first_contacted_on ?? today,
       status: lead.status === "new" ? "contacted" : lead.status,
+      // A lead with no saved email gets the address it was just emailed at.
+      ...(recipient && !lead.email ? { email: recipient } : {}),
       updated_at: new Date().toISOString(),
     })
     .eq("id", values.leadId);
@@ -83,15 +90,16 @@ async function logMessage(supabase: SupabaseClient, values: z.output<typeof sent
 }
 
 const sendEmailSchema = sentMessageSchema.omit({ channel: true }).extend({
+  to: z.string().trim().pipe(z.email("That doesn't look like a valid email address.")),
   subject: z.string().trim().min(1, "The email needs a subject.").max(300),
 });
 
 export type SendEmailInput = z.input<typeof sendEmailSchema>;
 
 /**
- * Sends an outreach email through the site's Gmail account and logs it.
- * The recipient is always the lead's stored email — never an address from the
- * browser — so this can only email addresses already in the pipeline.
+ * Sends an outreach email through the site's Gmail account and logs it,
+ * including the address it went to. `to` is chosen in the composer (it
+ * defaults to the lead's saved email); a lead without a saved email gets it.
  */
 export async function sendLeadEmail(
   input: SendEmailInput
@@ -106,14 +114,10 @@ export async function sendLeadEmail(
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in.");
 
-  const { data: lead, error: leadError } = await supabase
-    .from("potential_customers")
-    .select("email")
-    .eq("id", values.leadId)
-    .single();
+  // Confirms the lead exists (and is visible to this session) before sending.
+  const { error: leadError } = await supabase.from("potential_customers").select("id").eq("id", values.leadId).single();
   if (leadError) throw leadError;
-  const to = (lead.email as string | null)?.trim();
-  if (!to) throw new Error("This lead has no email address.");
+  const { to } = values;
 
   const gmailUser = process.env.GMAIL_USER;
   const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
@@ -137,7 +141,7 @@ export async function sendLeadEmail(
   // would email them twice), so report it separately.
   let message: LeadMessage | null = null;
   try {
-    message = await logMessage(supabase, { ...values, channel: "email" });
+    message = await logMessage(supabase, { ...values, channel: "email" }, to);
   } catch (error) {
     console.error("Outreach email sent but not logged:", error);
   }
