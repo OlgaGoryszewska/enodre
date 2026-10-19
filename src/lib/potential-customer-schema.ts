@@ -1,14 +1,10 @@
 import { z } from "zod";
-import { ACCOUNTING_SYSTEM_VALUES, BEST_CHANNEL_VALUES, SEGMENT_VALUES } from "@/lib/potential-customer";
+import { BEST_CHANNEL_VALUES, SEGMENT_VALUES } from "@/lib/potential-customer";
 
 export const potentialCustomerFormSchema = z.object({
   name: z.string().min(1, "Name is required."),
   company: z.string().optional(),
-  email: z
-    .string()
-    .email("That doesn't look like a valid email address.")
-    .optional()
-    .or(z.literal("")),
+  email: z.string().email("That doesn't look like a valid email address.").optional().or(z.literal("")),
   phone: z.string().optional(),
   source: z.string().optional(),
 });
@@ -24,6 +20,8 @@ const optionalText = (max: number) =>
     .nullable();
 
 // The GTM fields edited in the lead's Details dialog. Empty inputs become null.
+// Discovery answers (accounting system, hours, pain) are recorded per call in
+// discovery_calls, not here.
 export const potentialCustomerDetailsSchema = z.object({
   segment: z.enum(SEGMENT_VALUES).nullable(),
   employees: z.number().int().min(0).nullable(),
@@ -33,10 +31,10 @@ export const potentialCustomerDetailsSchema = z.object({
   best_channel: z.enum(BEST_CHANNEL_VALUES).nullable(),
   opener_fact: optionalText(1000),
   opener_source: optionalText(500),
-  accounting_system: z.enum(ACCOUNTING_SYSTEM_VALUES).nullable(),
-  admin_hours_per_week: z.number().min(0).max(200).nullable(),
-  main_pain: optionalText(1000),
   first_contacted_on: z.iso.date().nullable(),
+  // Optional: these columns only exist once gtm_command_centre.sql has run.
+  next_follow_up_on: z.iso.date().nullable().optional(),
+  next_action: optionalText(300).optional(),
 });
 
 export type PotentialCustomerDetails = z.input<typeof potentialCustomerDetailsSchema>;

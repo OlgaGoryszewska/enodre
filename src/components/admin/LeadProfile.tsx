@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, ExternalLink, Loader2, Trash2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { osloToday } from "@/lib/gtm-logic";
 import { LeadDetailsDialog } from "@/components/admin/LeadDetailsDialog";
 import type { PotentialCustomerDetails } from "@/lib/potential-customer-schema";
 import {
@@ -13,7 +14,8 @@ import {
   WEEK_4_BAR_HOURS,
   accountingSystemLabels,
   bestChannelLabels,
-  followUpDue,
+  followUpDate,
+  leadOpener,
   potentialCustomerAttitudeLabels,
   potentialCustomerStatusLabels,
   segmentLabels,
@@ -126,8 +128,9 @@ export function LeadProfile({
     }
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-  const due = lead.first_contacted_on ? followUpDue(lead.first_contacted_on) : null;
+  const today = osloToday();
+  const due = followUpDate(lead);
+  const opener = leadOpener(lead);
 
   return (
     <aside className="grid content-start gap-5 rounded-2xl border border-black/10 bg-card p-6">
@@ -245,11 +248,11 @@ export function LeadProfile({
       </Group>
 
       <Group title="Opener">
-        <Row label="Fact">{lead.opener_fact}</Row>
+        <Row label="Fact">{opener.fact}</Row>
         <Row label="Source">
-          {lead.opener_source && (
+          {opener.source && (
             <a
-              href={lead.opener_source}
+              href={opener.source}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 hover:underline"

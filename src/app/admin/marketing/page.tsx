@@ -4,6 +4,11 @@ import Link from "next/link";
 import { PotentialCustomersTable } from "@/components/admin/PotentialCustomersTable";
 import { LeadAgentPanel } from "@/components/admin/LeadAgentPanel";
 import { GtmPlanCard } from "@/components/admin/GtmPlanCard";
+import { TodayPriorities } from "@/components/admin/TodayPriorities";
+import { GtmPerformance } from "@/components/admin/GtmPerformance";
+import { buildPerformance, buildPriorities, type ResearchRun } from "@/lib/gtm-dashboard";
+import { osloToday, startOfWeek } from "@/lib/gtm-logic";
+import type { DiscoveryCall } from "@/lib/discovery-call";
 import { MessageComposer } from "@/components/admin/MessageComposer";
 import { markLeadMessageSent, sendLeadEmail } from "@/app/admin/marketing/outreach-actions";
 import type { LeadMessage } from "@/lib/outreach-templates";
@@ -23,6 +28,8 @@ import {
   setPotentialCustomerAttitude,
   updatePotentialCustomerNote,
   updatePotentialCustomerDetails,
+  snoozeFollowUp,
+  clearFollowUp,
 } from "@/app/admin/marketing/potential-customers-actions";
 import {
   approveLeadCandidate,
@@ -91,6 +98,7 @@ export default async function MarketingPage() {
     { data: candidatesData, error: candidatesError },
     { data: researchRunsData, error: researchRunsError },
     { data: leadMessagesData, error: leadMessagesError },
+    { data: callsData, error: callsError },
   ] = await Promise.all([
     supabase.from("potential_customers").select("*").order("created_at", { ascending: false }),
     supabase.from("contacts").select("*").order("created_at", { ascending: false }),
@@ -101,9 +109,15 @@ export default async function MarketingPage() {
     businessProfileId
       ? supabase.from("customer_sticky_notes").select("*").eq("customer_id", businessProfileId).order("created_at", { ascending: true })
       : Promise.resolve({ data: [], error: null }),
-    supabase.from("lead_candidates").select("*").neq("status", "rejected").order("created_at", { ascending: false }),
-    supabase.from("lead_research_runs").select("cost_usd").gte("created_at", startOfMonthIso()),
+    supabase.from("lead_candidates").select("*").order("created_at", { ascending: false }),
+    // From whichever is earlier — the 1st of the month (budget) or this
+    // Monday (weekly activity).
+    supabase
+      .from("lead_research_runs")
+      .select("created_at, cost_usd, outcome")
+      .gte("created_at", [startOfMonthIso(), `${startOfWeek(osloToday())}T00:00:00Z`].sort()[0]),
     supabase.from("lead_messages").select("*").order("created_at", { ascending: false }),
+    supabase.from("discovery_calls").select("*").order("created_at", { ascending: false }),
   ]);
 
   if (leadsError) {
@@ -133,13 +147,28 @@ export default async function MarketingPage() {
   }
 
   const leads = (leadsData ?? []) as PotentialCustomer[];
-  const leadCandidates = (candidatesData ?? []) as LeadCandidate[];
+  if (callsError) {
+    // discovery_calls doesn't exist until gtm_command_centre.sql has run.
+    console.error("Failed to load discovery calls:", callsError);
+  }
+  const allCandidates = (candidatesData ?? []) as LeadCandidate[];
+  const leadCandidates = allCandidates.filter((candidate) => candidate.status !== "rejected");
   const leadMessages = (leadMessagesData ?? []) as LeadMessage[];
+  const discoveryCalls = (callsData ?? []) as DiscoveryCall[];
+  const researchRuns = (researchRunsData ?? []) as ResearchRun[];
+  const monthStart = startOfMonthIso();
+  const monthRuns = researchRuns.filter((run) => run.created_at >= monthStart);
   // If spend can't be loaded, show the budget as used up rather than unknown —
   // the server action re-checks it anyway.
   const researchSpendThisMonth = researchRunsError
     ? Number.POSITIVE_INFINITY
-    : (researchRunsData ?? []).reduce((sum, row) => sum + Number(row.cost_usd), 0);
+    : monthRuns.reduce((sum, row) => sum + Number(row.cost_usd), 0);
+  const researchStats = {
+    runs: monthRuns.length,
+    failedRuns: monthRuns.filter((run) => run.outcome !== "researched").length,
+    rejected: allCandidates.length - leadCandidates.length,
+  };
+  const today = osloToday();
   const inboundContacts = (inboundData ?? []) as Contact[];
   const marketingTasks = (marketingTasksData ?? []) as MarketingTask[];
   const files = (filesData ?? []) as CustomerFile[];
@@ -166,13 +195,36 @@ export default async function MarketingPage() {
     <section className="shell py-20 sm:py-28">
       <AdminNav />
 
-      <div className="mt-10">
+      <div className="mt-10 flex flex-wrap items-end justify-between gap-4">
         <h1 className="page-title text-2xl">Business Plan & Marketing Strategy</h1>
+        <Link
+          href="/admin/execution"
+          className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background transition hover:opacity-90"
+        >
+          Open Daily Execution →
+        </Link>
       </div>
+
+      <TodayPriorities
+        tasks={buildPriorities({ leads, candidates: allCandidates, calls: discoveryCalls, today })}
+        onSnooze={snoozeFollowUp}
+        onClear={clearFollowUp}
+      />
 
       <GtmPlanCard marketingTasks={marketingTasks} onAddTasks={addGtmTasksToBoard} />
 
-      <div className="mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
+      <GtmPerformance
+        performance={buildPerformance({
+          leads,
+          candidates: allCandidates,
+          calls: discoveryCalls,
+          runs: researchRuns,
+          messages: leadMessages,
+          today,
+        })}
+      />
+
+      <div id="leads" className="mt-10 scroll-mt-24 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
         <h2 className="text-lg font-semibold tracking-tight">Leads pipeline</h2>
         <p className="mt-1 text-sm text-ink-muted">A separate list from People, not a filtered view of it.</p>
         <div className="mt-6">
@@ -207,7 +259,7 @@ export default async function MarketingPage() {
         </div>
       </div>
 
-      <div className="mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
+      <div id="lead-finder" className="mt-10 scroll-mt-24 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
         <h2 className="text-lg font-semibold tracking-tight">Lead finder agents</h2>
         <p className="mt-1 text-sm text-ink-muted">
           Find companies in the public register, research each one with Claude, then approve the good ones into the
@@ -217,6 +269,7 @@ export default async function MarketingPage() {
           <LeadAgentPanel
             candidates={leadCandidates}
             monthSpendUsd={researchSpendThisMonth}
+            researchStats={researchStats}
             onFind={findLeads}
             onResearch={researchLeadCandidate}
             onApprove={approveLeadCandidate}
@@ -229,7 +282,7 @@ export default async function MarketingPage() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold tracking-tight">Customers who reached us</h2>
-            <p className="mt-1 text-sm text-ink-muted">Inbound — submitted the site's contact form, rather than us reaching out.</p>
+            <p className="mt-1 text-sm text-ink-muted">Inbound — submitted the site&apos;s contact form, rather than us reaching out.</p>
           </div>
           <Link href="/admin" className="text-sm font-semibold text-accent hover:underline">
             Open full inbox →
@@ -253,7 +306,7 @@ export default async function MarketingPage() {
 
       <div className="mt-16">
         <p className="text-xs text-ink-muted">
-          Files and sticky notes here are stored the same way as on a person's profile, just scoped to Enodre itself
+          Files and sticky notes here are stored the same way as on a person&apos;s profile, just scoped to Enodre itself
           instead of a specific contact.
         </p>
       </div>

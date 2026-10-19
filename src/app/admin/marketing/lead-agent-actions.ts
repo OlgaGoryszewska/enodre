@@ -12,7 +12,10 @@ import {
   canStartResearch,
   startOfMonthIso,
   type LeadCandidate,
+  type ResearchOutcome,
 } from "@/lib/lead-candidate";
+import { MAX_RESEARCH_ATTEMPTS, classifyResearchError, isStaleProcessing } from "@/lib/gtm-logic";
+import { isMissingColumnError } from "@/lib/lead-updates";
 
 const TABLE = "lead_candidates";
 const RUNS_TABLE = "lead_research_runs";
@@ -125,21 +128,77 @@ export async function findLeads(input: FindLeadsInput) {
   return { added: companies.length, totalMatches };
 }
 
-/** Researcher agent: Claude researches one candidate and drafts the message. */
-export async function researchLeadCandidate(id: string) {
-  const supabase = await requireAdmin();
+// Queue columns added by gtm_command_centre.sql. Until it has run, writes
+// retry without them (and without the 'processing' state) instead of failing.
+const QUEUE_COLUMNS = ["research_started_at", "attempts", "error_kind"];
+const CHECK_VIOLATION = "23514";
 
-  // Budget guard runs server-side, so it holds even if the UI is bypassed.
-  const monthSpend = await getResearchSpendThisMonth(supabase);
-  if (!canStartResearch(monthSpend)) {
-    throw new Error(
-      `Monthly research budget reached ($${monthSpend.toFixed(2)} of $${RESEARCH_BUDGET.monthlyUsd}). It resets on the 1st.`
-    );
+async function updateCandidate(
+  supabase: SupabaseClient,
+  id: string,
+  patch: Record<string, unknown>,
+  where: (query: ReturnType<ReturnType<SupabaseClient["from"]>["update"]>) => typeof query = (query) => query
+) {
+  const values = { ...patch, updated_at: new Date().toISOString() };
+  const run = (row: Record<string, unknown>) => where(supabase.from(TABLE).update(row).eq("id", id)).select("id");
+  let { data, error } = await run(values);
+  if (error && isMissingColumnError(error)) {
+    ({ data, error } = await run(
+      Object.fromEntries(Object.entries(values).filter(([key]) => !QUEUE_COLUMNS.includes(key)))
+    ));
   }
+  return { rows: data?.length ?? 0, error };
+}
+
+/**
+ * Researcher agent: Claude researches one candidate and drafts the message.
+ * Safe to call twice: finished candidates are skipped (no second paid run),
+ * and a claim on the row stops two runs processing the same company.
+ */
+export async function researchLeadCandidate(id: string): Promise<ResearchOutcome> {
+  const supabase = await requireAdmin();
 
   const { data, error } = await supabase.from(TABLE).select("*").eq("id", id).single();
   if (error) throw error;
   const candidate = data as LeadCandidate;
+  const attempts = candidate.attempts ?? 0;
+
+  if (["researched", "approved", "rejected"].includes(candidate.status)) {
+    return { status: "skipped", message: `${candidate.company} is already ${candidate.status}.` };
+  }
+  if (candidate.status === "processing" && !isStaleProcessing(candidate.research_started_at ?? null)) {
+    return { status: "skipped", message: `${candidate.company} is already being researched.` };
+  }
+  if (candidate.status === "failed" && candidate.error_kind !== "blocked" && attempts >= MAX_RESEARCH_ATTEMPTS) {
+    return {
+      status: "failed",
+      message: `${candidate.company} has failed ${attempts} times — check the error, or add it without research.`,
+    };
+  }
+
+  // Budget guard runs server-side, so it holds even if the UI is bypassed.
+  const monthSpend = await getResearchSpendThisMonth(supabase);
+  if (!canStartResearch(monthSpend)) {
+    return {
+      status: "failed",
+      blocked: true,
+      message: `Monthly research budget reached ($${monthSpend.toFixed(2)} of $${RESEARCH_BUDGET.monthlyUsd}). It resets on the 1st.`,
+    };
+  }
+
+  // Claim the row: only succeeds if nobody changed it since we read it.
+  const claim = await updateCandidate(
+    supabase,
+    id,
+    { status: "processing", research_started_at: new Date().toISOString(), attempts: attempts + 1, error: null },
+    (query) => query.eq("status", candidate.status)
+  );
+  if (claim.error && claim.error.code !== CHECK_VIOLATION) throw claim.error;
+  // CHECK_VIOLATION = the 'processing' state doesn't exist yet (migration not
+  // run) — carry on without the claim, as before.
+  if (!claim.error && claim.rows === 0) {
+    return { status: "skipped", message: `${candidate.company} was picked up by another run.` };
+  }
 
   try {
     const { research, usage } = await researchLead({
@@ -156,24 +215,46 @@ export async function researchLeadCandidate(id: string) {
       contactRole: candidate.contact_role,
     });
 
-    const { error: updateError } = await supabase
-      .from(TABLE)
-      .update({
-        status: "researched",
-        research,
-        fit_score: research.fit_score,
-        website: candidate.website ?? research.website,
-        cost_usd: usage.costUsd,
-        error: null,
-        researched_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id);
-    await recordRun(supabase, id, "researched", usage, null);
-    if (updateError) throw updateError;
+    // The research is paid for — try twice to save it before giving up.
+    const result = {
+      status: "researched",
+      research,
+      fit_score: research.fit_score,
+      website: candidate.website ?? research.website,
+      cost_usd: usage.costUsd,
+      error: null,
+      error_kind: null,
+      researched_at: new Date().toISOString(),
+    };
+    let saved = await updateCandidate(supabase, id, result);
+    if (saved.error) saved = await updateCandidate(supabase, id, result);
+    await recordRun(
+      supabase,
+      id,
+      saved.error ? "failed" : "researched",
+      usage,
+      saved.error ? "Result couldn't be saved" : null
+    );
+    if (saved.error) {
+      console.error(`Research for ${candidate.company} succeeded but couldn't be saved:`, saved.error);
+      await updateCandidate(supabase, id, {
+        status: "failed",
+        error: "Research finished but couldn't be saved.",
+        error_kind: "retryable",
+      });
+      return { status: "failed", message: "Research finished but couldn't be saved. Try again." };
+    }
+    revalidatePath("/admin/marketing");
+    return { status: "researched" };
   } catch (researchError) {
-    if (!(researchError instanceof LeadResearchError)) throw researchError;
+    if (!(researchError instanceof LeadResearchError)) {
+      await updateCandidate(supabase, id, { status: "failed", error: "Unexpected error.", error_kind: "retryable" });
+      throw researchError;
+    }
     console.error(`Lead research failed for ${candidate.company}:`, researchError);
+    // overBudget = this company passed the per-company cap: specific to it,
+    // not account-wide, so it needs a person rather than a blind retry.
+    const kind = researchError.overBudget ? "permanent" : classifyResearchError(researchError.message);
     await recordRun(
       supabase,
       id,
@@ -181,19 +262,25 @@ export async function researchLeadCandidate(id: string) {
       researchError.usage,
       researchError.message
     );
-    await supabase
-      .from(TABLE)
-      .update({
-        status: "failed",
-        error: researchError.message,
-        cost_usd: researchError.usage.costUsd,
-        researched_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id);
+    await updateCandidate(supabase, id, {
+      status: "failed",
+      error: researchError.message,
+      error_kind: kind,
+      // An account-wide problem isn't this company's fault — don't use up an attempt.
+      ...(kind === "blocked" ? { attempts } : {}),
+      cost_usd: researchError.usage.costUsd,
+      researched_at: new Date().toISOString(),
+    });
+    revalidatePath("/admin/marketing");
+    return {
+      status: "failed",
+      blocked: kind === "blocked",
+      message:
+        kind === "blocked"
+          ? `Research is blocked for the whole account: ${researchError.message}`
+          : `${candidate.company}: ${researchError.message}`,
+    };
   }
-
-  revalidatePath("/admin/marketing");
 }
 
 /**

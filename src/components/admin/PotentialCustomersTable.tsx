@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { osloToday } from "@/lib/gtm-logic";
 import {
   potentialCustomerFormSchema,
   type PotentialCustomerDetails,
@@ -20,7 +21,7 @@ import { COMPOSE_LEAD_EVENT } from "@/components/admin/MessageComposer";
 import {
   SEGMENT_VALUES,
   WEEK_4_BAR_HOURS,
-  followUpDue,
+  followUpDate,
   segmentLabels,
   type Segment,
   POTENTIAL_CUSTOMER_STATUS_VALUES,
@@ -78,6 +79,9 @@ const statusStyles: Record<PotentialCustomerStatus, string> = {
   new: "bg-black/5 text-ink-muted",
   contacted: "bg-accent/10 text-accent",
   interested: "bg-accent/15 text-accent",
+  call_booked: "bg-[#E3F3E6] text-[#1B8A3A]",
+  call_done: "bg-[#E3F3E6] text-[#1B8A3A]",
+  proposal_sent: "bg-[#EDE7FE] text-[#6C4CD6]",
   converted: "bg-[#EDE7FE] text-[#6C4CD6]",
   not_interested: "bg-black/5 text-ink-muted/60",
 };
@@ -126,7 +130,8 @@ function SegmentCell({ lead }: { lead: PotentialCustomer }) {
 function FollowUpCell({ lead, today }: { lead: PotentialCustomer; today: string }) {
   if (!lead.first_contacted_on) return <span className="text-xs text-ink-muted">Not contacted</span>;
   if (lead.responded) return <span className="text-xs text-ink-muted">Replied</span>;
-  const due = followUpDue(lead.first_contacted_on);
+  const due = followUpDate(lead);
+  if (!due) return <span className="text-xs text-ink-muted">None due</span>;
   const overdue = due < today;
   return (
     <span className={cn("whitespace-nowrap text-xs", overdue ? "font-semibold text-danger" : "text-ink-muted")}>
@@ -218,7 +223,7 @@ function LeadsTable({
   onDelete,
   deletingId,
 }: LeadsTableProps) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = osloToday();
   return (
     <div>
       <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
@@ -229,170 +234,308 @@ function LeadsTable({
           {emptyLabel}
         </div>
       ) : (
-        <div className="mt-4 overflow-hidden rounded-2xl border border-black/10">
-          <div className="overflow-x-auto">
-            <table
-              className={cn(
-                "w-full border-collapse text-left text-sm",
-                showAttitude ? "min-w-[1500px]" : "min-w-[1380px]"
-              )}
-            >
-              <thead>
-                <tr className="border-b border-black/10 bg-card text-xs uppercase tracking-widest text-ink-muted">
-                  <th className="px-5 py-3 font-medium">Name</th>
-                  <th className="px-5 py-3 font-medium">Company</th>
-                  <th className="px-5 py-3 font-medium">Segment</th>
-                  <th className="px-5 py-3 font-medium">Where</th>
-                  <th className="px-5 py-3 font-medium">Email</th>
-                  <th className="px-5 py-3 font-medium">Phone</th>
-                  <th className="px-5 py-3 font-medium">Source</th>
-                  <th className="px-5 py-3 font-medium">Status</th>
-                  {showAttitude && <th className="px-5 py-3 font-medium">Attitude</th>}
-                  <th className="px-5 py-3 font-medium">Message</th>
-                  <th className="px-5 py-3 font-medium">Call</th>
-                  <th className="px-5 py-3 font-medium">Responded</th>
-                  <th className="px-5 py-3 font-medium">{showAttitude ? "Week-4 bar" : "Follow-up"}</th>
-                  <th className="px-5 py-3 font-medium">Note</th>
-                  <th className="px-5 py-3 font-medium">
-                    <span className="sr-only">Details</span>
-                  </th>
-                  <th className="px-5 py-3 font-medium">Added</th>
-                  <th className="px-5 py-3 font-medium">
-                    <span className="sr-only">Delete</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {leads.map((lead) => (
-                  <tr key={lead.id} className="border-b border-black/10 last:border-b-0 hover:bg-card">
-                    <td className="px-5 py-4 font-semibold">
-                      <Link href={`/admin/marketing/leads/${lead.id}`} className="hover:underline">
-                        {lead.name}
-                      </Link>
-                    </td>
-                    <td className="px-5 py-4 text-ink-muted">
-                      {lead.company ? (
-                        <Link
-                          href={`/admin/marketing/leads/${lead.id}`}
-                          className="hover:text-foreground hover:underline"
-                        >
-                          {lead.company}
-                        </Link>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="px-5 py-4">
-                      <SegmentCell lead={lead} />
-                    </td>
-                    <td className="px-5 py-4 text-xs text-ink-muted">
-                      {[lead.location, lead.employees != null && `${lead.employees} empl.`]
+        <>
+          {/* Phones: one card per lead with the same controls as a table row. */}
+          <ul className="mt-4 grid gap-3 md:hidden">
+            {leads.map((lead) => (
+              <li key={lead.id} className="grid gap-3 rounded-2xl border border-black/10 bg-background p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <Link href={`/admin/marketing/leads/${lead.id}`} className="block font-semibold hover:underline">
+                      {lead.company || lead.name}
+                    </Link>
+                    {lead.company && lead.name !== lead.company && (
+                      <p className="text-sm text-ink-muted">{lead.name}</p>
+                    )}
+                    <p className="text-xs text-ink-muted">
+                      {[lead.location, lead.employees != null && `${lead.employees} empl.`, lead.source]
                         .filter(Boolean)
-                        .join(" · ") || "—"}
-                    </td>
-                    <td className="px-5 py-4 text-ink-muted">{lead.email || "—"}</td>
-                    <td className="px-5 py-4 text-ink-muted">{lead.phone || "—"}</td>
-                    <td className="px-5 py-4 text-ink-muted">{lead.source || "—"}</td>
-                    <td className="px-5 py-4">
-                      <select
-                        value={lead.status}
-                        onChange={(event) => onStatusChange(lead.id, event.target.value as PotentialCustomerStatus)}
-                        className={cn(
-                          "rounded-full border-none px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-accent/40",
-                          statusStyles[lead.status]
+                        .join(" · ")}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <SegmentCell lead={lead} />
+                    <button
+                      type="button"
+                      onClick={() => onDelete(lead.id)}
+                      disabled={deletingId === lead.id}
+                      aria-label={`Remove ${lead.name}`}
+                      className="rounded-full p-2 text-ink-muted transition hover:text-danger disabled:opacity-60"
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+
+                {(lead.phone || lead.email) && (
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                    {lead.phone && (
+                      <a href={`tel:${lead.phone.replace(/\s/g, "")}`} className="font-semibold hover:underline">
+                        {lead.phone}
+                      </a>
+                    )}
+                    {lead.email && (
+                      <a href={`mailto:${lead.email}`} className="break-all text-ink-muted hover:underline">
+                        {lead.email}
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <select
+                    value={lead.status}
+                    onChange={(event) => onStatusChange(lead.id, event.target.value as PotentialCustomerStatus)}
+                    aria-label="Status"
+                    className={cn(
+                      "h-10 w-full rounded-full border-none px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-accent/40",
+                      statusStyles[lead.status]
+                    )}
+                  >
+                    {POTENTIAL_CUSTOMER_STATUS_VALUES.map((status) => (
+                      <option key={status} value={status}>
+                        {potentialCustomerStatusLabels[status]}
+                      </option>
+                    ))}
+                  </select>
+                  {showAttitude && (
+                    <select
+                      value={lead.attitude ?? ""}
+                      onChange={(event) =>
+                        onAttitudeChange(lead.id, (event.target.value || null) as PotentialCustomerAttitude | null)
+                      }
+                      aria-label="Attitude"
+                      className={cn(
+                        "h-10 w-full rounded-full border-none px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-accent/40",
+                        lead.attitude ? attitudeStyles[lead.attitude] : "bg-black/5 text-ink-muted"
+                      )}
+                    >
+                      <option value="">Attitude not set</option>
+                      {POTENTIAL_CUSTOMER_ATTITUDE_VALUES.map((attitude) => (
+                        <option key={attitude} value={attitude}>
+                          {potentialCustomerAttitudeLabels[attitude]}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <ToggleButton
+                    active={lead.message_sent}
+                    activeLabel="Sent"
+                    inactiveLabel="Not sent"
+                    onClick={() => onToggleMessageSent(lead.id, !lead.message_sent)}
+                  />
+                  <ToggleButton
+                    active={lead.call_made}
+                    activeLabel="Called"
+                    inactiveLabel="Not called"
+                    onClick={() => onToggleCallMade(lead.id, !lead.call_made)}
+                  />
+                  <ToggleButton
+                    active={lead.responded}
+                    activeLabel={respondedToggleLabels.active}
+                    inactiveLabel={respondedToggleLabels.inactive}
+                    onClick={() => onToggleResponded(lead.id, !lead.responded)}
+                  />
+                </div>
+
+                <div>{showAttitude ? <Week4Cell lead={lead} /> : <FollowUpCell lead={lead} today={today} />}</div>
+
+                <NoteInput leadId={lead.id} initialNote={lead.notes} onUpdateNote={onUpdateNote} />
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      window.dispatchEvent(new CustomEvent(COMPOSE_LEAD_EVENT, { detail: { leadId: lead.id } }))
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-3 py-2 text-xs font-semibold text-ink-muted transition hover:border-black/25 hover:text-foreground"
+                  >
+                    <PenLine className="h-3.5 w-3.5" aria-hidden="true" />
+                    Write
+                  </button>
+                  <LeadDetailsDialog lead={lead} onSave={onUpdateDetails} />
+                  <Link
+                    href={`/admin/marketing/leads/${lead.id}`}
+                    className="ml-auto text-xs font-semibold text-ink-muted hover:text-foreground"
+                  >
+                    Open →
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-4 hidden overflow-hidden rounded-2xl border border-black/10 md:block">
+            <div className="overflow-x-auto">
+              <table
+                className={cn(
+                  "w-full border-collapse text-left text-sm",
+                  showAttitude ? "min-w-[1500px]" : "min-w-[1380px]"
+                )}
+              >
+                <thead>
+                  <tr className="border-b border-black/10 bg-card text-xs uppercase tracking-widest text-ink-muted">
+                    <th className="px-5 py-3 font-medium">Name</th>
+                    <th className="px-5 py-3 font-medium">Company</th>
+                    <th className="px-5 py-3 font-medium">Segment</th>
+                    <th className="px-5 py-3 font-medium">Where</th>
+                    <th className="px-5 py-3 font-medium">Email</th>
+                    <th className="px-5 py-3 font-medium">Phone</th>
+                    <th className="px-5 py-3 font-medium">Source</th>
+                    <th className="px-5 py-3 font-medium">Status</th>
+                    {showAttitude && <th className="px-5 py-3 font-medium">Attitude</th>}
+                    <th className="px-5 py-3 font-medium">Message</th>
+                    <th className="px-5 py-3 font-medium">Call</th>
+                    <th className="px-5 py-3 font-medium">Responded</th>
+                    <th className="px-5 py-3 font-medium">{showAttitude ? "Week-4 bar" : "Follow-up"}</th>
+                    <th className="px-5 py-3 font-medium">Note</th>
+                    <th className="px-5 py-3 font-medium">
+                      <span className="sr-only">Details</span>
+                    </th>
+                    <th className="px-5 py-3 font-medium">Added</th>
+                    <th className="px-5 py-3 font-medium">
+                      <span className="sr-only">Delete</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leads.map((lead) => (
+                    <tr key={lead.id} className="border-b border-black/10 last:border-b-0 hover:bg-card">
+                      <td className="px-5 py-4 font-semibold">
+                        <Link href={`/admin/marketing/leads/${lead.id}`} className="hover:underline">
+                          {lead.name}
+                        </Link>
+                      </td>
+                      <td className="px-5 py-4 text-ink-muted">
+                        {lead.company ? (
+                          <Link
+                            href={`/admin/marketing/leads/${lead.id}`}
+                            className="hover:text-foreground hover:underline"
+                          >
+                            {lead.company}
+                          </Link>
+                        ) : (
+                          "—"
                         )}
-                      >
-                        {POTENTIAL_CUSTOMER_STATUS_VALUES.map((status) => (
-                          <option key={status} value={status}>
-                            {potentialCustomerStatusLabels[status]}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    {showAttitude && (
+                      </td>
+                      <td className="px-5 py-4">
+                        <SegmentCell lead={lead} />
+                      </td>
+                      <td className="px-5 py-4 text-xs text-ink-muted">
+                        {[lead.location, lead.employees != null && `${lead.employees} empl.`]
+                          .filter(Boolean)
+                          .join(" · ") || "—"}
+                      </td>
+                      <td className="px-5 py-4 text-ink-muted">{lead.email || "—"}</td>
+                      <td className="px-5 py-4 text-ink-muted">{lead.phone || "—"}</td>
+                      <td className="px-5 py-4 text-ink-muted">{lead.source || "—"}</td>
                       <td className="px-5 py-4">
                         <select
-                          value={lead.attitude ?? ""}
-                          onChange={(event) =>
-                            onAttitudeChange(lead.id, (event.target.value || null) as PotentialCustomerAttitude | null)
-                          }
+                          value={lead.status}
+                          onChange={(event) => onStatusChange(lead.id, event.target.value as PotentialCustomerStatus)}
                           className={cn(
                             "rounded-full border-none px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-accent/40",
-                            lead.attitude ? attitudeStyles[lead.attitude] : "bg-black/5 text-ink-muted"
+                            statusStyles[lead.status]
                           )}
                         >
-                          <option value="">Not set</option>
-                          {POTENTIAL_CUSTOMER_ATTITUDE_VALUES.map((attitude) => (
-                            <option key={attitude} value={attitude}>
-                              {potentialCustomerAttitudeLabels[attitude]}
+                          {POTENTIAL_CUSTOMER_STATUS_VALUES.map((status) => (
+                            <option key={status} value={status}>
+                              {potentialCustomerStatusLabels[status]}
                             </option>
                           ))}
                         </select>
                       </td>
-                    )}
-                    <td className="px-5 py-4">
-                      <ToggleButton
-                        active={lead.message_sent}
-                        activeLabel="Sent"
-                        inactiveLabel="Not sent"
-                        onClick={() => onToggleMessageSent(lead.id, !lead.message_sent)}
-                      />
-                    </td>
-                    <td className="px-5 py-4">
-                      <ToggleButton
-                        active={lead.call_made}
-                        activeLabel="Called"
-                        inactiveLabel="Not called"
-                        onClick={() => onToggleCallMade(lead.id, !lead.call_made)}
-                      />
-                    </td>
-                    <td className="px-5 py-4">
-                      <ToggleButton
-                        active={lead.responded}
-                        activeLabel={respondedToggleLabels.active}
-                        inactiveLabel={respondedToggleLabels.inactive}
-                        onClick={() => onToggleResponded(lead.id, !lead.responded)}
-                      />
-                    </td>
-                    <td className="px-5 py-4">
-                      {showAttitude ? <Week4Cell lead={lead} /> : <FollowUpCell lead={lead} today={today} />}
-                    </td>
-                    <td className="px-5 py-4">
-                      <NoteInput leadId={lead.id} initialNote={lead.notes} onUpdateNote={onUpdateNote} />
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2">
+                      {showAttitude && (
+                        <td className="px-5 py-4">
+                          <select
+                            value={lead.attitude ?? ""}
+                            onChange={(event) =>
+                              onAttitudeChange(
+                                lead.id,
+                                (event.target.value || null) as PotentialCustomerAttitude | null
+                              )
+                            }
+                            className={cn(
+                              "rounded-full border-none px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-accent/40",
+                              lead.attitude ? attitudeStyles[lead.attitude] : "bg-black/5 text-ink-muted"
+                            )}
+                          >
+                            <option value="">Not set</option>
+                            {POTENTIAL_CUSTOMER_ATTITUDE_VALUES.map((attitude) => (
+                              <option key={attitude} value={attitude}>
+                                {potentialCustomerAttitudeLabels[attitude]}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                      )}
+                      <td className="px-5 py-4">
+                        <ToggleButton
+                          active={lead.message_sent}
+                          activeLabel="Sent"
+                          inactiveLabel="Not sent"
+                          onClick={() => onToggleMessageSent(lead.id, !lead.message_sent)}
+                        />
+                      </td>
+                      <td className="px-5 py-4">
+                        <ToggleButton
+                          active={lead.call_made}
+                          activeLabel="Called"
+                          inactiveLabel="Not called"
+                          onClick={() => onToggleCallMade(lead.id, !lead.call_made)}
+                        />
+                      </td>
+                      <td className="px-5 py-4">
+                        <ToggleButton
+                          active={lead.responded}
+                          activeLabel={respondedToggleLabels.active}
+                          inactiveLabel={respondedToggleLabels.inactive}
+                          onClick={() => onToggleResponded(lead.id, !lead.responded)}
+                        />
+                      </td>
+                      <td className="px-5 py-4">
+                        {showAttitude ? <Week4Cell lead={lead} /> : <FollowUpCell lead={lead} today={today} />}
+                      </td>
+                      <td className="px-5 py-4">
+                        <NoteInput leadId={lead.id} initialNote={lead.notes} onUpdateNote={onUpdateNote} />
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              window.dispatchEvent(new CustomEvent(COMPOSE_LEAD_EVENT, { detail: { leadId: lead.id } }))
+                            }
+                            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-black/10 px-3 py-1 text-xs font-semibold text-ink-muted transition hover:border-black/25 hover:text-foreground"
+                          >
+                            <PenLine className="h-3.5 w-3.5" aria-hidden="true" />
+                            Write
+                          </button>
+                          <LeadDetailsDialog lead={lead} onSave={onUpdateDetails} />
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-ink-muted">{formatDate(lead.created_at)}</td>
+                      <td className="px-5 py-4 text-right">
                         <button
                           type="button"
-                          onClick={() =>
-                            window.dispatchEvent(new CustomEvent(COMPOSE_LEAD_EVENT, { detail: { leadId: lead.id } }))
-                          }
-                          className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-black/10 px-3 py-1 text-xs font-semibold text-ink-muted transition hover:border-black/25 hover:text-foreground"
+                          onClick={() => onDelete(lead.id)}
+                          disabled={deletingId === lead.id}
+                          aria-label={`Remove ${lead.name}`}
+                          className="text-ink-muted transition hover:text-danger disabled:opacity-60"
                         >
-                          <PenLine className="h-3.5 w-3.5" aria-hidden="true" />
-                          Write
+                          <Trash2 className="h-4 w-4" aria-hidden="true" />
                         </button>
-                        <LeadDetailsDialog lead={lead} onSave={onUpdateDetails} />
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-ink-muted">{formatDate(lead.created_at)}</td>
-                    <td className="px-5 py-4 text-right">
-                      <button
-                        type="button"
-                        onClick={() => onDelete(lead.id)}
-                        disabled={deletingId === lead.id}
-                        aria-label={`Remove ${lead.name}`}
-                        className="text-ink-muted transition hover:text-danger disabled:opacity-60"
-                      >
-                        <Trash2 className="h-4 w-4" aria-hidden="true" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

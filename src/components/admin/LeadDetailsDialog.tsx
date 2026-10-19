@@ -9,19 +9,21 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } 
 import { cn } from "@/lib/utils";
 import type { PotentialCustomerDetails } from "@/lib/potential-customer-schema";
 import {
-  ACCOUNTING_SYSTEM_VALUES,
   BEST_CHANNEL_VALUES,
   SEGMENT_VALUES,
-  WEEK_4_BAR_HOURS,
-  accountingSystemLabels,
   bestChannelLabels,
-  followUpDue,
   segmentLabels,
   type PotentialCustomer,
 } from "@/lib/potential-customer";
 
 // Form state is all strings (what inputs hold); converted on save.
 type FormState = Record<keyof PotentialCustomerDetails, string>;
+
+// The follow-up fields need gtm_command_centre.sql; before it runs the
+// columns are missing (undefined) and the dialog leaves them out.
+function hasFollowUpColumns(lead: PotentialCustomer) {
+  return lead.next_follow_up_on !== undefined;
+}
 
 function toFormState(lead: PotentialCustomer): FormState {
   const text = (value: string | number | null) => (value == null ? "" : String(value));
@@ -34,14 +36,13 @@ function toFormState(lead: PotentialCustomer): FormState {
     best_channel: text(lead.best_channel),
     opener_fact: text(lead.opener_fact),
     opener_source: text(lead.opener_source),
-    accounting_system: text(lead.accounting_system),
-    admin_hours_per_week: text(lead.admin_hours_per_week),
-    main_pain: text(lead.main_pain),
     first_contacted_on: text(lead.first_contacted_on),
+    next_follow_up_on: text(lead.next_follow_up_on ?? null),
+    next_action: text(lead.next_action ?? null),
   };
 }
 
-function toDetails(form: FormState): PotentialCustomerDetails {
+function toDetails(form: FormState, withFollowUp: boolean): PotentialCustomerDetails {
   const number = (value: string) => (value.trim() === "" ? null : Number(value));
   const choice = <T extends string>(value: string) => (value === "" ? null : (value as T));
   return {
@@ -53,10 +54,8 @@ function toDetails(form: FormState): PotentialCustomerDetails {
     best_channel: choice(form.best_channel),
     opener_fact: form.opener_fact,
     opener_source: form.opener_source,
-    accounting_system: choice(form.accounting_system),
-    admin_hours_per_week: number(form.admin_hours_per_week),
-    main_pain: form.main_pain,
     first_contacted_on: form.first_contacted_on || null,
+    ...(withFollowUp ? { next_follow_up_on: form.next_follow_up_on || null, next_action: form.next_action } : {}),
   };
 }
 
@@ -111,7 +110,7 @@ export function LeadDetailsDialog({
     setSaving(true);
     setError(null);
     try {
-      await onSave(lead.id, toDetails(form));
+      await onSave(lead.id, toDetails(form, hasFollowUpColumns(lead)));
       setOpen(false);
     } catch {
       setError("Couldn't save. Check the values and try again.");
@@ -119,8 +118,6 @@ export function LeadDetailsDialog({
       setSaving(false);
     }
   }
-
-  const hours = form.admin_hours_per_week.trim() === "" ? null : Number(form.admin_hours_per_week);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -220,57 +217,35 @@ export function LeadDetailsDialog({
             </Field>
           </Section>
 
-          <Section title="Discovery — fill in on the call">
+          <Section title="Pipeline">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Accounting system">
-                <select
-                  className={selectClass}
-                  value={form.accounting_system}
-                  onChange={(e) => set("accounting_system", e.target.value)}
-                >
-                  <option value="">Not asked yet</option>
-                  {ACCOUNTING_SYSTEM_VALUES.map((value) => (
-                    <option key={value} value={value}>
-                      {accountingSystemLabels[value]}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field
-                label="Admin hours / week"
-                hint={
-                  hours == null
-                    ? `Office time from finished job to invoice. Week-4 bar: ${WEEK_4_BAR_HOURS}+ h`
-                    : hours >= WEEK_4_BAR_HOURS
-                      ? "Meets the week-4 bar"
-                      : `Below the ${WEEK_4_BAR_HOURS} h week-4 bar`
-                }
-              >
+              <Field label="First contacted">
                 <Input
-                  type="number"
-                  min={0}
-                  step={0.5}
-                  value={form.admin_hours_per_week}
-                  onChange={(e) => set("admin_hours_per_week", e.target.value)}
+                  type="date"
+                  value={form.first_contacted_on}
+                  onChange={(e) => set("first_contacted_on", e.target.value)}
                 />
               </Field>
+              {hasFollowUpColumns(lead) && (
+                <Field label="Next follow-up" hint="Set automatically when you log a message; change it here.">
+                  <Input
+                    type="date"
+                    value={form.next_follow_up_on}
+                    onChange={(e) => set("next_follow_up_on", e.target.value)}
+                  />
+                </Field>
+              )}
             </div>
-            <Field label="Main pain, in their words">
-              <Textarea rows={3} value={form.main_pain} onChange={(e) => set("main_pain", e.target.value)} />
-            </Field>
-          </Section>
-
-          <Section title="Pipeline">
-            <Field
-              label="First contacted"
-              hint={form.first_contacted_on ? `One follow-up due ${followUpDue(form.first_contacted_on)}` : undefined}
-            >
-              <Input
-                type="date"
-                value={form.first_contacted_on}
-                onChange={(e) => set("first_contacted_on", e.target.value)}
-              />
-            </Field>
+            {hasFollowUpColumns(lead) && (
+              <Field label="Next action">
+                <Input
+                  value={form.next_action}
+                  placeholder="e.g. Call Thursday to book the discovery call"
+                  onChange={(e) => set("next_action", e.target.value)}
+                />
+              </Field>
+            )}
+            <p className="text-xs text-ink-muted">Discovery answers are recorded per call on the lead&apos;s page.</p>
           </Section>
 
           {error && <p className="text-sm text-danger">{error}</p>}

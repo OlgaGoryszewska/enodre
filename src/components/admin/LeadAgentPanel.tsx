@@ -12,15 +12,18 @@ import {
   RESEARCH_BUDGET,
   canStartResearch,
   linkedInSearchUrl,
+  type ResearchOutcome,
   type LeadCandidate,
 } from "@/lib/lead-candidate";
 import type { FindLeadsInput } from "@/app/admin/marketing/lead-agent-actions";
+import { MAX_RESEARCH_ATTEMPTS, isStaleProcessing } from "@/lib/gtm-logic";
 
 interface LeadAgentPanelProps {
   candidates: LeadCandidate[];
   monthSpendUsd: number;
+  researchStats: { runs: number; failedRuns: number; rejected: number };
   onFind: (input: FindLeadsInput) => Promise<{ added: number; totalMatches: number }>;
-  onResearch: (id: string) => Promise<void>;
+  onResearch: (id: string) => Promise<ResearchOutcome>;
   onApprove: (id: string) => Promise<void>;
   onReject: (id: string) => Promise<void>;
 }
@@ -47,6 +50,7 @@ function errorMessage(error: unknown) {
 export function LeadAgentPanel({
   candidates,
   monthSpendUsd,
+  researchStats,
   onFind,
   onResearch,
   onApprove,
@@ -69,7 +73,9 @@ export function LeadAgentPanel({
   const byStatus = useMemo(() => {
     const groups: Record<Tab, LeadCandidate[]> = { found: [], researched: [], failed: [], approved: [] };
     for (const candidate of candidates) {
-      if (candidate.status in groups) groups[candidate.status as Tab].push(candidate);
+      // Running (or interrupted) research stays in the "To research" list.
+      const key = candidate.status === "processing" ? "found" : candidate.status;
+      if (key in groups) groups[key as Tab].push(candidate);
     }
     groups.researched.sort((a, b) => (b.fit_score ?? 0) - (a.fit_score ?? 0));
     return groups;
@@ -96,6 +102,19 @@ export function LeadAgentPanel({
     }
   }
 
+  /** Runs one research job; returns false when the batch should stop. */
+  async function runResearch(id: string) {
+    let outcome: ResearchOutcome | null = null;
+    const ok = await withBusy(id, async () => {
+      outcome = await onResearch(id);
+    });
+    const result = outcome as ResearchOutcome | null;
+    if (result && result.status !== "researched" && result.message) setActionError(result.message);
+    // Stop on account-wide problems (no credits, budget reached) — every
+    // other company would fail the same way and use up attempts.
+    return ok && !result?.blocked;
+  }
+
   async function withBusy(id: string, action: () => Promise<void>) {
     setBusyIds((current) => new Set(current).add(id));
     setActionError(null);
@@ -117,13 +136,12 @@ export function LeadAgentPanel({
   // One request per company, in sequence — each takes about a minute, and
   // separate requests keep every call well inside the function time limit.
   async function researchBatch() {
-    const batch = byStatus.found.slice(0, BATCH_SIZE);
+    const batch = byStatus.found.filter((candidate) => candidate.status === "found").slice(0, BATCH_SIZE);
     setBatchProgress({ done: 0, total: batch.length });
     for (const [index, candidate] of batch.entries()) {
-      const ok = await withBusy(candidate.id, () => onResearch(candidate.id));
+      const keepGoing = await runResearch(candidate.id);
       setBatchProgress({ done: index + 1, total: batch.length });
-      // Stop on the first refusal (e.g. budget reached) instead of hammering on.
-      if (!ok) break;
+      if (!keepGoing) break;
     }
     setBatchProgress(null);
   }
@@ -248,14 +266,14 @@ export function LeadAgentPanel({
       {/* Queue */}
       <div className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap rounded-full border border-black/10 bg-black/[0.03] p-1">
+          <div className="-mx-1 flex max-w-full overflow-x-auto rounded-full border border-black/10 bg-black/[0.03] p-1 [scrollbar-width:none]">
             {(Object.keys(TAB_LABELS) as Tab[]).map((key) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => setTab(key)}
                 className={cn(
-                  "rounded-full px-4 py-2 text-sm font-semibold transition",
+                  "shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition",
                   tab === key ? "bg-background text-foreground shadow-sm" : "text-ink-muted"
                 )}
               >
@@ -265,9 +283,18 @@ export function LeadAgentPanel({
           </div>
           <p className={cn("text-xs", budgetLeft ? "text-ink-muted" : "font-semibold text-danger")}>
             This month: {Number.isFinite(monthSpendUsd) ? `$${monthSpendUsd.toFixed(2)}` : "unknown"} of $
-            {RESEARCH_BUDGET.monthlyUsd} research budget
+            {RESEARCH_BUDGET.monthlyUsd} research budget (estimated)
           </p>
         </div>
+
+        <p className="text-xs text-ink-muted">
+          Pipeline: {byStatus.found.filter((c) => c.status === "found").length} queued ·{" "}
+          {byStatus.found.filter((c) => c.status === "processing").length} processing · {byStatus.researched.length}{" "}
+          ready for review · {byStatus.approved.length} approved · {researchStats.rejected} rejected ·{" "}
+          {byStatus.failed.length} failed
+          {researchStats.runs > 0 &&
+            ` · ${Math.round((researchStats.failedRuns / researchStats.runs) * 100)}% of this month's ${researchStats.runs} runs failed`}
+        </p>
 
         {actionError && (
           <div
@@ -323,8 +350,31 @@ export function LeadAgentPanel({
                   key={candidate.id}
                   className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-black/10 bg-background px-4 py-3"
                 >
-                  <CompanyLine candidate={candidate} />
+                  <div className="grid gap-1">
+                    <CompanyLine candidate={candidate} />
+                    {candidate.status === "processing" && (
+                      <p className="flex items-center gap-1.5 text-xs text-ink-muted">
+                        {isStaleProcessing(candidate.research_started_at ?? null) ? (
+                          "Research was interrupted — it can be run again."
+                        ) : (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" /> Researching…
+                          </>
+                        )}
+                      </p>
+                    )}
+                  </div>
                   <div className="flex gap-2">
+                    {candidate.status === "processing" && isStaleProcessing(candidate.research_started_at ?? null) && (
+                      <button
+                        type="button"
+                        onClick={() => void runResearch(candidate.id)}
+                        disabled={isResearching || !budgetLeft}
+                        className={cn(buttonVariants({ variant: "outline" }), "px-4 py-2 text-sm")}
+                      >
+                        Run again
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => void withBusy(candidate.id, () => onApprove(candidate.id))}
@@ -384,12 +434,24 @@ export function LeadAgentPanel({
                 <div className="grid gap-1">
                   <CompanyLine candidate={candidate} />
                   <p className="text-xs text-danger">{candidate.error}</p>
+                  <p className="text-xs text-ink-muted">
+                    {candidate.error_kind === "blocked"
+                      ? "Account problem (credits, key or budget) — fix it, then retry. Doesn't use up attempts."
+                      : candidate.error_kind === "permanent"
+                        ? "Needs a look before retrying."
+                        : "Temporary problem — worth a retry."}
+                    {candidate.attempts != null && ` · ${candidate.attempts} of ${MAX_RESEARCH_ATTEMPTS} attempts used`}
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => void withBusy(candidate.id, () => onResearch(candidate.id))}
-                    disabled={busyIds.has(candidate.id) || !budgetLeft}
+                    onClick={() => void runResearch(candidate.id)}
+                    disabled={
+                      busyIds.has(candidate.id) ||
+                      !budgetLeft ||
+                      (candidate.error_kind !== "blocked" && (candidate.attempts ?? 0) >= MAX_RESEARCH_ATTEMPTS)
+                    }
                     className={cn(buttonVariants({ variant: "outline" }), "px-4 py-2 text-sm")}
                   >
                     {busyIds.has(candidate.id) ? (

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { bestChannelLabels, segmentLabels, type PotentialCustomer } from "@/lib/potential-customer";
+import { bestChannelLabels, leadOpener, segmentLabels, type PotentialCustomer } from "@/lib/potential-customer";
 import {
   CONNECTION_NOTE_MAX,
   EMAILABLE_KINDS,
@@ -89,6 +89,8 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
   // Who the email goes to — starts as the lead's saved address, any address can be typed.
   const [recipient, setRecipient] = useState(lead?.email ?? "");
   const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  // An email that went out but wasn't logged — recorded with one click, never resent.
+  const [unlogged, setUnlogged] = useState<SentMessageInput | null>(null);
   // Messages sent this session, merged with the server's list until it refreshes.
   const [localMessages, setLocalMessages] = useState<LeadMessage[]>([]);
 
@@ -212,13 +214,23 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
       if (result.message) {
         const saved = result.message;
         setLocalMessages((current) => [...current, saved]);
+      } else {
+        setUnlogged({
+          leadId: lead.id,
+          kind,
+          channel: "email",
+          language,
+          subject: draft.subject,
+          body: draft.body,
+          recipient: result.to,
+        });
       }
       setNotice(
         result.logged
           ? { kind: "ok", text: `Sent to ${result.to} and logged. The follow-up clock has started.` }
           : {
               kind: "error",
-              text: `Sent to ${result.to}, but it couldn't be logged. Don't resend — use Mark as sent to log it.`,
+              text: `Sent to ${result.to}, but it couldn't be logged. Don't send it again — log it below instead.`,
             }
       );
     } catch {
@@ -231,6 +243,8 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
       setConfirmingSend(false);
     }
   }
+
+  const opener = lead ? leadOpener(lead) : { fact: null, source: null };
 
   const mailto =
     lead?.email &&
@@ -475,6 +489,38 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
             {notice.text}
           </p>
         )}
+        {unlogged && (
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-danger/30 bg-danger/5 p-4 text-sm">
+            <p className="flex-1">
+              The email to <span className="font-semibold">{unlogged.recipient}</span> was sent. Log it now — this
+              records it without sending anything.
+            </p>
+            <button
+              type="button"
+              disabled={sending}
+              onClick={async () => {
+                setSending(true);
+                try {
+                  const saved = await onMarkSent(unlogged);
+                  setLocalMessages((current) => [...current, saved]);
+                  setUnlogged(null);
+                  setNotice({ kind: "ok", text: "Logged. The follow-up date is set." });
+                } catch {
+                  setNotice({
+                    kind: "error",
+                    text: "Still couldn't log it. Run the latest SQL files in Supabase, then try again.",
+                  });
+                } finally {
+                  setSending(false);
+                }
+              }}
+              className={cn(buttonVariants({ variant: "primary" }), "bg-foreground px-4 py-2 text-sm")}
+            >
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
+              Log the sent email
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Reference panel */}
@@ -496,12 +542,12 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
 
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Opener fact</p>
-            {lead.opener_fact ? (
+            {opener.fact ? (
               <>
-                <p className="mt-1 leading-6">{lead.opener_fact}</p>
-                {lead.opener_source && (
+                <p className="mt-1 leading-6">{opener.fact}</p>
+                {opener.source && (
                   <a
-                    href={lead.opener_source}
+                    href={opener.source}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-1 inline-flex items-center gap-1 text-xs font-semibold hover:underline"

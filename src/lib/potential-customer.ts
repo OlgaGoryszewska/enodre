@@ -1,4 +1,16 @@
-export const POTENTIAL_CUSTOMER_STATUS_VALUES = ["new", "contacted", "interested", "converted", "not_interested"] as const;
+import { addBusinessDays, FOLLOW_UP_BUSINESS_DAYS, parseLegacyNotes } from "@/lib/gtm-logic";
+
+// Pipeline stages, in order. Keep in sync with the check in supabase/gtm_command_centre.sql.
+export const POTENTIAL_CUSTOMER_STATUS_VALUES = [
+  "new",
+  "contacted",
+  "interested",
+  "call_booked",
+  "call_done",
+  "proposal_sent",
+  "converted",
+  "not_interested",
+] as const;
 
 export type PotentialCustomerStatus = (typeof POTENTIAL_CUSTOMER_STATUS_VALUES)[number];
 
@@ -6,9 +18,15 @@ export const potentialCustomerStatusLabels: Record<PotentialCustomerStatus, stri
   new: "New",
   contacted: "Contacted",
   interested: "Interested",
-  converted: "Converted",
+  call_booked: "Discovery call booked",
+  call_done: "Discovery call done",
+  proposal_sent: "Proposal sent",
+  converted: "Pilot signed",
   not_interested: "Not interested",
 };
+
+// No routine follow-up reminders once a lead is won or out.
+export const CLOSED_STATUSES: readonly PotentialCustomerStatus[] = ["converted", "not_interested"];
 
 // Phase 2: once a lead responds, `attitude` tracks how they're coming
 // across in the conversation — separate from `status`, which keeps tracking
@@ -55,14 +73,24 @@ export const accountingSystemLabels: Record<AccountingSystem, string> = {
 
 // The GTM plan's week-4 gate: the pain matters at 5+ office hours a week.
 export const WEEK_4_BAR_HOURS = 5;
-// The plan allows one follow-up, 4–5 days after first contact.
-export const FOLLOW_UP_AFTER_DAYS = 5;
+/**
+ * The lead's next follow-up date (YYYY-MM-DD) or null when none is due.
+ * `next_follow_up_on` is the source of truth; until gtm_command_centre.sql has
+ * run the column is missing (undefined), so fall back to the old rule.
+ */
+export function followUpDate(lead: PotentialCustomer): string | null {
+  if (lead.next_follow_up_on !== undefined) return lead.next_follow_up_on;
+  if (!lead.first_contacted_on || lead.responded || CLOSED_STATUSES.includes(lead.status)) return null;
+  return addBusinessDays(lead.first_contacted_on, FOLLOW_UP_BUSINESS_DAYS);
+}
 
-/** Follow-up due date (YYYY-MM-DD) for a lead first contacted on `firstContactedOn`. */
-export function followUpDue(firstContactedOn: string) {
-  const date = new Date(`${firstContactedOn}T00:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + FOLLOW_UP_AFTER_DAYS);
-  return date.toISOString().slice(0, 10);
+/** The opener fact + source, reading older notes-only records too. */
+export function leadOpener(lead: Pick<PotentialCustomer, "opener_fact" | "opener_source" | "notes">) {
+  const legacy = lead.opener_fact ? {} : parseLegacyNotes(lead.notes);
+  return {
+    fact: lead.opener_fact ?? legacy.openerFact ?? null,
+    source: lead.opener_source ?? legacy.openerSource ?? null,
+  };
 }
 
 export type PotentialCustomer = {
@@ -92,4 +120,7 @@ export type PotentialCustomer = {
   admin_hours_per_week: number | null;
   main_pain: string | null;
   first_contacted_on: string | null;
+  // undefined until gtm_command_centre.sql has been run.
+  next_follow_up_on?: string | null;
+  next_action?: string | null;
 };

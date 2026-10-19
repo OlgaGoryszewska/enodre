@@ -71,7 +71,15 @@ export function startOfMonthIso(now = new Date()) {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
 }
 
-export const LEAD_CANDIDATE_STATUS_VALUES = ["found", "researched", "failed", "approved", "rejected"] as const;
+// Keep in sync with the check in supabase/gtm_command_centre.sql.
+export const LEAD_CANDIDATE_STATUS_VALUES = [
+  "found",
+  "processing",
+  "researched",
+  "failed",
+  "approved",
+  "rejected",
+] as const;
 
 export type LeadCandidateStatus = (typeof LEAD_CANDIDATE_STATUS_VALUES)[number];
 
@@ -98,6 +106,17 @@ export type LeadCandidate = {
   cost_usd: number | null;
   researched_at: string | null;
   potential_customer_id: string | null;
+  // Added by gtm_command_centre.sql — undefined until it has run.
+  research_started_at?: string | null;
+  attempts?: number;
+  error_kind?: "blocked" | "retryable" | "permanent" | null;
+};
+
+/** What a research run did — the panel uses it to stop a batch on account-wide problems. */
+export type ResearchOutcome = {
+  status: "researched" | "failed" | "skipped";
+  blocked?: boolean;
+  message?: string;
 };
 
 export function linkedInSearchUrl(candidate: Pick<LeadCandidate, "contact_name" | "company">) {

@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import nodemailer from "nodemailer";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { addBusinessDays, FOLLOW_UP_BUSINESS_DAYS, osloToday } from "@/lib/gtm-logic";
+import { isMissingColumnError, updateLead } from "@/lib/lead-updates";
+import { CLOSED_STATUSES, type PotentialCustomerStatus } from "@/lib/potential-customer";
 import {
   MESSAGE_CHANNEL_VALUES,
   MESSAGE_KIND_VALUES,
@@ -23,6 +26,8 @@ const sentMessageSchema = z.object({
     .transform((value) => value || null)
     .nullable(),
   body: z.string().trim().min(1, "The message is empty.").max(5000),
+  // Set when logging an email that was already sent (e.g. its first log failed).
+  recipient: z.string().trim().pipe(z.email()).nullable().optional(),
 });
 
 export type SentMessageInput = z.input<typeof sentMessageSchema>;
@@ -40,7 +45,7 @@ type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 export async function markLeadMessageSent(input: SentMessageInput): Promise<LeadMessage> {
   const values = sentMessageSchema.parse(input);
   const supabase = await createClient();
-  const message = await logMessage(supabase, values, null);
+  const message = await logMessage(supabase, values, values.recipient ?? null);
   revalidatePath("/admin/marketing", "layout");
   return message;
 }
@@ -52,39 +57,56 @@ async function logMessage(
 ) {
   const { data: lead, error: leadError } = await supabase
     .from("potential_customers")
-    .select("status, first_contacted_on, email")
+    // "*" rather than a column list: next_follow_up_on may not exist yet.
+    .select("*")
     .eq("id", values.leadId)
     .single();
   if (leadError) throw leadError;
 
-  const { data: message, error: insertError } = await supabase
-    .from("lead_messages")
-    .insert({
-      lead_id: values.leadId,
-      kind: values.kind,
-      channel: values.channel,
-      language: values.language,
-      subject: values.subject,
-      body: values.body,
-      recipient,
-    })
-    .select("*")
-    .single();
+  const row = {
+    lead_id: values.leadId,
+    kind: values.kind,
+    channel: values.channel,
+    language: values.language,
+    subject: values.subject,
+    body: values.body,
+    recipient,
+  };
+  let { data: message, error: insertError } = await supabase.from("lead_messages").insert(row).select("*").single();
+  // The recipient column arrived later; if the database doesn't have it yet,
+  // log the message without it rather than not at all.
+  if (insertError && isMissingColumnError(insertError)) {
+    const { recipient: _recipient, ...withoutRecipient } = row;
+    void _recipient;
+    ({ data: message, error: insertError } = await supabase
+      .from("lead_messages")
+      .insert(withoutRecipient)
+      .select("*")
+      .single());
+  }
   if (insertError) throw insertError;
 
-  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Oslo" });
-  const { error: updateError } = await supabase
-    .from("potential_customers")
-    .update({
-      ...(values.channel === "phone" ? { call_made: true } : { message_sent: true }),
-      first_contacted_on: lead.first_contacted_on ?? today,
-      status: lead.status === "new" ? "contacted" : lead.status,
-      // A lead with no saved email gets the address it was just emailed at.
-      ...(recipient && !lead.email ? { email: recipient } : {}),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", values.leadId);
-  if (updateError) throw updateError;
+  // Follow-up rules: a first contact schedules the one follow-up (4 business
+  // days out); sending that follow-up ends routine reminders.
+  const today = osloToday();
+  const status = lead.status as PotentialCustomerStatus;
+  const open = !lead.responded && !CLOSED_STATUSES.includes(status);
+  const followUpPending = Boolean(lead.next_follow_up_on);
+  const followUp =
+    values.kind === "follow_up"
+      ? { next_follow_up_on: null, next_action: "Wait for a reply — no more routine follow-ups" }
+      : open && values.kind !== "phone_opener" && !followUpPending
+        ? { next_follow_up_on: addBusinessDays(today, FOLLOW_UP_BUSINESS_DAYS), next_action: "Send the one follow-up" }
+        : {};
+
+  await updateLead(supabase, values.leadId, {
+    ...(values.channel === "phone" ? { call_made: true } : { message_sent: true }),
+    first_contacted_on: lead.first_contacted_on ?? today,
+    status: lead.status === "new" ? "contacted" : lead.status,
+    // A lead with no saved email gets the address it was just emailed at.
+    ...(recipient && !lead.email ? { email: recipient } : {}),
+    ...followUp,
+  });
 
   return message as LeadMessage;
 }

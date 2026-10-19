@@ -13,6 +13,8 @@ import {
   type PotentialCustomerAttitude,
 } from "@/lib/potential-customer";
 import { createClient } from "@/lib/supabase/server";
+import { addBusinessDays, osloToday } from "@/lib/gtm-logic";
+import { followUpForStatus, updateLead } from "@/lib/lead-updates";
 
 const TABLE = "potential_customers";
 
@@ -46,13 +48,37 @@ export async function setPotentialCustomerStatus(id: string, status: string) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from(TABLE)
-    .update({ status, updated_at: new Date().toISOString() })
-    .eq("id", id);
+  const nextStatus = status as PotentialCustomerStatus;
+  await updateLead(supabase, id, { status: nextStatus, ...followUpForStatus(nextStatus, osloToday()) });
 
-  if (error) throw error;
+  // Booking a call creates the call record (its preparation shows up in
+  // Today's priorities) unless one is already open for this lead.
+  if (nextStatus === "call_booked") {
+    const { data: open, error: openError } = await supabase
+      .from("discovery_calls")
+      .select("id")
+      .eq("lead_id", id)
+      .eq("status", "booked")
+      .limit(1);
+    if (openError) {
+      // discovery_calls doesn't exist until gtm_command_centre.sql has run.
+      console.error("Couldn't check for an open discovery call:", openError);
+    } else if (!open?.length) {
+      const { error: insertError } = await supabase.from("discovery_calls").insert({ lead_id: id, status: "booked" });
+      if (insertError) console.error("Couldn't create the discovery call:", insertError);
+    }
+  }
 
+  revalidatePath("/admin/marketing", "layout");
+}
+
+/** Pushes the next follow-up out by a number of business days (Today's priorities → Snooze). */
+export async function snoozeFollowUp(id: string, businessDays: number) {
+  if (!Number.isInteger(businessDays) || businessDays < 1 || businessDays > 20) {
+    throw new Error("Invalid snooze.");
+  }
+  const supabase = await createClient();
+  await updateLead(supabase, id, { next_follow_up_on: addBusinessDays(osloToday(), businessDays) });
   revalidatePath("/admin/marketing", "layout");
 }
 
@@ -82,12 +108,15 @@ export async function setPotentialCustomerCallMade(id: string, callMade: boolean
 
 export async function setPotentialCustomerResponded(id: string, responded: boolean) {
   const supabase = await createClient();
-  const { error } = await supabase
-    .from(TABLE)
-    .update({ responded, updated_at: new Date().toISOString() })
-    .eq("id", id);
-
-  if (error) throw error;
+  // A reply takes the lead out of the unanswered follow-up queue and asks for
+  // the reply to be recorded.
+  await updateLead(
+    supabase,
+    id,
+    responded
+      ? { responded, next_follow_up_on: null, next_action: "Record their reply and choose the next step" }
+      : { responded }
+  );
 
   revalidatePath("/admin/marketing", "layout");
 }
@@ -98,10 +127,7 @@ export async function setPotentialCustomerAttitude(id: string, attitude: string 
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from(TABLE)
-    .update({ attitude, updated_at: new Date().toISOString() })
-    .eq("id", id);
+  const { error } = await supabase.from(TABLE).update({ attitude, updated_at: new Date().toISOString() }).eq("id", id);
 
   if (error) throw error;
 
@@ -110,10 +136,7 @@ export async function setPotentialCustomerAttitude(id: string, attitude: string 
 
 export async function updatePotentialCustomerNote(id: string, notes: string) {
   const supabase = await createClient();
-  const { error } = await supabase
-    .from(TABLE)
-    .update({ notes, updated_at: new Date().toISOString() })
-    .eq("id", id);
+  const { error } = await supabase.from(TABLE).update({ notes, updated_at: new Date().toISOString() }).eq("id", id);
 
   if (error) throw error;
 
@@ -133,12 +156,14 @@ export async function updatePotentialCustomerDetails(id: string, details: Potent
   const values = potentialCustomerDetailsSchema.parse(details);
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from(TABLE)
-    .update({ ...values, updated_at: new Date().toISOString() })
-    .eq("id", id);
+  await updateLead(supabase, id, values);
 
-  if (error) throw error;
+  revalidatePath("/admin/marketing", "layout");
+}
 
+/** Today's priorities → "No follow-up needed": clears the pending follow-up. */
+export async function clearFollowUp(id: string) {
+  const supabase = await createClient();
+  await updateLead(supabase, id, { next_follow_up_on: null });
   revalidatePath("/admin/marketing", "layout");
 }

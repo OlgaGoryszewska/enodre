@@ -2,7 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Briefcase, CalendarDays, HeartPulse, Inbox, LayoutDashboard, Target, Users, type LucideIcon } from "lucide-react";
+import {
+  Briefcase,
+  CalendarDays,
+  HeartPulse,
+  Inbox,
+  LayoutDashboard,
+  ListChecks,
+  Target,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links: { href: string; label: string; icon: LucideIcon }[] = [
@@ -13,13 +23,14 @@ const links: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/health", label: "Health", icon: HeartPulse },
   { href: "/admin/linkedin", label: "Applying for jobs", icon: Briefcase },
   { href: "/admin/marketing", label: "Marketing", icon: Target },
+  { href: "/admin/execution", label: "Daily Execution", icon: ListChecks },
 ];
 
 export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-3 text-sm font-medium sm:gap-5">
+    <nav className="flex flex-wrap gap-2 text-sm font-medium sm:gap-5">
       {links.map((link) => {
         const isActive = pathname === link.href;
         const Icon = link.icon;

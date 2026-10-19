@@ -5,6 +5,14 @@ import { ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { LeadNotes, LeadProfile } from "@/components/admin/LeadProfile";
 import { MessageComposer } from "@/components/admin/MessageComposer";
+import { DiscoveryCalls } from "@/components/admin/DiscoveryCalls";
+import {
+  bookDiscoveryCall,
+  cancelDiscoveryCall,
+  completeDiscoveryCall,
+  saveDiscoveryCall,
+} from "@/app/admin/marketing/discovery-actions";
+import type { DiscoveryCall } from "@/lib/discovery-call";
 import {
   deletePotentialCustomer,
   setPotentialCustomerAttitude,
@@ -29,10 +37,19 @@ export default async function LeadPage({ params }: LeadPageProps) {
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: leadData, error: leadError }, { data: messagesData, error: messagesError }] = await Promise.all([
+  const [
+    { data: leadData, error: leadError },
+    { data: messagesData, error: messagesError },
+    { data: callsData, error: callsError },
+  ] = await Promise.all([
     supabase.from("potential_customers").select("*").eq("id", id).maybeSingle(),
     supabase.from("lead_messages").select("*").eq("lead_id", id).order("created_at", { ascending: false }),
+    supabase.from("discovery_calls").select("*").eq("lead_id", id).order("created_at", { ascending: false }),
   ]);
+  if (callsError) {
+    // discovery_calls doesn't exist until gtm_command_centre.sql has run.
+    console.error("Failed to load discovery calls:", callsError);
+  }
 
   if (leadError) {
     console.error("Failed to load potential customer:", leadError);
@@ -45,6 +62,7 @@ export default async function LeadPage({ params }: LeadPageProps) {
 
   const lead = leadData as PotentialCustomer;
   const messages = (messagesData ?? []) as LeadMessage[];
+  const calls = (callsData ?? []) as DiscoveryCall[];
 
   return (
     <section className="shell py-20 sm:py-28">
@@ -99,6 +117,15 @@ export default async function LeadPage({ params }: LeadPageProps) {
               />
             </div>
           </div>
+
+          <DiscoveryCalls
+            leadId={lead.id}
+            calls={calls}
+            onBook={bookDiscoveryCall}
+            onSave={saveDiscoveryCall}
+            onComplete={completeDiscoveryCall}
+            onCancel={cancelDiscoveryCall}
+          />
 
           <LeadNotes leadId={lead.id} notes={lead.notes} onSave={updatePotentialCustomerNote} />
         </div>

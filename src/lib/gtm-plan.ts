@@ -1,3 +1,5 @@
+import { RESEARCH_BUDGET } from "@/lib/lead-candidate";
+
 // Dashboard summary of the GTM plan. The full plan (and the source of truth)
 // is the Claude Doc at GTM_PLAN_URL — update this file when the doc's
 // phases, gates or targets change.
@@ -47,12 +49,27 @@ export const GTM_PHASES: GtmPhase[] = [
   },
 ];
 
+// The plan's weekly targets — the single source for every component that
+// shows them (the GTM card and the weekly activity view).
+export const WEEKLY_TARGETS = {
+  researched: 20,
+  approved: 20,
+  contacts: 20,
+  discoveryCalls: { min: 3, max: 5 },
+} as const;
+
+// Plan-level milestones the performance view measures against.
+export const GTM_MILESTONES = {
+  discoveryCallsByWeek4: 15,
+  pilotsByWeek8: { min: 2, max: 3 },
+} as const;
+
 export const GTM_WEEKLY_TARGETS = [
-  { label: "Companies researched", target: "~20" },
-  { label: "Leads approved", target: "~20" },
-  { label: "Contacts made", target: "20" },
-  { label: "Discovery calls", target: "3–5" },
-  { label: "Research spend", target: "< $10 / month" },
+  { label: "Companies researched", target: `~${WEEKLY_TARGETS.researched}` },
+  { label: "Leads approved", target: `~${WEEKLY_TARGETS.approved}` },
+  { label: "Contacts made", target: `${WEEKLY_TARGETS.contacts}` },
+  { label: "Discovery calls", target: `${WEEKLY_TARGETS.discoveryCalls.min}–${WEEKLY_TARGETS.discoveryCalls.max}` },
+  { label: "Research spend", target: `< $${RESEARCH_BUDGET.monthlyUsd} / month` },
 ];
 
 /** Index of the phase `today` (YYYY-MM-DD) falls in; -1 before, phases.length after. */
@@ -75,26 +92,72 @@ export const GTM_TASK_PREFIX = "GTM · ";
 
 export const GTM_TASKS: { title: string; description: string }[] = [
   // Setup — this week
-  { title: "Run lead_candidates.sql in Supabase", description: "Setup, week 1. Creates the lead finder queue and the research spend log." },
-  { title: "Add Anthropic credits + monthly spend limit", description: "Setup, week 1. Console → Plans & Billing. The spend limit is the safety net behind the $10/month cap in code." },
-  { title: "Add ANTHROPIC_API_KEY to Vercel", description: "Setup, week 1. Needed for the research agent in production." },
-  { title: "Send booking/contact emails from info@enodre.com", description: "Setup, week 1. Gmail → Settings → Accounts → Send mail as, or a Workspace app password." },
+  {
+    title: "Run lead_candidates.sql in Supabase",
+    description: "Setup, week 1. Creates the lead finder queue and the research spend log.",
+  },
+  {
+    title: "Add Anthropic credits + monthly spend limit",
+    description:
+      "Setup, week 1. Console → Plans & Billing. The spend limit is the safety net behind the $10/month cap in code.",
+  },
+  {
+    title: "Add ANTHROPIC_API_KEY to Vercel",
+    description: "Setup, week 1. Needed for the research agent in production.",
+  },
+  {
+    title: "Send booking/contact emails from info@enodre.com",
+    description: "Setup, week 1. Gmail → Settings → Accounts → Send mail as, or a Workspace app password.",
+  },
   // Phase 1 — Discover (weeks 1–4)
-  { title: "Find the first 25 companies", description: "Phase 1. Trøndelag, Vestfold, Telemark (A/B) + F segment nationwide." },
-  { title: "Research and approve 20 leads", description: "Phase 1, every week. Check every claim and source before approving." },
-  { title: "Contact 20 leads this week", description: "Phase 1, every week. LinkedIn by hand or phone; one follow-up after 4–5 days." },
-  { title: "Hold 15 discovery calls", description: "Phase 1, by 9 Nov. Use the interview script; write down hours/week, systems, pain in their words." },
-  { title: "Week-4 gate review", description: "9 Nov. Do 5+ of 15 share the same pain at 5+ hours a week? If not, switch the workflow." },
+  {
+    title: "Find the first 25 companies",
+    description: "Phase 1. Trøndelag, Vestfold, Telemark (A/B) + F segment nationwide.",
+  },
+  {
+    title: "Research and approve 20 leads",
+    description: "Phase 1, every week. Check every claim and source before approving.",
+  },
+  {
+    title: "Contact 20 leads this week",
+    description: "Phase 1, every week. LinkedIn by hand or phone; one follow-up after 4–5 days.",
+  },
+  {
+    title: "Hold 15 discovery calls",
+    description: "Phase 1, by 9 Nov. Use the interview script; write down hours/week, systems, pain in their words.",
+  },
+  {
+    title: "Week-4 gate review",
+    description: "9 Nov. Do 5+ of 15 share the same pain at 5+ hours a week? If not, switch the workflow.",
+  },
   // Phase 2 — Pilot offers (weeks 5–8)
-  { title: "Write the one-page pilot proposal template", description: "Phase 2. One workflow, fixed scope, 4–6 weeks, success measure, reduced setup price." },
-  { title: "Draft pilot terms with case-study clause", description: "Phase 2. Reduced price in return for a named case study with real numbers." },
-  { title: "Process-mapping calls (Olga + Nick)", description: "Phase 2. 45 min with the daglig leder and the person who does invoicing." },
-  { title: "Sign 2–3 pilots", description: "Week-8 gate, 7 Dec. If no one accepts, test lower setup + higher monthly." },
+  {
+    title: "Write the one-page pilot proposal template",
+    description: "Phase 2. One workflow, fixed scope, 4–6 weeks, success measure, reduced setup price.",
+  },
+  {
+    title: "Draft pilot terms with case-study clause",
+    description: "Phase 2. Reduced price in return for a named case study with real numbers.",
+  },
+  {
+    title: "Process-mapping calls (Olga + Nick)",
+    description: "Phase 2. 45 min with the daglig leder and the person who does invoicing.",
+  },
+  {
+    title: "Sign 2–3 pilots",
+    description: "Week-8 gate, 7 Dec. If no one accepts, test lower setup + higher monthly.",
+  },
   // Phase 3 — First pilot (weeks 9–12)
   { title: "Book pilot kick-offs before 15 Dec", description: "Phase 3. Avoid the holiday stall." },
   { title: "Build the first pilot workflow", description: "Phase 3. Nick builds, Olga runs it with the customer." },
-  { title: "Measure before/after and write the case study", description: "Week-12 gate, 4 Jan. Use the customer's real numbers only." },
+  {
+    title: "Measure before/after and write the case study",
+    description: "Week-12 gate, 4 Jan. Use the customer's real numbers only.",
+  },
   // Open decisions
   { title: "Decide: switch website hero to Jobb-til-faktura?", description: "Open question from the GTM plan." },
-  { title: "Decide which accounting systems to support first", description: "Open question. Decide from what discovery calls show (Tripletex, Fiken, PowerOffice, Visma)." },
+  {
+    title: "Decide which accounting systems to support first",
+    description: "Open question. Decide from what discovery calls show (Tripletex, Fiken, PowerOffice, Visma).",
+  },
 ];
