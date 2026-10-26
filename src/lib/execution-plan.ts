@@ -112,6 +112,35 @@ export type PlannedTask = {
 export const DAILY_RESEARCH = 4;
 export const DAILY_FIRST_CONTACTS = 4;
 
+/** Daily targets — adjustable in Daily Execution → Settings. Defaults = weekly targets ÷ 5. */
+export type DailyTargets = {
+  research: number; // companies researched or approved
+  decisionMakers: number; // contact person found for a lead
+  drafts: number; // personalised messages drafted
+  approvals: number; // messages reviewed and approved
+  firstContacts: number; // first messages sent
+  followUps: number; // follow-ups sent
+};
+
+export const DEFAULT_TARGETS: DailyTargets = {
+  research: DAILY_RESEARCH,
+  decisionMakers: 4,
+  drafts: 4,
+  approvals: 4,
+  firstContacts: DAILY_FIRST_CONTACTS,
+  followUps: 4,
+};
+
+/** Merges saved targets over the defaults, ignoring anything invalid. */
+export function resolveTargets(saved: Partial<Record<keyof DailyTargets, unknown>> | null | undefined): DailyTargets {
+  const result = { ...DEFAULT_TARGETS };
+  for (const key of Object.keys(DEFAULT_TARGETS) as (keyof DailyTargets)[]) {
+    const value = Number(saved?.[key]);
+    if (Number.isInteger(value) && value >= 0 && value <= 100) result[key] = value;
+  }
+  return result;
+}
+
 type RoadmapItem = Omit<PlannedTask, "sourceKey"> & { key: string };
 
 const R = (date: string, key: string, rest: Omit<RoadmapItem, "date" | "key">): RoadmapItem => ({ date, key, ...rest });
@@ -405,7 +434,7 @@ export function roadmapTasks(options: {
 }
 
 /** Recurring daily work for one working day, sized from the weekly targets. */
-export function recurringTasks(date: string): PlannedTask[] {
+export function recurringTasks(date: string, targets: DailyTargets = DEFAULT_TARGETS): PlannedTask[] {
   if (!isWorkingDay(date)) return [];
   const friday = new Date(`${date}T00:00:00Z`).getUTCDay() === 5;
   const t = (key: string, task: Omit<PlannedTask, "sourceKey" | "date">): PlannedTask => ({
@@ -413,7 +442,7 @@ export function recurringTasks(date: string): PlannedTask[] {
     date,
     sourceKey: `recurring:${date}:${key}`,
   });
-  return [
+  const tasks = [
     t("plan", {
       title: "Review the pipeline and plan the day",
       description: "Check Today's priorities, confirm the morning check-in.",
@@ -423,20 +452,44 @@ export function recurringTasks(date: string): PlannedTask[] {
       minutes: 30,
     }),
     t("research", {
-      title: `Research ${DAILY_RESEARCH} companies`,
-      description: "Verify company info, find the decision-maker, record an opener fact, approve or reject each one.",
+      title: `Research ${targets.research} companies`,
+      description: "Verify company info, note facts with sources, spot likely workflows, approve or reject each one.",
       block: "research",
       category: "research",
       priority: "high",
-      minutes: 90,
+      minutes: 60,
+    }),
+    t("decision-makers", {
+      title: `Find the decision-maker for ${targets.decisionMakers} companies`,
+      description: "Daglig leder from the register, or the operations/office lead from their website or LinkedIn.",
+      block: "research",
+      category: "research",
+      priority: "normal",
+      minutes: 30,
+    }),
+    t("drafts", {
+      title: `Draft ${targets.drafts} personalised messages`,
+      description: "One verified fact, one workflow question from the industry playbook, one line of value.",
+      block: "outreach",
+      category: "outreach",
+      priority: "high",
+      minutes: 45,
+    }),
+    t("approvals", {
+      title: `Review and approve ${targets.approvals} messages`,
+      description: "Fix everything the quality check flags before approving.",
+      block: "outreach",
+      category: "outreach",
+      priority: "high",
+      minutes: 15,
     }),
     t("outreach", {
-      title: `Send ${DAILY_FIRST_CONTACTS} personalised first contacts`,
-      description: "Write the opener from the researched fact; log each message in the composer.",
+      title: `Send ${targets.firstContacts} first messages`,
+      description: "Send or log each approved message from the composer.",
       block: "outreach",
       category: "outreach",
       priority: "critical",
-      minutes: 90,
+      minutes: 30,
     }),
     t("linkedin", {
       title: "LinkedIn visibility",
@@ -475,6 +528,19 @@ export function recurringTasks(date: string): PlannedTask[] {
         ]
       : []),
   ];
+  // A target of 0 means "not today": its task isn't generated.
+  const zeroTargets = new Set(
+    Object.entries({
+      research: targets.research,
+      "decision-makers": targets.decisionMakers,
+      drafts: targets.drafts,
+      approvals: targets.approvals,
+      outreach: targets.firstContacts,
+    })
+      .filter(([, value]) => value === 0)
+      .map(([key]) => `recurring:${date}:${key}`)
+  );
+  return tasks.filter((task) => !zeroTargets.has(task.sourceKey));
 }
 
 // ---------------------------------------------------------------------------
@@ -648,6 +714,10 @@ export function settleTasks(input: {
   tasks: OpenGeneratedTask[];
   firstContactsToday: number;
   researchedToday: number;
+  decisionMakersToday?: number;
+  draftsToday?: number;
+  approvalsToday?: number;
+  targets?: DailyTargets;
   followUpMessages: { leadId: string; createdAt: string }[];
   leads: PipelineLead[];
   calls: PipelineCall[];
@@ -657,14 +727,42 @@ export function settleTasks(input: {
   const calls = new Map(input.calls.map((call) => [call.id, call]));
   const result: { id: string; status: "completed" | "cancelled"; reason: string }[] = [];
 
+  const targets = input.targets ?? DEFAULT_TARGETS;
+  // Recurring count targets complete when the recorded count reaches the target.
+  const counted: Record<string, { value: number; target: number; reason: string }> = {
+    [`recurring:${today}:outreach`]: {
+      value: input.firstContactsToday,
+      target: targets.firstContacts,
+      reason: "first messages sent",
+    },
+    [`recurring:${today}:research`]: {
+      value: input.researchedToday,
+      target: targets.research,
+      reason: "companies researched",
+    },
+    [`recurring:${today}:decision-makers`]: {
+      value: input.decisionMakersToday ?? 0,
+      target: targets.decisionMakers,
+      reason: "decision-makers found",
+    },
+    [`recurring:${today}:drafts`]: {
+      value: input.draftsToday ?? 0,
+      target: targets.drafts,
+      reason: "messages drafted",
+    },
+    [`recurring:${today}:approvals`]: {
+      value: input.approvalsToday ?? 0,
+      target: targets.approvals,
+      reason: "messages approved",
+    },
+  };
+
   for (const task of input.tasks) {
     const key = task.sourceKey;
-    if (key === `recurring:${today}:outreach`) {
-      if (input.firstContactsToday >= DAILY_FIRST_CONTACTS)
-        result.push({ id: task.id, status: "completed", reason: `${input.firstContactsToday} first contacts logged` });
-    } else if (key === `recurring:${today}:research`) {
-      if (input.researchedToday >= DAILY_RESEARCH)
-        result.push({ id: task.id, status: "completed", reason: "Daily research target reached" });
+    if (key in counted) {
+      const count = counted[key];
+      if (count.target > 0 && count.value >= count.target)
+        result.push({ id: task.id, status: "completed", reason: `${count.value} ${count.reason}` });
     } else if (key.startsWith("crm:follow-up:") && task.leadId) {
       const followedUp = input.followUpMessages.some((m) => m.leadId === task.leadId && m.createdAt >= task.createdAt);
       const lead = leads.get(task.leadId);

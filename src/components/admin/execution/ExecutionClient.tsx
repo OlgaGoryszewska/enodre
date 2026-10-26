@@ -25,7 +25,7 @@ import {
   type GtmTaskEvent,
   type GtmTaskStatus,
 } from "@/lib/execution-tasks";
-import { formatDuration, formatTimer, trackedSeconds, type BlockConfig } from "@/lib/execution-plan";
+import { formatDuration, formatTimer, trackedSeconds, type BlockConfig, type DailyTargets } from "@/lib/execution-plan";
 
 const selectClass =
   "h-9 rounded-xl border border-black/10 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40";
@@ -1001,15 +1001,27 @@ export function MoveTask({
   );
 }
 
+const TARGET_LABELS: [keyof DailyTargets, string][] = [
+  ["research", "Companies researched"],
+  ["decisionMakers", "Decision-makers found"],
+  ["drafts", "Messages drafted"],
+  ["approvals", "Messages approved"],
+  ["firstContacts", "First messages sent"],
+  ["followUps", "Follow-ups sent"],
+];
+
 export function PlannerSettingsForm({
   dayStart,
   blocks,
+  targets: initialTargets,
   onSave,
 }: {
   dayStart: string;
   blocks: BlockConfig[];
+  targets: DailyTargets;
   onSave: (input: PlannerSettingsInput) => Promise<void>;
 }) {
+  const [targets, setTargets] = useState<DailyTargets>(initialTargets);
   const [start, setStart] = useState(dayStart);
   const [minutes, setMinutes] = useState<Record<string, number>>(
     Object.fromEntries(blocks.map((block) => [block.key, block.minutes]))
@@ -1042,12 +1054,36 @@ export function PlannerSettingsForm({
       <p className="text-xs text-ink-muted">
         Total {Math.floor(total / 60)} h {total % 60} min including breaks.
       </p>
+      <div className="grid gap-2 border-t border-black/10 pt-4">
+        <p className="text-sm font-semibold">Daily targets</p>
+        <p className="text-xs text-ink-muted">
+          Size the day&apos;s recurring tasks and the progress tiles. 0 = skip that task. New targets apply from the
+          next day&apos;s plan.
+        </p>
+        <ul className="grid gap-2">
+          {TARGET_LABELS.map(([key, label]) => (
+            <li key={key} className="flex items-center justify-between gap-3 text-sm">
+              <span>{label}</span>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={targets[key]}
+                onChange={(e) =>
+                  setTargets({ ...targets, [key]: Math.max(0, Math.min(100, Number(e.target.value) || 0)) })
+                }
+                className="h-9 w-20"
+              />
+            </li>
+          ))}
+        </ul>
+      </div>
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={async () => {
             try {
-              await onSave({ day_start: start.slice(0, 5), block_minutes: minutes });
+              await onSave({ day_start: start.slice(0, 5), block_minutes: minutes, targets });
               setMessage("Saved.");
             } catch (err) {
               setMessage(errorText(err));

@@ -5,7 +5,7 @@ import { addBusinessDays, computeGate, startOfWeek } from "@/lib/gtm-logic";
 import { CLOSED_STATUSES, followUpDate, type PotentialCustomer } from "@/lib/potential-customer";
 import type { LeadCandidate } from "@/lib/lead-candidate";
 import type { DiscoveryCall } from "@/lib/discovery-call";
-import type { LeadMessage } from "@/lib/outreach-templates";
+import { isSentMessage, type LeadMessage } from "@/lib/outreach-templates";
 import { GTM_MILESTONES, WEEKLY_TARGETS } from "@/lib/gtm-plan";
 
 export type PriorityTask = {
@@ -22,6 +22,8 @@ export type PriorityTask = {
 
 export type ResearchRun = { created_at: string; cost_usd: number; outcome: string };
 
+export type FunnelRow = { label: string; value: number; hint?: string; target?: number; targetLabel?: string };
+
 const leadName = (lead: PotentialCustomer) => lead.company || lead.name;
 const leadHref = (id: string) => `/admin/marketing/leads/${id}`;
 
@@ -29,9 +31,11 @@ export function buildPriorities(input: {
   leads: PotentialCustomer[];
   candidates: LeadCandidate[];
   calls: DiscoveryCall[];
+  messages?: LeadMessage[];
   today: string;
 }): PriorityTask[] {
   const { leads, candidates, calls, today } = input;
+  const messages = input.messages ?? [];
   const tasks: PriorityTask[] = [];
   const tomorrow = addBusinessDays(today, 1);
   const leadsById = new Map(leads.map((lead) => [lead.id, lead]));
@@ -98,6 +102,28 @@ export function buildPriorities(input: {
     });
   }
 
+  // Outreach work in progress: approved messages are ready to go out; drafts need review.
+  const approvedUnsent = messages.filter((m) => m.status === "approved");
+  if (approvedUnsent.length > 0) {
+    tasks.push({
+      key: "approved-unsent",
+      priority: 2,
+      title: `${approvedUnsent.length} approved message${approvedUnsent.length === 1 ? "" : "s"} ready to send`,
+      detail: "Open the lead, send it or log it as sent",
+      href: approvedUnsent.length === 1 ? leadHref(approvedUnsent[0].lead_id) : "/admin/marketing#composer",
+    });
+  }
+  const drafts = messages.filter((m) => m.status === "draft");
+  if (drafts.length > 0) {
+    tasks.push({
+      key: "drafts",
+      priority: 4,
+      title: `${drafts.length} draft${drafts.length === 1 ? "" : "s"} waiting for review`,
+      detail: "Check the quality notes, then approve",
+      href: drafts.length === 1 ? leadHref(drafts[0].lead_id) : "/admin/marketing#composer",
+    });
+  }
+
   const failed = candidates.filter((candidate) => candidate.status === "failed");
   if (failed.length > 0) {
     const blocked = failed.some(
@@ -157,13 +183,21 @@ export function buildPerformance(input: {
 
   // Only things that really happened count: a drafted message isn't a contact,
   // a booked call isn't a completed one, a high fit score isn't "qualified".
-  const funnel = [
+  const linkedLeads = new Set(candidates.map((c) => c.potential_customer_id).filter(Boolean));
+  const funnel: FunnelRow[] = [
     { label: "Companies discovered", value: candidates.length },
-    { label: "Companies researched", value: candidates.filter((c) => c.research).length },
-    { label: "Leads approved", value: candidates.filter((c) => c.status === "approved").length },
-    { label: "First contacts sent", value: leads.filter((l) => l.first_contacted_on).length },
-    { label: "Positive responses", value: leads.filter((l) => l.responded && l.attitude === "positive").length },
-    { label: "Discovery calls booked", value: perLead.length },
+    {
+      label: "Prospects researched",
+      value:
+        candidates.filter((c) => c.research).length + leads.filter((l) => l.research && !linkedLeads.has(l.id)).length,
+    },
+    { label: "Prospects qualified", value: leads.length, hint: "Approved into the Leads pipeline" },
+    { label: "Messages drafted", value: messages.length },
+    { label: "Messages approved", value: messages.filter((m) => m.status === "approved" || isSentMessage(m)).length },
+    { label: "Messages sent", value: messages.filter(isSentMessage).length },
+    { label: "Replies received", value: leads.filter((l) => l.responded).length },
+    { label: "Positive replies", value: leads.filter((l) => l.responded && l.attitude === "positive").length },
+    { label: "Meetings booked", value: perLead.length, hint: "Discovery calls booked or held" },
     {
       label: "Discovery calls completed",
       value: completed.length,
@@ -176,12 +210,17 @@ export function buildPerformance(input: {
       value: leads.filter((l) => l.status === "proposal_sent" || l.status === "converted").length,
     },
     {
-      label: "Pilots signed",
+      label: "Deals won",
       value: leads.filter((l) => l.status === "converted").length,
       target: GTM_MILESTONES.pilotsByWeek8.min,
-      targetLabel: `${GTM_MILESTONES.pilotsByWeek8.min}–${GTM_MILESTONES.pilotsByWeek8.max} by week 8`,
+      targetLabel: `${GTM_MILESTONES.pilotsByWeek8.min}–${GTM_MILESTONES.pilotsByWeek8.max} pilots by week 8`,
     },
   ];
+
+  // Revenue = deal value of won deals (entered on the lead when it's signed).
+  const revenueNok = leads
+    .filter((l) => l.status === "converted")
+    .reduce((sum, l) => sum + Number(l.deal_value_nok ?? 0), 0);
 
   const weekStart = startOfWeek(today);
   const inWeek = (iso: string | null | undefined) => Boolean(iso && iso.slice(0, 10) >= weekStart);
@@ -198,7 +237,9 @@ export function buildPerformance(input: {
     },
     {
       label: "Contacts made",
-      value: new Set(messages.filter((m) => inWeek(m.created_at)).map((m) => m.lead_id)).size,
+      value: new Set(
+        messages.filter((m) => isSentMessage(m) && inWeek(m.sent_at ?? m.created_at)).map((m) => m.lead_id)
+      ).size,
       target: WEEKLY_TARGETS.contacts,
     },
     {
@@ -225,5 +266,5 @@ export function buildPerformance(input: {
     if (call.accounting_system) systems.set(call.accounting_system, (systems.get(call.accounting_system) ?? 0) + 1);
   }
 
-  return { funnel, weekly, weekStart, gate, systems: [...systems.entries()].sort((a, b) => b[1] - a[1]) };
+  return { funnel, revenueNok, weekly, weekStart, gate, systems: [...systems.entries()].sort((a, b) => b[1] - a[1]) };
 }

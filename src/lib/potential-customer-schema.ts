@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { BEST_CHANNEL_VALUES, SEGMENT_VALUES } from "@/lib/potential-customer";
+import { INDUSTRY_VALUES } from "@/lib/industry-playbooks";
 
 export const potentialCustomerFormSchema = z.object({
   name: z.string().min(1, "Name is required."),
@@ -23,6 +24,15 @@ const optionalText = (max: number) =>
 // Discovery answers (accounting system, hours, pain) are recorded per call in
 // discovery_calls, not here.
 export const potentialCustomerDetailsSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .max(254)
+    .transform((value) => value || null)
+    .pipe(z.email("That doesn't look like a valid email address.").nullable())
+    .nullable()
+    .optional(),
+  phone: optionalText(40).optional(),
   segment: z.enum(SEGMENT_VALUES).nullable(),
   employees: z.number().int().min(0).nullable(),
   location: optionalText(120),
@@ -35,6 +45,10 @@ export const potentialCustomerDetailsSchema = z.object({
   // Optional: these columns only exist once gtm_command_centre.sql has run.
   next_follow_up_on: z.iso.date().nullable().optional(),
   next_action: optionalText(300).optional(),
+  // Optional: these columns only exist once outreach_system.sql has run.
+  industry: z.enum(INDUSTRY_VALUES).nullable().optional(),
+  do_not_contact: z.boolean().optional(),
+  deal_value_nok: z.number().min(0).max(100_000_000).nullable().optional(),
 });
 
 export type PotentialCustomerDetails = z.input<typeof potentialCustomerDetailsSchema>;

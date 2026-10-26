@@ -92,6 +92,7 @@ create table if not exists public.weekly_reviews (
 );
 
 -- Upgrades for a database that ran an earlier version of this file.
+alter table public.planner_settings add column if not exists targets jsonb not null default '{}'::jsonb;
 alter table public.gtm_tasks add column if not exists tracked_seconds integer not null default 0;
 alter table public.gtm_tasks add column if not exists timer_started_at timestamptz;
 -- At most one running timer: time is never counted twice.
@@ -109,7 +110,9 @@ create table if not exists public.planner_settings (
   updated_at timestamptz not null default now(),
   day_start time not null default '08:30',
   -- [{ "key": "research", "minutes": 90 }, …] — overrides of the default blocks.
-  block_minutes jsonb not null default '{}'::jsonb
+  block_minutes jsonb not null default '{}'::jsonb,
+  -- Daily targets: { research, decisionMakers, drafts, approvals, firstContacts, followUps }.
+  targets jsonb not null default '{}'::jsonb
 );
 
 -- Single-admin, admin-only tables — same reasoning as events.sql/tasks.sql.

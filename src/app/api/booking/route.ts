@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import nodemailer from "nodemailer";
+import { fromHeader, getMailer } from "@/lib/mailer";
 import { createClient } from "@supabase/supabase-js";
 import { BOOKING_CONFIG, generateCandidateSlots, isValidTimeZone } from "@/lib/booking";
 import { bookingRequestSchema, type BookingLocale } from "@/lib/booking-schema";
@@ -130,18 +130,14 @@ export async function POST(request: Request) {
 
   // Emails are notifications only — the booking already exists, so their
   // failure is logged but doesn't fail the request.
-  const gmailUser = process.env.GMAIL_USER;
-  const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
+  const mailer = getMailer();
 
-  if (!gmailUser || !gmailAppPassword) {
-    console.error("Missing GMAIL_USER / GMAIL_APP_PASSWORD env vars — booking emails not sent.");
+  if (!mailer) {
+    console.error("Missing MAIL_SMTP_USER / MAIL_SMTP_PASSWORD env vars — booking emails not sent.");
   } else {
     const startDate = new Date(slot.start);
     const endDate = new Date(slot.end);
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: { user: gmailUser, pass: gmailAppPassword },
-    });
+    const { transporter } = mailer;
 
     const ownerText = [
       `When: ${formatWhen(startDate, endDate, BOOKING_CONFIG.timeZone, "en")}`,
@@ -172,14 +168,14 @@ export async function POST(request: Request) {
 
     const results = await Promise.allSettled([
       transporter.sendMail({
-        from: `"Enodre website" <${gmailUser}>`,
+        from: fromHeader(mailer, "Enodre website"),
         to: RECIPIENT,
         replyTo: email,
         subject: `New call booked — ${fullName}, ${formatWhen(startDate, endDate, BOOKING_CONFIG.timeZone, "en")}`,
         text: ownerText,
       }),
       transporter.sendMail({
-        from: `"Enodre" <${gmailUser}>`,
+        from: fromHeader(mailer, "Enodre"),
         to: email,
         replyTo: PUBLIC_CONTACT,
         subject: t.subject,

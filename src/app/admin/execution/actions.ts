@@ -381,6 +381,16 @@ export async function saveWeeklyReview(weekStart: string, reviewDay: string, inp
 const settingsSchema = z.object({
   day_start: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use HH:MM."),
   block_minutes: z.record(z.string(), z.number().int().min(0).max(240)),
+  targets: z
+    .object({
+      research: z.number().int().min(0).max(100),
+      decisionMakers: z.number().int().min(0).max(100),
+      drafts: z.number().int().min(0).max(100),
+      approvals: z.number().int().min(0).max(100),
+      firstContacts: z.number().int().min(0).max(100),
+      followUps: z.number().int().min(0).max(100),
+    })
+    .optional(),
 });
 export type PlannerSettingsInput = z.input<typeof settingsSchema>;
 
@@ -389,12 +399,16 @@ export async function savePlannerSettings(input: PlannerSettingsInput) {
   const known = new Set(DEFAULT_BLOCKS.map((block) => block.key as string));
   const blockMinutes = Object.fromEntries(Object.entries(values.block_minutes).filter(([key]) => known.has(key)));
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("planner_settings")
-    .upsert(
-      { id: 1, day_start: values.day_start, block_minutes: blockMinutes, updated_at: new Date().toISOString() },
-      { onConflict: "id" }
-    );
+  const { error } = await supabase.from("planner_settings").upsert(
+    {
+      id: 1,
+      day_start: values.day_start,
+      block_minutes: blockMinutes,
+      ...(values.targets ? { targets: values.targets } : {}),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "id" }
+  );
   if (error) throw error;
   refresh();
 }

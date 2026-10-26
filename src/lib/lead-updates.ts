@@ -9,7 +9,15 @@ type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 // Columns added by gtm_command_centre.sql. Until it has run, writes that
 // include them fail with "column does not exist" (Postgres 42703) — then the
 // write is retried without them, so nothing else is lost.
-const FOLLOW_UP_COLUMNS = ["next_follow_up_on", "next_action"] as const;
+// …and the outreach columns from outreach_system.sql.
+const FOLLOW_UP_COLUMNS = [
+  "next_follow_up_on",
+  "next_action",
+  "industry",
+  "research",
+  "do_not_contact",
+  "deal_value_nok",
+] as const;
 const UNDEFINED_COLUMN = "42703";
 const UNDEFINED_COLUMN_CACHE = "PGRST204";
 

@@ -18,6 +18,7 @@ import {
   planDayNumber,
   scheduleBlocks,
   scoreDay,
+  resolveTargets,
   slotTasks,
   minutesBetween,
   trackedSeconds,
@@ -193,9 +194,16 @@ export default async function ExecutionPage({ searchParams }: { searchParams: Pr
     runs: (runsRes.data ?? []) as ResearchRun[],
   };
 
+  const savedSettings = settingsRes.data as {
+    day_start: string;
+    block_minutes: Record<string, number>;
+    targets?: Record<string, unknown>;
+  } | null;
+  const targets = resolveTargets(savedSettings?.targets);
+
   let setupError: string | null = null;
   try {
-    await prepareDay(supabase, today, data);
+    await prepareDay(supabase, today, data, targets);
   } catch (error) {
     console.error("Couldn't prepare the day's tasks:", error);
     setupError =
@@ -216,7 +224,7 @@ export default async function ExecutionPage({ searchParams }: { searchParams: Pr
   const weeklyReview = (weeklyRes.data ?? null) as WeeklyReview | null;
 
   // Schedule (settings override the default block lengths).
-  const settings = settingsRes.data as { day_start: string; block_minutes: Record<string, number> } | null;
+  const settings = savedSettings;
   const dayStart = settings?.day_start?.slice(0, 5) ?? DEFAULT_DAY_START;
   const blocks: BlockConfig[] = DEFAULT_BLOCKS.map((block) => ({
     ...block,
@@ -373,7 +381,7 @@ export default async function ExecutionPage({ searchParams }: { searchParams: Pr
   const pilotsEnd = GTM_PHASES[1].end;
   const firstPilotEnd = GTM_PHASES[2].end;
   const callsDone = performance.funnel.find((row) => row.label === "Discovery calls completed")?.value ?? 0;
-  const pilotsSigned = performance.funnel.find((row) => row.label === "Pilots signed")?.value ?? 0;
+  const pilotsSigned = performance.funnel.find((row) => row.label === "Deals won")?.value ?? 0;
   const milestoneTasks = (key: GtmTask["milestone"]) =>
     tasks.filter((task) => task.milestone === key && task.status !== "cancelled");
   const milestones = [
@@ -524,12 +532,15 @@ export default async function ExecutionPage({ searchParams }: { searchParams: Pr
               </div>
               <dl className="grid grid-cols-3 gap-3 text-sm">
                 {[
-                  ["First contacts", activity.firstContacts, 4],
-                  ["Follow-ups", activity.followUps, null],
-                  ["Researched", activity.researched + activity.approved, 4],
+                  ["Researched", activity.researched + activity.approved, targets.research],
+                  ["Decision-makers", activity.decisionMakers, targets.decisionMakers],
+                  ["Drafted", activity.drafted, targets.drafts],
+                  ["Approved", activity.messagesApproved, targets.approvals],
+                  ["First messages", activity.firstContacts, targets.firstContacts],
+                  ["Follow-ups", activity.followUps, targets.followUps],
+                  ["Replies", activity.responses, null],
                   ["Calls booked", activity.callsBooked, null],
                   ["Calls done", activity.callsCompleted, null],
-                  ["Replies", activity.responses, null],
                 ].map(([label, value, target]) => (
                   <div key={label as string} className="rounded-xl bg-black/[0.03] p-3">
                     <dt className="text-xs text-ink-muted">{label}</dt>
@@ -1179,7 +1190,7 @@ export default async function ExecutionPage({ searchParams }: { searchParams: Pr
           title="Working schedule"
           subtitle="Block lengths set the planner's times. Breaks aren't counted as work."
         >
-          <PlannerSettingsForm dayStart={dayStart} blocks={blocks} onSave={savePlannerSettings} />
+          <PlannerSettingsForm dayStart={dayStart} blocks={blocks} targets={targets} onSave={savePlannerSettings} />
         </Card>
       )}
     </section>

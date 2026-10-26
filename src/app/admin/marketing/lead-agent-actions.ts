@@ -16,6 +16,7 @@ import {
 } from "@/lib/lead-candidate";
 import { MAX_RESEARCH_ATTEMPTS, classifyResearchError, isStaleProcessing } from "@/lib/gtm-logic";
 import { isMissingColumnError } from "@/lib/lead-updates";
+import { industryFromCode } from "@/lib/industry-playbooks";
 
 const TABLE = "lead_candidates";
 const RUNS_TABLE = "lead_research_runs";
@@ -333,26 +334,34 @@ export async function approveLeadCandidate(id: string) {
     .filter(Boolean)
     .join("\n\n");
 
-  const { data: created, error: insertError } = await supabase
-    .from("potential_customers")
-    .insert({
-      name: candidate.contact_name ?? candidate.company,
-      company: candidate.company,
-      phone: candidate.phone,
-      source: "brreg-agent",
-      status: "new",
-      notes,
-      segment: LEAD_INDUSTRIES.find((industry) => industry.code === candidate.industry_code)?.priority ?? null,
-      employees: candidate.employees,
-      location: candidate.municipality,
-      org_number: candidate.org_number,
-      website: candidate.website ?? candidate.research?.website ?? null,
-      opener_fact: candidate.research?.facts[0]?.fact ?? null,
-      opener_source: candidate.research?.facts[0]?.source_url ?? null,
-    })
-    .select("id")
-    .single();
-  if (insertError) throw insertError;
+  const baseRow = {
+    name: candidate.contact_name ?? candidate.company,
+    company: candidate.company,
+    phone: candidate.phone,
+    source: "brreg-agent",
+    status: "new",
+    notes,
+    segment: LEAD_INDUSTRIES.find((industry) => industry.code === candidate.industry_code)?.priority ?? null,
+    employees: candidate.employees,
+    location: candidate.municipality,
+    org_number: candidate.org_number,
+    website: candidate.website ?? candidate.research?.website ?? null,
+    opener_fact: candidate.research?.facts[0]?.fact ?? null,
+    opener_source: candidate.research?.facts[0]?.source_url ?? null,
+  };
+  // The research and industry move onto the lead (outreach_system.sql columns);
+  // before that migration, insert without them rather than failing.
+  const insertRow = (row: Record<string, unknown>) =>
+    supabase.from("potential_customers").insert(row).select("id").single();
+  let { data: created, error: insertError } = await insertRow({
+    ...baseRow,
+    industry: industryFromCode(candidate.industry_code),
+    research: candidate.research ? { ...candidate.research, researched_at: candidate.researched_at } : null,
+  });
+  if (insertError && isMissingColumnError(insertError)) {
+    ({ data: created, error: insertError } = await insertRow(baseRow));
+  }
+  if (insertError || !created) throw insertError ?? new Error("Couldn't add the lead.");
 
   const { error: updateError } = await supabase
     .from(TABLE)

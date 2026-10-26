@@ -1,4 +1,22 @@
 import { addBusinessDays, FOLLOW_UP_BUSINESS_DAYS, parseLegacyNotes } from "@/lib/gtm-logic";
+import type { Industry } from "@/lib/industry-playbooks";
+
+/** Research stored on the lead. Facts carry a source; the rest are hypotheses. */
+export type LeadResearchData = {
+  summary?: string | null;
+  facts?: { fact: string; source_url: string }[];
+  signals?: { signal: string; source_url: string }[];
+  likely_pain?: string | null;
+  pain_evidence?: string | null;
+  how_we_help?: string | null;
+  confidence?: "high" | "medium" | "low" | null;
+  message_no?: string | null;
+  // The message opening (part A), written from one verified fact.
+  opener_fact?: string | null;
+  opener_no?: string | null;
+  opener_en?: string | null;
+  researched_at?: string | null;
+};
 
 // Pipeline stages, in order. Keep in sync with the check in supabase/gtm_command_centre.sql.
 export const POTENTIAL_CUSTOMER_STATUS_VALUES = [
@@ -123,4 +141,9 @@ export type PotentialCustomer = {
   // undefined until gtm_command_centre.sql has been run.
   next_follow_up_on?: string | null;
   next_action?: string | null;
+  // Added by outreach_system.sql — undefined until it has run.
+  industry?: Industry | null;
+  research?: LeadResearchData | null;
+  do_not_contact?: boolean;
+  deal_value_nok?: number | null;
 };

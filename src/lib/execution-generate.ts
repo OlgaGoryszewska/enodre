@@ -5,12 +5,14 @@
 import type { createClient } from "@/lib/supabase/server";
 import { osloToday } from "@/lib/gtm-logic";
 import {
+  DEFAULT_TARGETS,
   GATE_DATE,
   pipelineTasks,
   recurringTasks,
   roadmapTasks,
   segmentSeconds,
   settleTasks,
+  type DailyTargets,
   type PipelineCall,
   type PipelineLead,
   type PlannedTask,
@@ -19,7 +21,7 @@ import { buildPerformance } from "@/lib/gtm-dashboard";
 import { followUpDate, type PotentialCustomer } from "@/lib/potential-customer";
 import type { DiscoveryCall } from "@/lib/discovery-call";
 import type { LeadCandidate } from "@/lib/lead-candidate";
-import type { LeadMessage } from "@/lib/outreach-templates";
+import { isSentMessage, type LeadMessage } from "@/lib/outreach-templates";
 import type { ResearchRun } from "@/lib/gtm-dashboard";
 import type { GtmTask } from "@/lib/execution-tasks";
 
@@ -38,10 +40,16 @@ const FIRST_CONTACT_KINDS = ["connection_note", "first_message", "email"];
 /** Real activity on one Oslo day, from the records — never from task checkboxes. */
 export function activityOn(day: string, data: ExecutionData) {
   const onDay = (iso: string | null | undefined) => Boolean(iso) && osloToday(new Date(iso as string)) === day;
-  const dayMessages = data.messages.filter((m) => onDay(m.created_at));
+  // Drafts and approved-but-unsent messages never count as activity.
+  const dayMessages = data.messages.filter((m) => isSentMessage(m) && onDay(m.sent_at ?? m.created_at));
   return {
     firstContacts: new Set(dayMessages.filter((m) => FIRST_CONTACT_KINDS.includes(m.kind)).map((m) => m.lead_id)).size,
-    followUps: dayMessages.filter((m) => m.kind === "follow_up").length,
+    // Drafting and approving are work too (any status, by when it happened).
+    drafted: data.messages.filter((m) => onDay(m.created_at)).length,
+    messagesApproved: data.messages.filter((m) => onDay(m.approved_at)).length,
+    // New leads with a named contact person (not just the company).
+    decisionMakers: data.leads.filter((l) => onDay(l.created_at) && l.name && l.name !== l.company).length,
+    followUps: dayMessages.filter((m) => m.kind === "follow_up" || m.kind === "final_follow_up").length,
     researched: data.runs.filter((r) => r.outcome === "researched" && onDay(r.created_at)).length,
     approved: data.candidates.filter((c) => c.status === "approved" && onDay(c.updated_at)).length,
     callsBooked: data.calls.filter((c) => onDay(c.created_at)).length,
@@ -126,7 +134,12 @@ export async function logEvents(
  * resolved), inserts roadmap/recurring/pipeline tasks that don't exist yet,
  * and completes tasks only where the real action is on record.
  */
-export async function prepareDay(supabase: SupabaseClient, today: string, data: ExecutionData) {
+export async function prepareDay(
+  supabase: SupabaseClient,
+  today: string,
+  data: ExecutionData,
+  targets: DailyTargets = DEFAULT_TARGETS
+) {
   const now = new Date().toISOString();
 
   // 1. Insert what's missing. ignoreDuplicates = ON CONFLICT DO NOTHING on
@@ -139,7 +152,7 @@ export async function prepareDay(supabase: SupabaseClient, today: string, data: 
       gateMet: performance.gate.verdict === "met",
       qualifiedLeads: qualified,
     }).map((task) => toRow(task, "roadmap")),
-    ...recurringTasks(today).map((task) => toRow(task, "recurring")),
+    ...recurringTasks(today, targets).map((task) => toRow(task, "recurring")),
     ...pipelineTasks({
       today,
       ...pipeline(data),
@@ -203,9 +216,13 @@ export async function prepareDay(supabase: SupabaseClient, today: string, data: 
     })),
     firstContactsToday: activity.firstContacts,
     researchedToday: activity.researched + activity.approved,
+    decisionMakersToday: activity.decisionMakers,
+    draftsToday: activity.drafted,
+    approvalsToday: activity.messagesApproved,
+    targets,
     followUpMessages: data.messages
-      .filter((m) => m.kind === "follow_up")
-      .map((m) => ({ leadId: m.lead_id, createdAt: m.created_at })),
+      .filter((m) => isSentMessage(m) && (m.kind === "follow_up" || m.kind === "final_follow_up"))
+      .map((m) => ({ leadId: m.lead_id, createdAt: m.sent_at ?? m.created_at })),
     ...pipeline(data),
   });
 

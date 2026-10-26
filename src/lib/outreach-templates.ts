@@ -1,11 +1,22 @@
-import type { PotentialCustomer } from "@/lib/potential-customer";
+import { leadOpener, type PotentialCustomer } from "@/lib/potential-customer";
+import { PLAYBOOKS, type Industry } from "@/lib/industry-playbooks";
 
-// Message templates for the composer. They follow the GTM plan's rules: about
-// them, the pain as a QUESTION, one plain sentence on the solution, a small
-// ask, no product names. The opener (sentence 1) is always written by hand
-// from the lead's researched fact — the template leaves a marked gap for it.
+// Message templates for the composer. Structure (first message):
+//   A. A specific, verified observation — written by hand from a sourced fact.
+//      With no verified fact, a plain, honest opening instead (never invented).
+//   B. One operational question from the company's industry playbook.
+//   C. One sentence on how Enodre helps.
+//   D. A small, low-pressure ask: a 5-minute talk — not a full meeting.
+// Follow-ups add context or ask differently; the final one makes declining easy.
 
-export const MESSAGE_KIND_VALUES = ["connection_note", "first_message", "email", "follow_up", "phone_opener"] as const;
+export const MESSAGE_KIND_VALUES = [
+  "connection_note",
+  "first_message",
+  "email",
+  "follow_up",
+  "final_follow_up",
+  "phone_opener",
+] as const;
 export type MessageKind = (typeof MESSAGE_KIND_VALUES)[number];
 
 export const messageKindLabels: Record<MessageKind, string> = {
@@ -13,6 +24,7 @@ export const messageKindLabels: Record<MessageKind, string> = {
   first_message: "First message",
   email: "Email",
   follow_up: "Follow-up",
+  final_follow_up: "Final follow-up",
   phone_opener: "Phone opener",
 };
 
@@ -29,13 +41,19 @@ export const messageChannelLabels: Record<MessageChannel, string> = {
 export const MESSAGE_LANGUAGE_VALUES = ["no", "en"] as const;
 export type MessageLanguage = (typeof MESSAGE_LANGUAGE_VALUES)[number];
 
+export const MESSAGE_STATUS_VALUES = ["draft", "approved", "sent"] as const;
+export type MessageStatus = (typeof MESSAGE_STATUS_VALUES)[number];
+
 // Kinds that can be sent straight from the composer by email.
-export const EMAILABLE_KINDS: readonly MessageKind[] = ["first_message", "email", "follow_up"];
+export const EMAILABLE_KINDS: readonly MessageKind[] = ["first_message", "email", "follow_up", "final_follow_up"];
 
 // LinkedIn's limit for a note on a connection request.
 export const CONNECTION_NOTE_MAX = 300;
 
-export const OPENER_GAP = { no: "[Én konkret, sann ting om dem]", en: "[One specific, true thing about them]" };
+export const OPENER_GAP = {
+  no: "[Skriv én konkret, sann observasjon om dem – fra faktaene til høyre]",
+  en: "[Write one specific, true observation about them – from the facts on the right]",
+};
 
 export type LeadMessage = {
   id: string;
@@ -47,7 +65,16 @@ export type LeadMessage = {
   subject: string | null;
   body: string;
   recipient: string | null;
+  // Added by outreach_system.sql — undefined (= sent) for older rows.
+  status?: MessageStatus;
+  approved_at?: string | null;
+  sent_at?: string | null;
 };
+
+/** A row counts as sent unless it's an unsent draft (older rows have no status = sent). */
+export function isSentMessage(message: Pick<LeadMessage, "status">) {
+  return (message.status ?? "sent") === "sent";
+}
 
 /** The channel a message kind is usually sent through — editable in the composer. */
 export function defaultChannel(kind: MessageKind, lead: PotentialCustomer): MessageChannel {
@@ -59,49 +86,33 @@ export function defaultChannel(kind: MessageKind, lead: PotentialCustomer): Mess
   return "linkedin";
 }
 
-// Segment F (fuel, generators, equipment service) talks about deliveries and
-// service visits and may mention the similar system we built — but never by
-// name and never with customer results (it has no paying customers yet).
-type Wording = { pain: string; peers: string; cost: string; solution: string; reference: string | null };
+/** The playbook for a lead: its industry, or fuel for segment F, else generic. */
+export function leadIndustry(lead: PotentialCustomer): Industry {
+  if (lead.industry) return lead.industry;
+  if (lead.segment === "F") return "fuel_energy";
+  return "other";
+}
 
-const WORDING: Record<MessageLanguage, { field: Wording; fuel: Wording }> = {
-  no: {
-    field: {
-      pain: "får dere timer, materiell og utført arbeid fra folka ute og over på fakturaen i dag",
-      peers: "bedrifter med mange oppdrag ute",
-      cost: "timer på SMS, lister som må sjekkes, og faktura som går ut for sent – eller ikke i det hele tatt",
-      solution:
-        "det folka registrerer ute på jobben går rett til fakturautkast i regnskapssystemet dere allerede bruker, uten manuell punching",
-      reference: null,
-    },
-    fuel: {
-      pain: "blir leveranser, påfyllinger og servicebesøk dokumentert og fakturert hos dere i dag",
-      peers: "drivstoff- og utstyrsbedrifter",
-      cost: "dokumentasjon som tas for hånd, rapporter som tar tid å sette sammen, og faktura som går ut for sent",
-      solution:
-        "hver leveranse eller hvert besøk registreres med GPS, tidspunkt og bilde, og blir til rapport og fakturautkast i systemene dere allerede har",
-      reference: "Vi har bygget et lignende system for drivstofflevering og aggregatdrift.",
-    },
-  },
-  en: {
-    field: {
-      pain: "do hours, materials and finished work get from your people in the field onto the invoice today",
-      peers: "companies with lots of field jobs",
-      cost: "hours sent by text, lists to check, and invoices that go out late – or not at all",
-      solution:
-        "what your people register on the job goes straight into draft invoices in the accounting system you already use, with no manual re-typing",
-      reference: null,
-    },
-    fuel: {
-      pain: "are deliveries, refuels and service visits documented and invoiced today",
-      peers: "fuel and equipment companies",
-      cost: "documentation done by hand, reports that take time to put together, and invoices that go out late",
-      solution:
-        "every delivery or visit is logged with GPS, timestamp and photo, and becomes a report and a draft invoice in the systems you already have",
-      reference: "We've built a similar system for fuel delivery and generator operations.",
-    },
-  },
-};
+/** Verified facts for a lead: research facts with a source, plus the opener fact. */
+export function verifiedFacts(lead: PotentialCustomer) {
+  const facts = (lead.research?.facts ?? []).filter((fact) => fact.fact && fact.source_url);
+  const opener = leadOpener(lead);
+  if (opener.fact && opener.source && !facts.some((fact) => fact.fact === opener.fact)) {
+    facts.unshift({ fact: opener.fact, source_url: opener.source });
+  }
+  return facts;
+}
+
+/**
+ * The saved opening sentence for a language — only while the fact it was
+ * written from is still one of the lead's verified facts.
+ */
+export function savedOpener(lead: PotentialCustomer, language: MessageLanguage) {
+  const research = lead.research;
+  const text = language === "no" ? research?.opener_no : research?.opener_en;
+  if (!text || !research?.opener_fact) return null;
+  return verifiedFacts(lead).some((fact) => fact.fact === research.opener_fact) ? text : null;
+}
 
 function firstName(lead: PotentialCustomer) {
   // "Johannes & Jarle Sjurseike" -> "Johannes"; a company-only lead -> no name.
@@ -112,42 +123,70 @@ function firstName(lead: PotentialCustomer) {
 export function buildMessage(
   kind: MessageKind,
   language: MessageLanguage,
-  lead: PotentialCustomer
+  lead: PotentialCustomer,
+  questionIndex = 0
 ): { subject: string | null; body: string } {
-  const w = WORDING[language][lead.segment === "F" ? "fuel" : "field"];
+  const playbook = PLAYBOOKS[leadIndustry(lead)];
+  const questions = playbook.openingQuestions;
+  const question = questions[questionIndex % questions.length][language];
+  // The follow-up asks differently: the next question, or a duplicate-work angle.
+  const otherQuestion =
+    questions.length > 1
+      ? questions[(questionIndex + 1) % questions.length][language]
+      : language === "no"
+        ? "Hvor i arbeidsflyten tastes den samme informasjonen inn mer enn én gang hos dere?"
+        : "Where in your workflow does the same information get typed in more than once?";
   const name = firstName(lead);
   const company = lead.company || lead.name;
-  const opener = OPENER_GAP[language];
+  const hasFact = verifiedFacts(lead).length > 0;
+  const peers = playbook.peers[language];
 
   if (language === "no") {
     const hi = name ? `Hei ${name}` : "Hei";
+    const opening =
+      savedOpener(lead, "no") ??
+      (hasFact ? OPENER_GAP.no : `Jeg jobber med ${peers}, og tar kontakt for å høre litt om hvordan dere jobber.`);
     switch (kind) {
       case "connection_note":
         return {
           subject: null,
-          body: `${hi}! Jeg hjelper ${w.peers} å få ferdig arbeid over til faktura uten manuell punching. Hadde vært fint å koble seg til. – Olga, Enodre`,
+          body: `${hi}! Jeg jobber med ${peers} om å forenkle arbeidsflyten mellom felt og kontor. Hadde vært fint å koble seg til. – Olga, Enodre`,
         };
       case "follow_up":
         return {
-          subject: `Oppfølging: fakturering hos ${company}`,
-          body: `Hei igjen${name ? ` ${name}` : ""} – bare en rask påminnelse i tilfelle meldingen druknet. 15 minutter, når det passer deg. Ingen salg.\n\nOlga, Enodre`,
+          subject: `Re: arbeidsflyten hos ${company}`,
+          body: [
+            `Hei igjen${name ? ` ${name}` : ""},`,
+            `Jeg sendte deg en kort melding for noen dager siden. Et litt annet spørsmål: ${otherQuestion}`,
+            `Det er ofte her dobbeltarbeidet oppstår hos ${peers}. Hvis det ikke er aktuelt, er det helt greit å si fra.`,
+            "Olga, Enodre",
+          ].join("\n\n"),
+        };
+      case "final_follow_up":
+        return {
+          subject: `Siste melding fra meg – ${company}`,
+          body: [
+            `Hei${name ? ` ${name}` : ""},`,
+            "Jeg skal ikke fylle innboksen din, så dette er siste melding fra meg.",
+            "Hvis det blir aktuelt å forenkle arbeidsflyten mellom felt og kontor senere, er det bare å svare her. Og er det ikke relevant, er et kort «nei takk» helt i orden.",
+            "Olga, Enodre",
+          ].join("\n\n"),
         };
       case "phone_opener":
         return {
           subject: null,
-          body: `Hei, jeg heter Olga fra Enodre. Vi snakker med ${w.peers} om hvordan de håndterer fakturering etter ferdige jobber. Har du to minutter nå, eller kan jeg ringe tilbake når det passer bedre?`,
+          body: `Hei, jeg heter Olga fra Enodre. Vi snakker med ${peers} om hvordan informasjonen fra folk ute kommer inn til kontoret. Har du to minutter nå, eller passer det bedre en annen gang?`,
         };
       case "first_message":
       case "email":
         return {
-          subject: `Kort spørsmål om fakturering hos ${company}`,
+          subject: `Spørsmål om arbeidsflyten hos ${company}`,
           body: [
             `${hi},`,
-            opener,
-            `Hvordan ${w.pain}?`,
-            `Hos mange ${w.peers} er det her tiden forsvinner: ${w.cost}.`,
-            [`Vi setter opp løsninger der ${w.solution}.`, w.reference].filter(Boolean).join(" "),
-            "Har du 15 minutter en dag neste uke? Jeg vil gjerne høre hvordan dere gjør det i dag.",
+            opening,
+            question,
+            playbook.value.no,
+            "Er du åpen for en kort prat på 5 minutter?",
             "Olga, Enodre",
           ].join("\n\n"),
         };
@@ -155,33 +194,50 @@ export function buildMessage(
   }
 
   const hi = name ? `Hi ${name}` : "Hi";
+  const opening =
+    savedOpener(lead, "en") ??
+    (hasFact ? OPENER_GAP.en : `I work with ${peers}, and I'm getting in touch to learn a little about how you work.`);
   switch (kind) {
     case "connection_note":
       return {
         subject: null,
-        body: `${hi}! I help ${w.peers} get finished work onto the invoice without manual re-typing. Would be good to connect. – Olga, Enodre`,
+        body: `${hi}! I work with ${peers} on simplifying the workflow between the field and the office. Would be good to connect. – Olga, Enodre`,
       };
     case "follow_up":
       return {
-        subject: `Following up: invoicing at ${company}`,
-        body: `Hi again${name ? ` ${name}` : ""} – just a quick nudge in case my message got buried. 15 minutes, whenever suits you. No sales.\n\nOlga, Enodre`,
+        subject: `Re: workflow at ${company}`,
+        body: [
+          `Hi again${name ? ` ${name}` : ""},`,
+          `I sent you a short message a few days ago. A slightly different question: ${otherQuestion}`,
+          `That's often where duplicate work creeps in for ${peers}. If it's not relevant, just say so.`,
+          "Olga, Enodre",
+        ].join("\n\n"),
+      };
+    case "final_follow_up":
+      return {
+        subject: `Last message from me – ${company}`,
+        body: [
+          `Hi${name ? ` ${name}` : ""},`,
+          "I don't want to fill your inbox, so this is my last message.",
+          "If simplifying the workflow between the field and the office becomes relevant later, just reply here. And if it isn't, a short “no thanks” is completely fine.",
+          "Olga, Enodre",
+        ].join("\n\n"),
       };
     case "phone_opener":
       return {
         subject: null,
-        body: `Hi, this is Olga from Enodre. We're talking to ${w.peers} about how they handle invoicing after finished jobs. Do you have two minutes now, or can I call back at a better time?`,
+        body: `Hi, this is Olga from Enodre. We're talking to ${peers} about how information from people in the field reaches the office. Do you have two minutes now, or is another time better?`,
       };
     case "first_message":
     case "email":
       return {
-        subject: `Quick question about invoicing at ${company}`,
+        subject: `Question about the workflow at ${company}`,
         body: [
           `${hi},`,
-          opener,
-          `How ${w.pain}?`,
-          `For many ${w.peers}, this is where the time goes: ${w.cost}.`,
-          [`We set up systems where ${w.solution}.`, w.reference].filter(Boolean).join(" "),
-          "Do you have 15 minutes one day next week? I'd like to hear how you do it today.",
+          opening,
+          question,
+          playbook.value.en,
+          "Would you be open to a quick 5-minute chat?",
           "Olga, Enodre",
         ].join("\n\n"),
       };

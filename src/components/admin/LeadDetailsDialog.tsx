@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { INDUSTRY_VALUES, PLAYBOOKS, type Industry } from "@/lib/industry-playbooks";
 import type { PotentialCustomerDetails } from "@/lib/potential-customer-schema";
 import {
   BEST_CHANNEL_VALUES,
@@ -24,10 +25,16 @@ type FormState = Record<keyof PotentialCustomerDetails, string>;
 function hasFollowUpColumns(lead: PotentialCustomer) {
   return lead.next_follow_up_on !== undefined;
 }
+// Same for industry / do-not-contact / deal value (outreach_system.sql).
+function hasOutreachColumns(lead: PotentialCustomer) {
+  return lead.industry !== undefined;
+}
 
 function toFormState(lead: PotentialCustomer): FormState {
   const text = (value: string | number | null) => (value == null ? "" : String(value));
   return {
+    email: text(lead.email),
+    phone: text(lead.phone),
     segment: text(lead.segment),
     employees: text(lead.employees),
     location: text(lead.location),
@@ -39,13 +46,18 @@ function toFormState(lead: PotentialCustomer): FormState {
     first_contacted_on: text(lead.first_contacted_on),
     next_follow_up_on: text(lead.next_follow_up_on ?? null),
     next_action: text(lead.next_action ?? null),
+    industry: text(lead.industry ?? null),
+    do_not_contact: lead.do_not_contact ? "true" : "",
+    deal_value_nok: text(lead.deal_value_nok ?? null),
   };
 }
 
-function toDetails(form: FormState, withFollowUp: boolean): PotentialCustomerDetails {
+function toDetails(form: FormState, withFollowUp: boolean, withOutreach: boolean): PotentialCustomerDetails {
   const number = (value: string) => (value.trim() === "" ? null : Number(value));
   const choice = <T extends string>(value: string) => (value === "" ? null : (value as T));
   return {
+    email: form.email,
+    phone: form.phone,
     segment: choice(form.segment),
     employees: number(form.employees),
     location: form.location,
@@ -56,6 +68,13 @@ function toDetails(form: FormState, withFollowUp: boolean): PotentialCustomerDet
     opener_source: form.opener_source,
     first_contacted_on: form.first_contacted_on || null,
     ...(withFollowUp ? { next_follow_up_on: form.next_follow_up_on || null, next_action: form.next_action } : {}),
+    ...(withOutreach
+      ? {
+          industry: choice<Industry>(form.industry),
+          do_not_contact: form.do_not_contact === "true",
+          deal_value_nok: number(form.deal_value_nok),
+        }
+      : {}),
   };
 }
 
@@ -110,7 +129,7 @@ export function LeadDetailsDialog({
     setSaving(true);
     setError(null);
     try {
-      await onSave(lead.id, toDetails(form, hasFollowUpColumns(lead)));
+      await onSave(lead.id, toDetails(form, hasFollowUpColumns(lead), hasOutreachColumns(lead)));
       setOpen(false);
     } catch {
       setError("Couldn't save. Check the values and try again.");
@@ -138,6 +157,18 @@ export function LeadDetailsDialog({
 
         <div className="mt-6 grid gap-6">
           <Section title="GTM fit">
+            {hasOutreachColumns(lead) && (
+              <Field label="Industry" hint="Picks the outreach playbook: which question to ask and how to follow up.">
+                <select className={selectClass} value={form.industry} onChange={(e) => set("industry", e.target.value)}>
+                  <option value="">Not set</option>
+                  {INDUSTRY_VALUES.map((value) => (
+                    <option key={value} value={value}>
+                      {PLAYBOOKS[value].label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Segment">
                 <select className={selectClass} value={form.segment} onChange={(e) => set("segment", e.target.value)}>
@@ -178,6 +209,28 @@ export function LeadDetailsDialog({
           </Section>
 
           <Section title="Contact & opener">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Email" hint="Company addresses (post@, kontakt@) for cold outreach.">
+                <Input
+                  type="email"
+                  inputMode="email"
+                  autoComplete="off"
+                  value={form.email}
+                  placeholder="post@company.no"
+                  onChange={(e) => set("email", e.target.value)}
+                />
+              </Field>
+              <Field label="Phone">
+                <Input
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="off"
+                  value={form.phone}
+                  placeholder="+47 400 00 000"
+                  onChange={(e) => set("phone", e.target.value)}
+                />
+              </Field>
+            </div>
             <Field label="Best channel" hint="Email only to generic addresses (post@, kontakt@).">
               <select
                 className={selectClass}
@@ -244,6 +297,36 @@ export function LeadDetailsDialog({
                   onChange={(e) => set("next_action", e.target.value)}
                 />
               </Field>
+            )}
+            {hasOutreachColumns(lead) && (
+              <Field
+                label="Deal value (NOK)"
+                hint="Fill in when a pilot or project is signed — feeds Revenue on the dashboard."
+              >
+                <Input
+                  type="number"
+                  min={0}
+                  step={1000}
+                  value={form.deal_value_nok}
+                  onChange={(e) => set("deal_value_nok", e.target.value)}
+                />
+              </Field>
+            )}
+            {hasOutreachColumns(lead) && (
+              <label className="flex items-start gap-3 rounded-xl border border-black/10 p-3 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4"
+                  checked={form.do_not_contact === "true"}
+                  onChange={(e) => set("do_not_contact", e.target.checked ? "true" : "")}
+                />
+                <span>
+                  <span className="font-medium">Do not contact</span>
+                  <span className="block text-xs text-ink-muted">
+                    They asked not to be contacted. Stops follow-ups and blocks sending.
+                  </span>
+                </span>
+              </label>
             )}
             <p className="text-xs text-ink-muted">Discovery answers are recorded per call on the lead&apos;s page.</p>
           </Section>

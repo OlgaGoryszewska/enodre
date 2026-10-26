@@ -111,6 +111,8 @@ export const INTERVIEW_GUIDE: { title: string; questions: string[] }[] = [
   {
     title: "Current workflow",
     questions: [
+      "Which tasks do you or your team repeat every day or every week?",
+      "Which of them take the most time, or annoy people most?",
       "What happens when a field job is completed?",
       "Who records the hours, materials and work performed?",
       "Where is that information stored?",

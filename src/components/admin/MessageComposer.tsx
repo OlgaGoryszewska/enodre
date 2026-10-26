@@ -1,12 +1,26 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, Check, Copy, ExternalLink, Loader2, Mail, Phone, RotateCcw, Send } from "lucide-react";
+import {
+  AlertCircle,
+  Check,
+  CheckCircle2,
+  Copy,
+  ExternalLink,
+  Info,
+  Loader2,
+  Mail,
+  Phone,
+  RotateCcw,
+  Save,
+  Send,
+  Sparkles,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { bestChannelLabels, leadOpener, segmentLabels, type PotentialCustomer } from "@/lib/potential-customer";
+import { bestChannelLabels, followUpDate, segmentLabels, type PotentialCustomer } from "@/lib/potential-customer";
 import {
   CONNECTION_NOTE_MAX,
   EMAILABLE_KINDS,
@@ -15,23 +29,37 @@ import {
   OPENER_GAP,
   buildMessage,
   defaultChannel,
+  isSentMessage,
+  leadIndustry,
   messageChannelLabels,
   messageKindLabels,
+  verifiedFacts,
   type LeadMessage,
   type MessageChannel,
   type MessageKind,
   type MessageLanguage,
 } from "@/lib/outreach-templates";
-import type { SendEmailInput, SentMessageInput } from "@/app/admin/marketing/outreach-actions";
+import { PLAYBOOKS, RESPONSE_LABELS, RESPONSE_REPLIES, type ResponseType } from "@/lib/industry-playbooks";
+import { checkMessage, isReady } from "@/lib/message-quality";
+import type { DraftInput, SendEmailInput, SentMessageInput } from "@/app/admin/marketing/outreach-actions";
+import type { GenerateDraftResult, GenerateOpenerResult } from "@/app/admin/marketing/outreach-ai-actions";
 
 // The Leads table dispatches this to open the composer on a lead.
 export const COMPOSE_LEAD_EVENT = "enodre:compose-lead";
 
-interface MessageComposerProps {
+export interface MessageComposerProps {
   leads: PotentialCustomer[];
   messages: LeadMessage[];
   onMarkSent: (input: SentMessageInput) => Promise<LeadMessage>;
   onSendEmail: (input: SendEmailInput) => Promise<{ message: LeadMessage | null; to: string; logged: boolean }>;
+  onSaveDraft: (input: DraftInput) => Promise<LeadMessage>;
+  onApprove: (input: DraftInput) => Promise<LeadMessage>;
+  onGenerate: (input: { leadId: string; kind: MessageKind; language: MessageLanguage }) => Promise<GenerateDraftResult>;
+  onRecordResponse: (leadId: string, response: ResponseType) => Promise<void>;
+  onStopSequence: (leadId: string, reason: "declined" | "do_not_contact" | "paused") => Promise<void>;
+  onGenerateOpener: (leadId: string) => Promise<GenerateOpenerResult>;
+  /** The address emails go out from (null when sending isn't set up). */
+  senderAddress?: string | null;
 }
 
 /**
@@ -60,53 +88,128 @@ function formatDateTime(value: string) {
   });
 }
 
+function formatDay(value: string) {
+  return new Date(`${value}T00:00:00Z`).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
+}
+
 function linkedInSearchUrl(lead: PotentialCustomer) {
   const keywords = [lead.name !== lead.company ? lead.name : null, lead.company].filter(Boolean).join(" ");
   return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(keywords)}`;
 }
 
-export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: MessageComposerProps) {
+const FIRST_CONTACT_KINDS: MessageKind[] = ["connection_note", "first_message", "email", "phone_opener"];
+
+/** Where the lead is in the sequence: first contact → follow-up → final follow-up. */
+function sequenceState(lead: PotentialCustomer, sent: LeadMessage[]) {
+  const first = sent.find((m) => FIRST_CONTACT_KINDS.includes(m.kind));
+  const follow = sent.find((m) => m.kind === "follow_up");
+  const final = sent.find((m) => m.kind === "final_follow_up");
+  const stopped =
+    lead.do_not_contact || lead.responded || lead.status === "not_interested" || lead.status === "converted";
+  const next: MessageKind = !first ? "first_message" : !follow ? "follow_up" : !final ? "final_follow_up" : "follow_up";
+  return { first, follow, final, stopped, next, done: Boolean(final) };
+}
+
+export function MessageComposer({
+  leads,
+  messages,
+  onMarkSent,
+  onSendEmail,
+  onSaveDraft,
+  onApprove,
+  onGenerate,
+  onRecordResponse,
+  onStopSequence,
+  onGenerateOpener,
+  senderAddress,
+}: MessageComposerProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const sortedLeads = useMemo(
     () => [...leads].sort((a, b) => (a.company || a.name).localeCompare(b.company || b.name)),
     [leads]
   );
+  // Messages saved this session, merged with the server's list until it refreshes.
+  const [localMessages, setLocalMessages] = useState<LeadMessage[]>([]);
+  const allMessages = useMemo(() => {
+    const byId = new Map<string, LeadMessage>();
+    for (const message of [...messages, ...localMessages]) byId.set(message.id, message);
+    return [...byId.values()];
+  }, [messages, localMessages]);
 
   const [leadId, setLeadId] = useState<string>(sortedLeads[0]?.id ?? "");
-  const [kind, setKind] = useState<MessageKind>("first_message");
-  const [language, setLanguage] = useState<MessageLanguage>("no");
+  const leadIdRef = useRef(leadId);
   const lead = leads.find((candidate) => candidate.id === leadId) ?? null;
+  const leadMessages = allMessages.filter((m) => m.lead_id === leadId);
+  const sent = leadMessages.filter(isSentMessage).sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const sequence = lead ? sequenceState(lead, sent) : null;
 
-  const [draft, setDraft] = useState(() =>
-    lead ? buildMessage("first_message", "no", lead) : { subject: null as string | null, body: "" }
-  );
-  const [channel, setChannel] = useState<MessageChannel>(() =>
-    lead ? defaultChannel("first_message", lead) : "linkedin"
-  );
+  const openDraftFor = (id: string, k: MessageKind) =>
+    allMessages.find((m) => m.lead_id === id && m.kind === k && (m.status === "draft" || m.status === "approved")) ??
+    null;
+
+  const initialKind: MessageKind = lead
+    ? sequenceState(
+        lead,
+        allMessages.filter((m) => m.lead_id === lead.id && isSentMessage(m))
+      ).next
+    : "first_message";
+  const [kind, setKind] = useState<MessageKind>(initialKind);
+  const [language, setLanguage] = useState<MessageLanguage>("no");
+  const languageRef = useRef(language);
+  // Kept current for the opener callback, which resolves after later renders.
+  useEffect(() => {
+    leadIdRef.current = leadId;
+    languageRef.current = language;
+  }, [leadId, language]);
+  const [draft, setDraft] = useState(() => {
+    if (!lead) return { subject: null as string | null, body: "" };
+    const saved = openDraftFor(lead.id, initialKind);
+    return saved ? { subject: saved.subject, body: saved.body } : buildMessage(initialKind, "no", lead);
+  });
+  const [channel, setChannel] = useState<MessageChannel>(() => (lead ? defaultChannel(initialKind, lead) : "linkedin"));
+  const [busy, setBusy] = useState<"save" | "approve" | "generate" | "send" | "log" | null>(null);
   const [copied, setCopied] = useState(false);
-  const [sending, setSending] = useState(false);
   const [confirmingSend, setConfirmingSend] = useState(false);
-  // Who the email goes to — starts as the lead's saved address, any address can be typed.
   const [recipient, setRecipient] = useState(lead?.email ?? "");
   const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
-  // An email that went out but wasn't logged — recorded with one click, never resent.
   const [unlogged, setUnlogged] = useState<SentMessageInput | null>(null);
-  // Messages sent this session, merged with the server's list until it refreshes.
-  const [localMessages, setLocalMessages] = useState<LeadMessage[]>([]);
+  const [replyType, setReplyType] = useState<ResponseType | null>(null);
+  // Automatic opening line: one attempt per lead per visit; results by lead.
+  const openerAttempts = useRef(new Set<string>());
+  const [openers, setOpeners] = useState<
+    Record<string, { ok: true; no: string; en: string; fact: string } | { ok: false; error: string }>
+  >({});
 
-  // A new lead, type or language starts a fresh draft from the template.
-  function select(next: { leadId?: string; kind?: MessageKind; language?: MessageLanguage }) {
+  // A new lead, type or language loads its saved draft, or a fresh template.
+  function select(next: { leadId?: string; kind?: MessageKind; language?: MessageLanguage; fresh?: boolean }) {
     const nextLeadId = next.leadId ?? leadId;
-    const nextKind = next.kind ?? kind;
-    const nextLanguage = next.language ?? language;
     const nextLead = leads.find((candidate) => candidate.id === nextLeadId);
+    const nextKind =
+      next.kind ??
+      (next.leadId && nextLead
+        ? sequenceState(
+            nextLead,
+            allMessages.filter((m) => m.lead_id === nextLead.id && isSentMessage(m))
+          ).next
+        : kind);
+    const nextLanguage = next.language ?? language;
     setLeadId(nextLeadId);
     setKind(nextKind);
     setLanguage(nextLanguage);
     setNotice(null);
     setConfirmingSend(false);
+    setReplyType(null);
     if (nextLead) {
-      setDraft(buildMessage(nextKind, nextLanguage, nextLead));
+      const saved = next.fresh ? null : openDraftFor(nextLead.id, nextKind);
+      const built = buildMessage(nextKind, nextLanguage, nextLead);
+      const local = openers[nextLead.id];
+      if (local?.ok)
+        built.body = built.body.replace(OPENER_GAP[nextLanguage], nextLanguage === "no" ? local.no : local.en);
+      setDraft(saved ? { subject: saved.subject, body: saved.body } : built);
       setChannel(defaultChannel(nextKind, nextLead));
       if (nextLeadId !== leadId) setRecipient(nextLead.email ?? "");
     }
@@ -116,22 +219,49 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
     function handleCompose(event: Event) {
       const id = (event as CustomEvent<{ leadId: string }>).detail?.leadId;
       if (!id) return;
-      select({ leadId: id, kind: "first_message" });
+      select({ leadId: id });
       rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     window.addEventListener(COMPOSE_LEAD_EVENT, handleCompose);
     return () => window.removeEventListener(COMPOSE_LEAD_EVENT, handleCompose);
   });
 
-  const history = useMemo(() => {
-    const byId = new Map<string, LeadMessage>();
-    for (const message of [...messages, ...localMessages]) byId.set(message.id, message);
-    return [...byId.values()]
-      .filter((message) => message.lead_id === leadId)
-      .sort((a, b) => b.created_at.localeCompare(a.created_at));
-  }, [messages, localMessages, leadId]);
+  // Fill the opening automatically when the draft still has the placeholder
+  // and the lead has verified facts. State is only set when the call returns.
+  const needsOpener = Boolean(lead && draft.body.includes(OPENER_GAP[language]) && verifiedFacts(lead).length > 0);
+  useEffect(() => {
+    if (!lead || !needsOpener || openerAttempts.current.has(lead.id)) return;
+    openerAttempts.current.add(lead.id);
+    const id = lead.id;
+    onGenerateOpener(id).then(
+      (result) => {
+        if (result.ok) {
+          setOpeners((current) => ({
+            ...current,
+            [id]: { ok: true, no: result.opener_no, en: result.opener_en, fact: result.fact },
+          }));
+          // Fill it in only if this lead's draft still has the placeholder.
+          setDraft((current) =>
+            leadIdRef.current === id && current.body.includes(OPENER_GAP[languageRef.current])
+              ? {
+                  ...current,
+                  body: current.body.replace(
+                    OPENER_GAP[languageRef.current],
+                    languageRef.current === "no" ? result.opener_no : result.opener_en
+                  ),
+                }
+              : current
+          );
+        } else {
+          setOpeners((current) => ({ ...current, [id]: { ok: false, error: result.error } }));
+        }
+      },
+      () =>
+        setOpeners((current) => ({ ...current, [id]: { ok: false, error: "Couldn't write the opening right now." } }))
+    );
+  }, [lead, needsOpener, onGenerateOpener]);
 
-  if (leads.length === 0) {
+  if (leads.length === 0 || !lead || !sequence) {
     return (
       <p className="rounded-xl border border-dashed border-black/15 p-6 text-center text-sm text-ink-muted">
         Add potential customers first — the composer drafts messages for them.
@@ -139,33 +269,47 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
     );
   }
 
-  const hasOpenerGap = draft.body.includes(OPENER_GAP.no) || draft.body.includes(OPENER_GAP.en);
+  const facts = verifiedFacts(lead);
+  const playbook = PLAYBOOKS[leadIndustry(lead)];
+  const quality = checkMessage({
+    kind,
+    language,
+    body: draft.body,
+    companyName: lead.company || lead.name,
+    verifiedFacts: facts.map((fact) => fact.fact),
+  });
+  const ready = isReady(quality);
+  const saved = openDraftFor(lead.id, kind);
+  const approved =
+    saved?.status === "approved" &&
+    saved.body.trim() === draft.body.trim() &&
+    (saved.subject ?? "") === (draft.subject ?? "");
+  const unsaved = !saved || saved.body.trim() !== draft.body.trim() || (saved.subject ?? "") !== (draft.subject ?? "");
   const overLimit = kind === "connection_note" && draft.body.length > CONNECTION_NOTE_MAX;
-  const canMarkSent = Boolean(lead) && draft.body.trim() !== "" && !hasOpenerGap && !overLimit && !sending;
   const emailable = EMAILABLE_KINDS.includes(kind);
   const to = recipient.trim();
   const validRecipient = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to);
-  const canSendEmail = canMarkSent && emailable && validRecipient && Boolean(draft.subject?.trim());
-  // Why Send is unavailable, in plain words — shown under the button.
-  const sendBlocker = !emailable
-    ? kind === "phone_opener"
-      ? "Use this on the call, then log it with Mark as sent."
-      : "Send this on LinkedIn, then log it with Mark as sent."
-    : !to
-      ? "Type an email address to send to — a company address (post@, kontakt@) — or send it on LinkedIn and log it with Mark as sent."
-      : !validRecipient
-        ? "That email address doesn't look complete."
-        : hasOpenerGap
-          ? "Write the opener line first."
-          : !draft.subject?.trim()
-            ? "Add a subject."
-            : null;
+  const blocked = Boolean(lead.do_not_contact);
+  const canSendEmail =
+    approved && !blocked && emailable && validRecipient && Boolean(draft.subject?.trim()) && busy === null;
   const personalAddress = Boolean(
-    lead && validRecipient && lead.name !== lead.company && looksPersonal(to, lead.name, lead.company)
+    validRecipient && lead.name !== lead.company && looksPersonal(to, lead.name, lead.company)
   );
+  const input: DraftInput = { leadId: lead.id, kind, channel, language, subject: draft.subject, body: draft.body };
+
+  async function run(action: "save" | "approve" | "generate", work: () => Promise<void>) {
+    setBusy(action);
+    setNotice(null);
+    try {
+      await work();
+    } catch (error) {
+      setNotice({ kind: "error", text: error instanceof Error ? error.message : "Something went wrong." });
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function copy() {
-    // The subject only belongs in the copy for an email; LinkedIn has no subject.
     const text = kind === "email" && draft.subject ? `${draft.subject}\n\n${draft.body}` : draft.body;
     try {
       await navigator.clipboard.writeText(text);
@@ -177,34 +321,25 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
   }
 
   async function markSent() {
-    if (!lead) return;
-    setSending(true);
+    setBusy("log");
     setNotice(null);
     try {
-      const saved = await onMarkSent({
-        leadId: lead.id,
-        kind,
-        channel,
-        language,
-        subject: draft.subject,
-        body: draft.body,
-      });
-      setLocalMessages((current) => [...current, saved]);
-      setNotice({ kind: "ok", text: "Logged. The lead is marked as contacted and the follow-up clock has started." });
-    } catch {
-      setNotice({ kind: "error", text: "Couldn't log the message. Is lead_messages.sql run in Supabase?" });
+      const message = await onMarkSent(input);
+      setLocalMessages((current) => [...current, message]);
+      setNotice({ kind: "ok", text: "Logged as sent. The follow-up date is set." });
+    } catch (error) {
+      setNotice({ kind: "error", text: error instanceof Error ? error.message : "Couldn't log the message." });
     } finally {
-      setSending(false);
+      setBusy(null);
     }
   }
 
   async function sendEmail() {
-    if (!lead) return;
-    setSending(true);
+    setBusy("send");
     setNotice(null);
     try {
       const result = await onSendEmail({
-        leadId: lead.id,
+        leadId: lead!.id,
         kind,
         language,
         to,
@@ -212,48 +347,46 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
         body: draft.body,
       });
       if (result.message) {
-        const saved = result.message;
-        setLocalMessages((current) => [...current, saved]);
+        const message = result.message;
+        setLocalMessages((current) => [...current, message]);
       } else {
-        setUnlogged({
-          leadId: lead.id,
-          kind,
-          channel: "email",
-          language,
-          subject: draft.subject,
-          body: draft.body,
-          recipient: result.to,
-        });
+        setUnlogged({ ...input, channel: "email", recipient: result.to });
       }
       setNotice(
         result.logged
-          ? { kind: "ok", text: `Sent to ${result.to} and logged. The follow-up clock has started.` }
+          ? { kind: "ok", text: `Sent to ${result.to} and logged. The follow-up date is set.` }
           : {
               kind: "error",
-              text: `Sent to ${result.to}, but it couldn't be logged. Don't send it again — log it below instead.`,
+              text: `Sent to ${result.to}, but it couldn't be logged. Don't send it again — log it below.`,
             }
       );
-    } catch {
-      setNotice({
-        kind: "error",
-        text: "Not sent. Check the email setup (GMAIL_USER / GMAIL_APP_PASSWORD) and try again.",
-      });
+    } catch (error) {
+      setNotice({ kind: "error", text: error instanceof Error ? error.message : "Not sent." });
     } finally {
-      setSending(false);
+      setBusy(null);
       setConfirmingSend(false);
     }
   }
 
-  const opener = lead ? leadOpener(lead) : { fact: null, source: null };
-
-  const mailto =
-    lead?.email &&
-    `mailto:${lead.email}?subject=${encodeURIComponent(draft.subject ?? "")}&body=${encodeURIComponent(draft.body)}`;
+  const due = followUpDate(lead);
+  const stepState = (message: LeadMessage | undefined, dueDate: string | null) =>
+    message
+      ? `Sent ${formatDateTime(message.created_at)}`
+      : sequence.stopped
+        ? "Stopped"
+        : dueDate
+          ? `Due ${formatDay(dueDate)}`
+          : "Not yet";
 
   return (
-    <div ref={rootRef} className="grid scroll-mt-24 gap-6 lg:grid-cols-[1fr_320px]">
+    <div ref={rootRef} className="grid scroll-mt-24 gap-6 lg:grid-cols-[1fr_340px]">
       {/* Editor */}
-      <div className="grid gap-4">
+      <div className="grid content-start gap-4">
+        {blocked && (
+          <p className="rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 text-sm font-semibold text-danger">
+            {lead.company || lead.name} asked not to be contacted. Sending is turned off.
+          </p>
+        )}
         <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
           <label className="grid gap-1.5 text-sm">
             <span className="font-medium">To</span>
@@ -261,7 +394,13 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
               {sortedLeads.map((candidate) => (
                 <option key={candidate.id} value={candidate.id}>
                   {candidate.company ? `${candidate.company} — ${candidate.name}` : candidate.name}
-                  {candidate.responded ? " (replied)" : candidate.first_contacted_on ? " (contacted)" : ""}
+                  {candidate.do_not_contact
+                    ? " (do not contact)"
+                    : candidate.responded
+                      ? " (replied)"
+                      : candidate.first_contacted_on
+                        ? " (contacted)"
+                        : ""}
                 </option>
               ))}
             </select>
@@ -273,7 +412,7 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
                 <button
                   key={value}
                   type="button"
-                  onClick={() => select({ language: value })}
+                  onClick={() => select({ language: value, fresh: true })}
                   className={cn(
                     "rounded-full px-4 py-1.5 text-sm font-semibold transition",
                     language === value ? "bg-background text-foreground shadow-sm" : "text-ink-muted"
@@ -301,6 +440,7 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
               )}
             >
               {messageKindLabels[value]}
+              {value === sequence.next && !sequence.stopped && <span className="ml-1 text-xs opacity-60">· next</span>}
             </button>
           ))}
         </div>
@@ -316,41 +456,182 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
         )}
 
         <label className="grid gap-1.5 text-sm">
-          <span className="flex items-baseline justify-between gap-2 font-medium">
-            Message
+          <span className="flex flex-wrap items-baseline justify-between gap-2 font-medium">
+            <span>
+              Message{" "}
+              <span
+                className={cn(
+                  "ml-1 rounded-full px-2 py-0.5 text-xs font-semibold",
+                  approved ? "bg-[#E3F3E6] text-[#1B8A3A]" : "bg-black/5 text-ink-muted"
+                )}
+              >
+                {approved ? "Approved" : unsaved ? (saved ? "Edited since saving" : "Not saved") : "Draft saved"}
+              </span>
+            </span>
             <span className={cn("text-xs font-normal", overLimit ? "font-semibold text-danger" : "text-ink-muted")}>
               {draft.body.length}
               {kind === "connection_note" && ` / ${CONNECTION_NOTE_MAX}`} characters
             </span>
           </span>
           <Textarea
-            rows={kind === "first_message" || kind === "email" ? 14 : 5}
+            rows={kind === "first_message" || kind === "email" ? 13 : 7}
             value={draft.body}
             onChange={(event) => setDraft({ ...draft, body: event.target.value })}
             className="leading-6"
           />
         </label>
 
-        {hasOpenerGap && (
-          <p className="flex items-start gap-2 rounded-xl border border-black/10 bg-black/[0.03] px-4 py-3 text-sm">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-ink-muted" aria-hidden="true" />
-            Replace the bracketed line with one specific, true thing about them — use the opener fact on the right and
-            check it against its source.
+        {(() => {
+          const result = openers[lead.id];
+          if (needsOpener && !result)
+            return (
+              <p className="flex items-center gap-2 text-sm text-ink-muted">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Writing the opening from the verified
+                facts…
+              </p>
+            );
+          if (result && !result.ok && needsOpener)
+            return <p className="text-sm text-ink-muted">Opening not written automatically: {result.error}</p>;
+          if (result?.ok && !needsOpener && draft.body.includes(language === "no" ? result.no : result.en))
+            return (
+              <p className="text-sm text-ink-muted">
+                Opening written from: “{result.fact}”. Check it reads right before approving.
+              </p>
+            );
+          return null;
+        })()}
+
+        {/* Quality check */}
+        <div className="grid gap-2 rounded-xl border border-black/10 bg-background p-3 text-sm">
+          <p className={cn("flex items-center gap-2 font-semibold", ready ? "text-[#1B8A3A]" : "text-danger")}>
+            {ready ? (
+              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <AlertCircle className="h-4 w-4" aria-hidden="true" />
+            )}
+            {ready
+              ? quality.length === 0
+                ? "Quality check passed"
+                : `Ready to approve · ${quality.length} note${quality.length === 1 ? "" : "s"}`
+              : "Not ready to approve"}
           </p>
-        )}
-        {overLimit && (
-          <p className="text-sm text-danger">
-            LinkedIn connection notes are limited to {CONNECTION_NOTE_MAX} characters.
-          </p>
-        )}
+          {quality.length > 0 && (
+            <ul className="grid gap-1.5">
+              {quality.map((issue) => (
+                <li key={issue.id} className="flex items-start gap-2">
+                  {issue.level === "error" ? (
+                    <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-danger" aria-hidden="true" />
+                  ) : issue.level === "warning" ? (
+                    <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#9A6200]" aria-hidden="true" />
+                  ) : (
+                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ink-muted" aria-hidden="true" />
+                  )}
+                  <span>
+                    <span className="font-medium">{issue.title}.</span>{" "}
+                    <span className="text-ink-muted">{issue.suggestion}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Draft actions */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            disabled={busy !== null}
+            onClick={() =>
+              void run("save", async () => {
+                const message = await onSaveDraft(input);
+                setLocalMessages((current) => [...current.filter((m) => m.id !== message.id), message]);
+                setNotice({ kind: "ok", text: "Draft saved." });
+              })
+            }
+            className={cn(buttonVariants({ variant: "outline" }), "px-4 py-2 text-sm")}
+          >
+            {busy === "save" ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Save className="h-4 w-4" aria-hidden="true" />
+            )}
+            Save draft
+          </button>
+          <button
+            type="button"
+            disabled={busy !== null || !ready || approved || blocked}
+            title={!ready ? "Fix the errors in the quality check first" : undefined}
+            onClick={() =>
+              void run("approve", async () => {
+                const message = await onApprove(input);
+                setLocalMessages((current) => [...current.filter((m) => m.id !== message.id), message]);
+                setNotice({ kind: "ok", text: "Approved — you can now send it or log it as sent." });
+              })
+            }
+            className={cn(buttonVariants({ variant: "primary" }), "bg-foreground px-4 py-2 text-sm")}
+          >
+            {busy === "approve" ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Check className="h-4 w-4" aria-hidden="true" />
+            )}
+            {approved ? "Approved" : "Approve"}
+          </button>
+          <button
+            type="button"
+            disabled={busy !== null}
+            onClick={() =>
+              void run("generate", async () => {
+                const result = await onGenerate({ leadId: lead.id, kind, language });
+                if (!result.ok) throw new Error(result.error);
+                setDraft({ subject: result.subject ?? draft.subject, body: result.body });
+                setNotice({
+                  kind: "ok",
+                  text: `Draft written by Claude ($${result.costUsd.toFixed(3)}). Check every claim before approving.`,
+                });
+              })
+            }
+            className="inline-flex items-center gap-1.5 px-2 text-sm font-semibold text-ink-muted hover:text-foreground"
+          >
+            {busy === "generate" ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+            )}
+            Generate with Claude
+          </button>
+          {lead.research?.message_no && language === "no" && (kind === "first_message" || kind === "email") && (
+            <button
+              type="button"
+              onClick={() => setDraft({ ...draft, body: lead.research?.message_no ?? draft.body })}
+              className="px-2 text-sm font-semibold text-ink-muted hover:text-foreground"
+            >
+              Use the researched draft
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => select({ fresh: true })}
+            className="inline-flex items-center gap-1.5 px-2 text-sm font-semibold text-ink-muted hover:text-foreground"
+          >
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+            Template
+          </button>
+        </div>
 
         {/* Send */}
-        <div className="grid gap-3 rounded-xl border border-black/10 bg-background p-4">
+        <div
+          className={cn(
+            "grid gap-3 rounded-xl border bg-background p-4",
+            approved ? "border-foreground/30" : "border-black/10"
+          )}
+        >
+          {!approved && <p className="text-sm text-ink-muted">Approve the message to send it or log it as sent.</p>}
           {emailable && (
             <label className="grid gap-1.5 text-sm">
               <span className="flex flex-wrap items-baseline justify-between gap-2 font-medium">
                 To
-                {lead?.email && to !== lead.email && (
+                {lead.email && to !== lead.email && (
                   <button
                     type="button"
                     onClick={() => setRecipient(lead.email ?? "")}
@@ -369,25 +650,20 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
                   setConfirmingSend(false);
                 }}
               />
-              {!lead?.email && validRecipient && (
-                <span className="text-xs text-ink-muted">This lead has no saved email — sending saves this one.</span>
-              )}
             </label>
           )}
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setConfirmingSend(true)}
-              disabled={!canSendEmail || confirmingSend}
-              className={cn(buttonVariants({ variant: "primary" }), "bg-foreground px-5 py-2.5 text-sm")}
-            >
-              <Mail className="h-4 w-4" aria-hidden="true" />
-              {validRecipient && emailable ? `Send email to ${to}` : "Send email"}
-            </button>
-            {sendBlocker && <p className="text-sm text-ink-muted">{sendBlocker}</p>}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 border-t border-black/10 pt-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {emailable && (
+              <button
+                type="button"
+                onClick={() => setConfirmingSend(true)}
+                disabled={!canSendEmail || confirmingSend}
+                className={cn(buttonVariants({ variant: "primary" }), "bg-foreground px-4 py-2 text-sm")}
+              >
+                <Mail className="h-4 w-4" aria-hidden="true" />
+                {validRecipient ? `Send email to ${to}` : "Send email"}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => void copy()}
@@ -400,16 +676,6 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
               )}
               {copied ? "Copied" : "Copy"}
             </button>
-            {lead && (
-              <button
-                type="button"
-                onClick={() => select({})}
-                className="inline-flex items-center gap-1.5 px-2 text-sm font-semibold text-ink-muted hover:text-foreground"
-              >
-                <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                Reset to template
-              </button>
-            )}
             <div className="ml-auto flex flex-wrap items-center gap-2">
               <label className="flex items-center gap-2 text-sm text-ink-muted">
                 Sent it yourself via
@@ -428,11 +694,10 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
               <button
                 type="button"
                 onClick={() => void markSent()}
-                disabled={!canMarkSent}
-                title="Log a message you sent yourself (LinkedIn, phone, your own email)"
+                disabled={!approved || busy !== null}
                 className={cn(buttonVariants({ variant: "outline" }), "px-4 py-2 text-sm")}
               >
-                {sending ? (
+                {busy === "log" ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                 ) : (
                   <Send className="h-4 w-4" aria-hidden="true" />
@@ -442,6 +707,7 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
             </div>
           </div>
         </div>
+
         {confirmingSend && validRecipient && (
           <div
             role="alertdialog"
@@ -449,8 +715,9 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
             className="grid gap-3 rounded-xl border border-foreground/30 bg-background p-4 text-sm"
           >
             <p>
-              Send this email to <span className="font-semibold">{to}</span> now? It goes out from the site&apos;s Gmail
-              account; replies go to info@enodre.com.
+              Send this approved email to <span className="font-semibold">{to}</span> now? It goes out from{" "}
+              <span className="font-semibold">{senderAddress ?? "the site's mail account"}</span>; replies go to
+              info@enodre.com.
             </p>
             {personalAddress && (
               <p className="flex items-start gap-2 font-semibold text-danger">
@@ -463,20 +730,20 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
               <button
                 type="button"
                 onClick={() => void sendEmail()}
-                disabled={sending}
+                disabled={busy !== null}
                 className={cn(buttonVariants({ variant: "primary" }), "bg-foreground px-4 py-2 text-sm")}
               >
-                {sending ? (
+                {busy === "send" ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                 ) : (
                   <Send className="h-4 w-4" aria-hidden="true" />
                 )}
-                {sending ? "Sending..." : "Send now"}
+                {busy === "send" ? "Sending..." : "Send now"}
               </button>
               <button
                 type="button"
                 onClick={() => setConfirmingSend(false)}
-                disabled={sending}
+                disabled={busy !== null}
                 className={cn(buttonVariants({ variant: "outline" }), "px-4 py-2 text-sm")}
               >
                 Cancel
@@ -497,12 +764,12 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
             </p>
             <button
               type="button"
-              disabled={sending}
+              disabled={busy !== null}
               onClick={async () => {
-                setSending(true);
+                setBusy("log");
                 try {
-                  const saved = await onMarkSent(unlogged);
-                  setLocalMessages((current) => [...current, saved]);
+                  const message = await onMarkSent(unlogged);
+                  setLocalMessages((current) => [...current, message]);
                   setUnlogged(null);
                   setNotice({ kind: "ok", text: "Logged. The follow-up date is set." });
                 } catch {
@@ -511,12 +778,11 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
                     text: "Still couldn't log it. Run the latest SQL files in Supabase, then try again.",
                   });
                 } finally {
-                  setSending(false);
+                  setBusy(null);
                 }
               }}
               className={cn(buttonVariants({ variant: "primary" }), "bg-foreground px-4 py-2 text-sm")}
             >
-              {sending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
               Log the sent email
             </button>
           </div>
@@ -524,103 +790,184 @@ export function MessageComposer({ leads, messages, onMarkSent, onSendEmail }: Me
       </div>
 
       {/* Reference panel */}
-      {lead && (
-        <aside className="grid content-start gap-4 rounded-xl border border-black/10 bg-background p-4 text-sm">
-          <div>
-            <p className="font-semibold">{lead.company || lead.name}</p>
-            <p className="text-xs text-ink-muted">
-              {[
-                lead.name !== lead.company ? lead.name : null,
-                lead.location,
-                lead.employees != null && `${lead.employees} empl.`,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </p>
-            {lead.segment && <p className="mt-1 text-xs text-ink-muted">{segmentLabels[lead.segment]}</p>}
-          </div>
+      <aside className="grid content-start gap-5 rounded-xl border border-black/10 bg-background p-4 text-sm">
+        <div>
+          <p className="font-semibold">{lead.company || lead.name}</p>
+          <p className="text-xs text-ink-muted">
+            {[
+              lead.name !== lead.company ? lead.name : null,
+              lead.location,
+              lead.employees != null && `${lead.employees} empl.`,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+          <p className="mt-1 text-xs text-ink-muted">
+            {playbook.label}
+            {lead.segment && ` · ${segmentLabels[lead.segment]}`}
+          </p>
+        </div>
 
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Opener fact</p>
-            {opener.fact ? (
-              <>
-                <p className="mt-1 leading-6">{opener.fact}</p>
-                {opener.source && (
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Verified facts</p>
+          {facts.length === 0 ? (
+            <p className="mt-1 text-ink-muted">
+              None yet — research them, or add a fact with its source on the lead page. Until then, keep the opening
+              plain.
+            </p>
+          ) : (
+            <ul className="mt-1 grid gap-2">
+              {facts.map((fact, index) => (
+                <li key={index} className="leading-5">
+                  {fact.fact}{" "}
                   <a
-                    href={opener.source}
+                    href={fact.source_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1 inline-flex items-center gap-1 text-xs font-semibold hover:underline"
+                    className="inline-flex items-center gap-0.5 text-xs font-semibold hover:underline"
                   >
-                    Check the source <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                    source <ExternalLink className="h-3 w-3" aria-hidden="true" />
                   </a>
-                )}
-              </>
-            ) : (
-              <p className="mt-1 text-ink-muted">
-                None yet — add one in the lead&apos;s Details, or research them first.
-              </p>
-            )}
-          </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
-          <div className="grid gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
-              Reach them{lead.best_channel ? ` · best: ${bestChannelLabels[lead.best_channel]}` : ""}
-            </p>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Suggested angle (hypothesis)</p>
+          <p className="mt-1 leading-5">{lead.research?.likely_pain || playbook.openingQuestions[0][language]}</p>
+        </div>
+
+        <div className="grid gap-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Sequence</p>
+          {[
+            ["1. First message", stepState(sequence.first, null)],
+            ["2. Follow-up", stepState(sequence.follow, sequence.first && !sequence.follow ? due : null)],
+            ["3. Final follow-up", stepState(sequence.final, sequence.follow && !sequence.final ? due : null)],
+          ].map(([label, state]) => (
+            <div key={label} className="flex justify-between gap-2">
+              <span>{label}</span>
+              <span className="text-xs text-ink-muted">{state}</span>
+            </div>
+          ))}
+          {!sequence.stopped && sequence.first && !sequence.done && (
+            <div className="mt-1 flex flex-wrap gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => void onStopSequence(lead.id, "paused")}
+                className="font-semibold text-ink-muted hover:text-foreground"
+              >
+                Pause follow-ups
+              </button>
+              <button
+                type="button"
+                onClick={() => void onStopSequence(lead.id, "declined")}
+                className="font-semibold text-ink-muted hover:text-foreground"
+              >
+                They declined
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm("Mark as do not contact? This stops follow-ups and blocks sending."))
+                    void onStopSequence(lead.id, "do_not_contact");
+                }}
+                className="font-semibold text-danger"
+              >
+                Do not contact
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="grid gap-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted">They replied?</p>
+          <div className="flex flex-wrap gap-1.5">
+            {(Object.keys(RESPONSE_LABELS) as ResponseType[]).map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={async () => {
+                  setReplyType(type);
+                  await onRecordResponse(lead.id, type);
+                }}
+                className={cn(
+                  "rounded-full border px-2.5 py-1 text-xs",
+                  replyType === type
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-black/10 hover:border-black/30"
+                )}
+              >
+                {RESPONSE_LABELS[type]}
+              </button>
+            ))}
+          </div>
+          {replyType && (
+            <div className="mt-1 grid gap-1.5 rounded-lg bg-black/[0.03] p-2">
+              <p className="text-xs text-ink-muted">Recorded, follow-ups stopped. Suggested reply:</p>
+              <p className="text-xs leading-5">{RESPONSE_REPLIES[replyType]}</p>
+              <button
+                type="button"
+                onClick={() => void navigator.clipboard.writeText(RESPONSE_REPLIES[replyType]).catch(() => undefined)}
+                className="justify-self-start text-xs font-semibold hover:underline"
+              >
+                Copy reply
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="grid gap-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
+            Reach them{lead.best_channel ? ` · best: ${bestChannelLabels[lead.best_channel]}` : ""}
+          </p>
+          <a
+            href={linkedInSearchUrl(lead)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 font-semibold hover:underline"
+          >
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /> Find on LinkedIn
+          </a>
+          {lead.phone && (
             <a
-              href={linkedInSearchUrl(lead)}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={`tel:${lead.phone.replace(/\s/g, "")}`}
               className="inline-flex items-center gap-1.5 font-semibold hover:underline"
             >
-              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /> Find on LinkedIn
+              <Phone className="h-3.5 w-3.5" aria-hidden="true" /> Call {lead.phone}
             </a>
-            {mailto && (
-              <a href={mailto} className="inline-flex items-center gap-1.5 font-semibold hover:underline">
-                <Mail className="h-3.5 w-3.5" aria-hidden="true" /> Email {lead.email}
-              </a>
-            )}
-            {lead.phone && (
-              <a
-                href={`tel:${lead.phone.replace(/\s/g, "")}`}
-                className="inline-flex items-center gap-1.5 font-semibold hover:underline"
-              >
-                <Phone className="h-3.5 w-3.5" aria-hidden="true" /> Call {lead.phone}
-              </a>
-            )}
-            {mailto && (
-              <p className="text-xs text-ink-muted">
-                Email only to company addresses (post@, kontakt@) — markedsføringsloven §15.
-              </p>
-            )}
-          </div>
+          )}
+          {!lead.phone && !lead.email && (
+            <p className="text-xs text-ink-muted">No email or phone yet — add them in Details.</p>
+          )}
+        </div>
 
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Sent so far</p>
-            {history.length === 0 ? (
-              <p className="mt-1 text-ink-muted">Nothing yet.</p>
-            ) : (
-              <ul className="mt-1 grid gap-1.5">
-                {history.map((message) => (
-                  <li key={message.id}>
-                    <details>
-                      <summary className="cursor-pointer">
-                        {formatDateTime(message.created_at)} · {messageKindLabels[message.kind]} ·{" "}
-                        {messageChannelLabels[message.channel]}
-                        {message.recipient ? ` · to ${message.recipient}` : ""}
-                      </summary>
-                      <p className="mt-1 whitespace-pre-line rounded-lg bg-black/[0.03] p-2 text-xs leading-5">
-                        {message.subject ? `${message.subject}\n\n` : ""}
-                        {message.body}
-                      </p>
-                    </details>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </aside>
-      )}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Sent so far</p>
+          {sent.length === 0 ? (
+            <p className="mt-1 text-ink-muted">Nothing yet.</p>
+          ) : (
+            <ul className="mt-1 grid gap-1.5">
+              {[...sent].reverse().map((message) => (
+                <li key={message.id}>
+                  <details>
+                    <summary className="cursor-pointer">
+                      {formatDateTime(message.created_at)} · {messageKindLabels[message.kind]} ·{" "}
+                      {messageChannelLabels[message.channel]}
+                      {message.recipient ? ` · to ${message.recipient}` : ""}
+                    </summary>
+                    <p className="mt-1 whitespace-pre-line rounded-lg bg-black/[0.03] p-2 text-xs leading-5">
+                      {message.subject ? `${message.subject}\n\n` : ""}
+                      {message.body}
+                    </p>
+                  </details>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </aside>
     </div>
   );
 }

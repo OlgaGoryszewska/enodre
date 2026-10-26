@@ -3,9 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getMailer } from "@/lib/mailer";
 import { LeadNotes, LeadProfile } from "@/components/admin/LeadProfile";
 import { MessageComposer } from "@/components/admin/MessageComposer";
 import { DiscoveryCalls } from "@/components/admin/DiscoveryCalls";
+import { LeadResearchPanel } from "@/components/admin/LeadResearchPanel";
 import {
   bookDiscoveryCall,
   cancelDiscoveryCall,
@@ -23,7 +25,17 @@ import {
   updatePotentialCustomerDetails,
   updatePotentialCustomerNote,
 } from "@/app/admin/marketing/potential-customers-actions";
-import { markLeadMessageSent, sendLeadEmail } from "@/app/admin/marketing/outreach-actions";
+import {
+  addLeadFact,
+  approveMessage,
+  markLeadMessageSent,
+  removeLeadFact,
+  recordResponse,
+  saveMessageDraft,
+  sendLeadEmail,
+  stopSequence,
+} from "@/app/admin/marketing/outreach-actions";
+import { generateOpener, generateOutreachDraft } from "@/app/admin/marketing/outreach-ai-actions";
 import { potentialCustomerStatusLabels, segmentLabels, type PotentialCustomer } from "@/lib/potential-customer";
 import type { LeadMessage } from "@/lib/outreach-templates";
 
@@ -114,9 +126,18 @@ export default async function LeadPage({ params }: LeadPageProps) {
                 messages={messages}
                 onMarkSent={markLeadMessageSent}
                 onSendEmail={sendLeadEmail}
+                onSaveDraft={saveMessageDraft}
+                onApprove={approveMessage}
+                onGenerate={generateOutreachDraft}
+                onRecordResponse={recordResponse}
+                onStopSequence={stopSequence}
+                onGenerateOpener={generateOpener}
+                senderAddress={getMailer()?.address ?? null}
               />
             </div>
           </div>
+
+          <LeadResearchPanel lead={lead} onAddFact={addLeadFact} onRemoveFact={removeLeadFact} />
 
           <DiscoveryCalls
             leadId={lead.id}

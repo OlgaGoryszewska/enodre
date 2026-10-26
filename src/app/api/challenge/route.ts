@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import nodemailer from "nodemailer";
+import { fromHeader, getMailer } from "@/lib/mailer";
 import { createClient } from "@supabase/supabase-js";
 import { challengeFormSchema, urgencyLabel } from "@/lib/challenge-schema";
 
@@ -64,13 +64,10 @@ export async function POST(request: Request) {
   // make the user retry (and risk a duplicate submission) if the lead was
   // already saved above.
   let emailSent = false;
-  const gmailUser = process.env.GMAIL_USER;
-  const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
+  const mailer = getMailer();
 
-  if (!gmailUser || !gmailAppPassword) {
-    console.error(
-      "Missing GMAIL_USER / GMAIL_APP_PASSWORD env vars — email not sent."
-    );
+  if (!mailer) {
+    console.error("Missing MAIL_SMTP_USER / MAIL_SMTP_PASSWORD env vars — email not sent.");
   } else {
     const subject = `New challenge submission — ${fullName} (${urgencyLabel(urgency)})`;
 
@@ -89,14 +86,9 @@ export async function POST(request: Request) {
       .filter(Boolean)
       .join("\n");
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: { user: gmailUser, pass: gmailAppPassword },
-    });
-
     try {
-      await transporter.sendMail({
-        from: `"Enodre website" <${gmailUser}>`,
+      await mailer.transporter.sendMail({
+        from: fromHeader(mailer, "Enodre website"),
         to: RECIPIENT,
         replyTo: email,
         subject,

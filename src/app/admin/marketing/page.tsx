@@ -6,11 +6,20 @@ import { LeadAgentPanel } from "@/components/admin/LeadAgentPanel";
 import { GtmPlanCard } from "@/components/admin/GtmPlanCard";
 import { TodayPriorities } from "@/components/admin/TodayPriorities";
 import { GtmPerformance } from "@/components/admin/GtmPerformance";
+import { OutreachPlaybooks } from "@/components/admin/OutreachPlaybooks";
 import { buildPerformance, buildPriorities, type ResearchRun } from "@/lib/gtm-dashboard";
 import { osloToday, startOfWeek } from "@/lib/gtm-logic";
 import type { DiscoveryCall } from "@/lib/discovery-call";
 import { MessageComposer } from "@/components/admin/MessageComposer";
-import { markLeadMessageSent, sendLeadEmail } from "@/app/admin/marketing/outreach-actions";
+import {
+  approveMessage,
+  markLeadMessageSent,
+  recordResponse,
+  saveMessageDraft,
+  sendLeadEmail,
+  stopSequence,
+} from "@/app/admin/marketing/outreach-actions";
+import { generateOpener, generateOutreachDraft } from "@/app/admin/marketing/outreach-ai-actions";
 import type { LeadMessage } from "@/lib/outreach-templates";
 import { addGtmTasksToBoard } from "@/app/admin/marketing/gtm-actions";
 import { MarketingKanbanBoard } from "@/components/admin/MarketingKanbanBoard";
@@ -18,6 +27,7 @@ import { ContactsTable } from "@/components/admin/ContactsTable";
 import { CustomerFilesSection } from "@/components/admin/CustomerFilesSection";
 import { StickyNotesBoard } from "@/components/admin/StickyNotesBoard";
 import { createClient } from "@/lib/supabase/server";
+import { getMailer } from "@/lib/mailer";
 import {
   addPotentialCustomer,
   deletePotentialCustomer,
@@ -104,10 +114,18 @@ export default async function MarketingPage() {
     supabase.from("contacts").select("*").order("created_at", { ascending: false }),
     supabase.from("marketing_tasks").select("*").order("position", { ascending: true }),
     businessProfileId
-      ? supabase.from("customer_files").select("*").eq("customer_id", businessProfileId).order("created_at", { ascending: false })
+      ? supabase
+          .from("customer_files")
+          .select("*")
+          .eq("customer_id", businessProfileId)
+          .order("created_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
     businessProfileId
-      ? supabase.from("customer_sticky_notes").select("*").eq("customer_id", businessProfileId).order("created_at", { ascending: true })
+      ? supabase
+          .from("customer_sticky_notes")
+          .select("*")
+          .eq("customer_id", businessProfileId)
+          .order("created_at", { ascending: true })
       : Promise.resolve({ data: [], error: null }),
     supabase.from("lead_candidates").select("*").order("created_at", { ascending: false }),
     // From whichever is earlier — the 1st of the month (budget) or this
@@ -176,12 +194,10 @@ export default async function MarketingPage() {
 
   let signedUrlByPath = new Map<string, string>();
   if (files.length > 0) {
-    const { data: signed } = await supabase.storage
-      .from(BUCKET)
-      .createSignedUrls(
-        files.map((file) => file.storage_path),
-        SIGNED_URL_TTL_SECONDS
-      );
+    const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrls(
+      files.map((file) => file.storage_path),
+      SIGNED_URL_TTL_SECONDS
+    );
     signedUrlByPath = new Map(
       (signed ?? []).filter((entry) => entry.signedUrl).map((entry) => [entry.path ?? "", entry.signedUrl as string])
     );
@@ -206,7 +222,13 @@ export default async function MarketingPage() {
       </div>
 
       <TodayPriorities
-        tasks={buildPriorities({ leads, candidates: allCandidates, calls: discoveryCalls, today })}
+        tasks={buildPriorities({
+          leads,
+          candidates: allCandidates,
+          calls: discoveryCalls,
+          messages: leadMessages,
+          today,
+        })}
         onSnooze={snoozeFollowUp}
         onClear={clearFollowUp}
       />
@@ -243,11 +265,11 @@ export default async function MarketingPage() {
         </div>
       </div>
 
-      <div className="mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
+      <div id="composer" className="mt-10 scroll-mt-24 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
         <h2 className="text-lg font-semibold tracking-tight">Message composer</h2>
         <p className="mt-1 text-sm text-ink-muted">
-          Draft outreach from a lead&apos;s details. Write the opener yourself from their researched fact, check it, then
-          send it from LinkedIn, email or the phone and mark it as sent here.
+          Draft outreach from a lead&apos;s details. Write the opener yourself from their researched fact, check it,
+          then send it from LinkedIn, email or the phone and mark it as sent here.
         </p>
         <div className="mt-6">
           <MessageComposer
@@ -255,9 +277,18 @@ export default async function MarketingPage() {
             messages={leadMessages}
             onMarkSent={markLeadMessageSent}
             onSendEmail={sendLeadEmail}
+            onSaveDraft={saveMessageDraft}
+            onApprove={approveMessage}
+            onGenerate={generateOutreachDraft}
+            onRecordResponse={recordResponse}
+            onStopSequence={stopSequence}
+            onGenerateOpener={generateOpener}
+            senderAddress={getMailer()?.address ?? null}
           />
         </div>
       </div>
+
+      <OutreachPlaybooks />
 
       <div id="lead-finder" className="mt-10 scroll-mt-24 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
         <h2 className="text-lg font-semibold tracking-tight">Lead finder agents</h2>
@@ -282,7 +313,9 @@ export default async function MarketingPage() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold tracking-tight">Customers who reached us</h2>
-            <p className="mt-1 text-sm text-ink-muted">Inbound — submitted the site&apos;s contact form, rather than us reaching out.</p>
+            <p className="mt-1 text-sm text-ink-muted">
+              Inbound — submitted the site&apos;s contact form, rather than us reaching out.
+            </p>
           </div>
           <Link href="/admin" className="text-sm font-semibold text-accent hover:underline">
             Open full inbox →
@@ -306,8 +339,8 @@ export default async function MarketingPage() {
 
       <div className="mt-16">
         <p className="text-xs text-ink-muted">
-          Files and sticky notes here are stored the same way as on a person&apos;s profile, just scoped to Enodre itself
-          instead of a specific contact.
+          Files and sticky notes here are stored the same way as on a person&apos;s profile, just scoped to Enodre
+          itself instead of a specific contact.
         </p>
       </div>
     </section>

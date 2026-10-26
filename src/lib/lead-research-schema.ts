@@ -16,17 +16,40 @@ export const leadResearchSchema = z.object({
   signals: z
     .array(
       z.object({
-        signal: z.string().describe("English. A buying signal: growth, hiring, Gaselle award, new contracts, many sites, etc."),
+        signal: z
+          .string()
+          .describe("English. A buying signal: growth, hiring, Gaselle award, new contracts, many sites, etc."),
         source_url: z.string(),
       })
     )
     .describe("Empty if none were found."),
-  likely_pain: z.string().describe("English. The most likely operational pain between finished job and invoice — a hypothesis."),
-  pain_evidence: z.string().describe("English. Why we think so, pointing to the facts/signals. Say plainly if evidence is thin."),
-  how_we_help: z.string().describe("English, one sentence, plain language, no product names."),
+  likely_pain: z
+    .string()
+    .describe(
+      "English. The repetitive manual workflow most likely costing them time — the one to automate first. A hypothesis."
+    ),
+  pain_evidence: z
+    .string()
+    .describe("English. Why we think so, pointing to the facts/signals. Say plainly if evidence is thin."),
+  how_we_help: z
+    .string()
+    .describe("English, one sentence: how we'd automate that workflow. Plain language, no product names."),
   fit_score: z.number().int().describe("1–5 fit for Enodre's offer, using the rubric in the instructions."),
   fit_reason: z.string().describe("English, one sentence."),
   confidence: z.enum(["high", "medium", "low"]).describe("How well-supported the research is."),
+  opener_fact: z
+    .string()
+    .nullable()
+    .describe(
+      "The one fact (copied exactly from `facts`) the opening sentence is based on, or null if no fact is reliable."
+    ),
+  opener_no: z
+    .string()
+    .nullable()
+    .describe(
+      'Part A only: one natural Norwegian sentence observing opener_fact, e.g. "Jeg så at …". Null if opener_fact is null.'
+    ),
+  opener_en: z.string().nullable().describe("The same opening sentence in English. Null if opener_fact is null."),
   message_no: z.string().describe("The outreach message in Norwegian bokmål, following the required structure."),
   message_en: z.string().describe("A faithful English translation of message_no."),
 });

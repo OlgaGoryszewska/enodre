@@ -27,20 +27,21 @@ function Bar({ value, target }: { value: number; target: number }) {
 
 /** GTM performance, this week's activity and the week-4 gate — all from real records. */
 export function GtmPerformance({ performance }: { performance: Performance }) {
-  const { funnel, weekly, weekStart, gate, systems } = performance;
+  const { funnel, revenueNok, weekly, weekStart, gate, systems } = performance;
 
   return (
     <div className="mt-10 grid gap-6 lg:grid-cols-2">
       <div className="rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
         <h2 className="text-lg font-semibold tracking-tight">GTM performance</h2>
         <p className="mt-1 text-sm text-ink-muted">
-          All time. Only real events count — drafts and bookings aren&apos;t results.
+          All time. Only real events count — a draft isn&apos;t a sent message, a booked call isn&apos;t a held one. The
+          percentage is the conversion from the stage above.
         </p>
         <dl className="mt-5 grid gap-1">
-          {funnel.map((row) => (
+          {funnel.map((row, index) => (
             <div
               key={row.label}
-              className="grid grid-cols-[1fr_auto] items-baseline gap-3 border-b border-black/5 py-1.5 text-sm last:border-0"
+              className="grid grid-cols-[1fr_auto_3.5rem] items-baseline gap-3 border-b border-black/5 py-1.5 text-sm last:border-0"
             >
               <dt>
                 {row.label}
@@ -54,8 +55,23 @@ export function GtmPerformance({ performance }: { performance: Performance }) {
                   </span>
                 )}
               </dd>
+              <dd className="text-right text-xs text-ink-muted tabular-nums">
+                {index > 0 && funnel[index - 1].value > 0
+                  ? `${Math.round((row.value / funnel[index - 1].value) * 100)}%`
+                  : ""}
+              </dd>
             </div>
           ))}
+          <div className="grid grid-cols-[1fr_auto_3.5rem] items-baseline gap-3 pt-2 text-sm">
+            <dt className="font-semibold">Revenue</dt>
+            <dd className="text-right font-semibold tabular-nums">
+              {revenueNok.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} NOK
+            </dd>
+            <dd />
+          </div>
+          <p className="text-xs text-ink-muted">
+            From the deal value on won leads (set it in the lead&apos;s Details).
+          </p>
         </dl>
       </div>
 
