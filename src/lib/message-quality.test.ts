@@ -127,3 +127,34 @@ test("a 5-minute talk is a fine first ask; meetings and demos are flagged", () =
   assert.equal(ask("Kan vi booke en demo neste uke?"), true);
   assert.equal(ask("Har du tid til et møte på 30 minutter?"), true);
 });
+
+test("partner track: codes map to the partner playbook, and its message passes the check", () => {
+  for (const code of ["62.100", "62.200", "62.900", "73.110", "74.120"]) {
+    assert.equal(industryFromCode(code), "agency_partner", code);
+  }
+  assert.equal(industryFromCode("63.100"), "other");
+
+  const playbook = PLAYBOOKS.agency_partner;
+  for (const language of ["no", "en"] as const) {
+    const body = [
+      language === "no" ? "Hei Kari," : "Hi Kari,",
+      language === "no"
+        ? "Jeg så at Byrået nettopp har lansert en ny nettbutikk for Fjord Sko."
+        : "I saw that Byrået has just launched a new online shop for Fjord Sko.",
+      playbook.openingQuestions[0][language],
+      playbook.value[language],
+      language === "no" ? "Er du åpen for en kort prat på 5 minutter?" : "Would you be open to a quick 5-minute chat?",
+      "Olga, Enodre",
+    ].join("\n\n");
+    const issues = checkMessage({
+      kind: "first_message",
+      language,
+      body,
+      companyName: "Byrået AS",
+      verifiedFacts: ["Launched a new online shop for Fjord Sko"],
+    });
+    assert.ok(isReady(issues), `${language}: ${ids(issues).join(", ")}`);
+    assert.ok(!ids(issues).includes("value"), language);
+    assert.ok(`Hi Kari! ${playbook.copy!.connectionNote[language]} – Olga, Enodre`.length <= 300, language);
+  }
+});

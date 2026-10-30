@@ -60,14 +60,29 @@ export const potentialCustomerAttitudeLabels: Record<PotentialCustomerAttitude, 
 };
 
 // GTM fields — keep values in sync with the checks in supabase/potential_customers.sql.
-export const SEGMENT_VALUES = ["F", "A", "B", "C"] as const;
+export const SEGMENT_VALUES = ["F", "A", "B", "C", "P"] as const;
 export type Segment = (typeof SEGMENT_VALUES)[number];
 export const segmentLabels: Record<Segment, string> = {
   F: "F · FuelFlo-like",
   A: "A · Best fit",
   B: "B · Good fit",
   C: "C · Later",
+  P: "P · Partner (dev/UX capacity)",
 };
+
+// Keep in sync with the check in supabase/partner_track.sql.
+export const COUNTRY_VALUES = ["NO", "PL"] as const;
+export type Country = (typeof COUNTRY_VALUES)[number];
+export const countryLabels: Record<Country, string> = { NO: "Norway", PL: "Poland" };
+
+/**
+ * Poland's electronic communications law (Prawo komunikacji elektronicznej,
+ * art. 398) bans commercial email and sales calls without prior consent —
+ * B2B too. So a Polish lead is emailed only once they've replied.
+ */
+export function needsConsentFirst(lead: Pick<PotentialCustomer, "country" | "responded">) {
+  return lead.country === "PL" && !lead.responded;
+}
 
 export const BEST_CHANNEL_VALUES = ["linkedin", "phone", "email", "contact_form", "in_person"] as const;
 export type BestChannel = (typeof BEST_CHANNEL_VALUES)[number];
@@ -146,4 +161,6 @@ export type PotentialCustomer = {
   research?: LeadResearchData | null;
   do_not_contact?: boolean;
   deal_value_nok?: number | null;
+  // Added by partner_track.sql — undefined until it has run (= Norway).
+  country?: Country | null;
 };

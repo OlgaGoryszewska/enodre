@@ -28,6 +28,8 @@ import {
 import {
   addLeadFact,
   approveMessage,
+  findLeadEmail,
+  saveLeadEmail,
   markLeadMessageSent,
   removeLeadFact,
   recordResponse,
@@ -132,6 +134,8 @@ export default async function LeadPage({ params }: LeadPageProps) {
                 onRecordResponse={recordResponse}
                 onStopSequence={stopSequence}
                 onGenerateOpener={generateOpener}
+                onFindEmail={findLeadEmail}
+                onSaveEmail={saveLeadEmail}
                 senderAddress={getMailer()?.address ?? null}
               />
             </div>

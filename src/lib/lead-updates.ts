@@ -17,6 +17,7 @@ const FOLLOW_UP_COLUMNS = [
   "research",
   "do_not_contact",
   "deal_value_nok",
+  "country",
 ] as const;
 const UNDEFINED_COLUMN = "42703";
 const UNDEFINED_COLUMN_CACHE = "PGRST204";

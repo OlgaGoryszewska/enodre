@@ -52,3 +52,18 @@ export function getMailer(): Mailer | null {
 export function fromHeader(mailer: Mailer, name: string) {
   return `"${name}" <${mailer.address}>`;
 }
+
+/**
+ * The personal Gmail account (GMAIL_USER, olga.goryszewska@gmail.com) — for
+ * job applications, which go out under Olga's own name, not Enodre's.
+ */
+export function getGmailMailer(): Mailer | null {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
+  if (!user || !pass) return null;
+  return {
+    transporter: nodemailer.createTransport({ service: "gmail", auth: { user, pass } }),
+    address: user,
+    provider: "gmail",
+  };
+}

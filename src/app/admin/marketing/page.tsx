@@ -11,8 +11,12 @@ import { buildPerformance, buildPriorities, type ResearchRun } from "@/lib/gtm-d
 import { osloToday, startOfWeek } from "@/lib/gtm-logic";
 import type { DiscoveryCall } from "@/lib/discovery-call";
 import { MessageComposer } from "@/components/admin/MessageComposer";
+import { OutreachAutopilot } from "@/components/admin/OutreachAutopilot";
+import { runOutreach } from "@/app/admin/marketing/autopilot-actions";
 import {
   approveMessage,
+  findLeadEmail,
+  saveLeadEmail,
   markLeadMessageSent,
   recordResponse,
   saveMessageDraft,
@@ -43,6 +47,7 @@ import {
 } from "@/app/admin/marketing/potential-customers-actions";
 import {
   approveLeadCandidate,
+  findHiringCompanies,
   findLeads,
   rejectLeadCandidate,
   researchLeadCandidate,
@@ -233,6 +238,8 @@ export default async function MarketingPage() {
         onClear={clearFollowUp}
       />
 
+      <OutreachAutopilot onRun={runOutreach} senderAddress={getMailer()?.address ?? null} />
+
       <GtmPlanCard marketingTasks={marketingTasks} onAddTasks={addGtmTasksToBoard} />
 
       <GtmPerformance
@@ -283,6 +290,8 @@ export default async function MarketingPage() {
             onRecordResponse={recordResponse}
             onStopSequence={stopSequence}
             onGenerateOpener={generateOpener}
+            onFindEmail={findLeadEmail}
+            onSaveEmail={saveLeadEmail}
             senderAddress={getMailer()?.address ?? null}
           />
         </div>
@@ -302,6 +311,7 @@ export default async function MarketingPage() {
             monthSpendUsd={researchSpendThisMonth}
             researchStats={researchStats}
             onFind={findLeads}
+            onFindHiring={findHiringCompanies}
             onResearch={researchLeadCandidate}
             onApprove={approveLeadCandidate}
             onReject={rejectLeadCandidate}

@@ -10,6 +10,8 @@ export const GTM_SUMMARY = {
   product: "Jobb-til-faktura — from finished field job to sent invoice the same day, without manual data entry.",
   customers:
     "Norwegian field-service companies, 10–100 employees (groundwork, haulage, electricians, plumbers), plus a FuelFlo-like segment (fuel distribution, generator rental, equipment service).",
+  partners:
+    "Second track — agencies, software houses and IT consultancies with their own clients that need extra development/UX hands: white-label, embedded in their team, or a fixed-scope part. Norway first (Brønnøysund codes 62.100, 62.200, 73.110, 74.120), then Poland (LinkedIn first — no cold email or sales calls without consent).",
   goal: "15+ discovery calls by week 4 · 2–3 signed pilots by week 8 · first pilot live with measured results by week 12.",
 };
 

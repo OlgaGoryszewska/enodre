@@ -34,7 +34,7 @@ export function buildPriorities(input: {
   messages?: LeadMessage[];
   today: string;
 }): PriorityTask[] {
-  const { leads, candidates, calls, today } = input;
+  const { leads, calls, today } = input;
   const messages = input.messages ?? [];
   const tasks: PriorityTask[] = [];
   const tomorrow = addBusinessDays(today, 1);
@@ -88,8 +88,8 @@ export function buildPriorities(input: {
 
   const waiting = leads.filter((lead) => lead.status === "new" && !lead.first_contacted_on);
   if (waiting.length > 0) {
-    // Best segments first: F (FuelFlo-like) and A before B and C.
-    const order = { F: 0, A: 1, B: 2, C: 3 } as const;
+    // Best segments first: F (FuelFlo-like) and A before B, partners and C.
+    const order = { F: 0, A: 1, B: 2, P: 2, C: 3 } as const;
     const next = [...waiting]
       .sort((a, b) => (order[a.segment ?? "C"] ?? 4) - (order[b.segment ?? "C"] ?? 4))
       .slice(0, 3);
@@ -102,17 +102,7 @@ export function buildPriorities(input: {
     });
   }
 
-  // Outreach work in progress: approved messages are ready to go out; drafts need review.
-  const approvedUnsent = messages.filter((m) => m.status === "approved");
-  if (approvedUnsent.length > 0) {
-    tasks.push({
-      key: "approved-unsent",
-      priority: 2,
-      title: `${approvedUnsent.length} approved message${approvedUnsent.length === 1 ? "" : "s"} ready to send`,
-      detail: "Open the lead, send it or log it as sent",
-      href: approvedUnsent.length === 1 ? leadHref(approvedUnsent[0].lead_id) : "/admin/marketing#composer",
-    });
-  }
+  // Outreach work in progress: drafts need review.
   const drafts = messages.filter((m) => m.status === "draft");
   if (drafts.length > 0) {
     tasks.push({
@@ -121,33 +111,6 @@ export function buildPriorities(input: {
       title: `${drafts.length} draft${drafts.length === 1 ? "" : "s"} waiting for review`,
       detail: "Check the quality notes, then approve",
       href: drafts.length === 1 ? leadHref(drafts[0].lead_id) : "/admin/marketing#composer",
-    });
-  }
-
-  const failed = candidates.filter((candidate) => candidate.status === "failed");
-  if (failed.length > 0) {
-    const blocked = failed.some(
-      (candidate) => candidate.error_kind === "blocked" || /credit balance/i.test(candidate.error ?? "")
-    );
-    tasks.push({
-      key: "research-failed",
-      priority: blocked ? 3 : 5,
-      title: `${failed.length} research job${failed.length === 1 ? "" : "s"} failed`,
-      detail: blocked
-        ? "Account problem — add Anthropic credits, then retry"
-        : "Check the errors, retry, or add them without research",
-      href: "/admin/marketing#lead-finder",
-    });
-  }
-
-  const queued = candidates.filter((candidate) => candidate.status === "found");
-  if (queued.length > 0) {
-    tasks.push({
-      key: "research-queued",
-      priority: 6,
-      title: `${queued.length} compan${queued.length === 1 ? "y" : "ies"} to research or add`,
-      detail: "Research a batch, or add the best ones straight to customers",
-      href: "/admin/marketing#lead-finder",
     });
   }
 

@@ -1,5 +1,6 @@
-import { leadOpener, type PotentialCustomer } from "@/lib/potential-customer";
+import { leadOpener, needsConsentFirst, type PotentialCustomer } from "@/lib/potential-customer";
 import { PLAYBOOKS, type Industry } from "@/lib/industry-playbooks";
+import { displayCompanyName, factOpening, profileOpening, roleFromAdTitle, roleOpening } from "@/lib/opener-templates";
 
 // Message templates for the composer. Structure (first message):
 //   A. A specific, verified observation — written by hand from a sourced fact.
@@ -78,12 +79,19 @@ export function isSentMessage(message: Pick<LeadMessage, "status">) {
 
 /** The channel a message kind is usually sent through — editable in the composer. */
 export function defaultChannel(kind: MessageKind, lead: PotentialCustomer): MessageChannel {
+  // Polish leads: no email or call before they've replied (see needsConsentFirst).
+  if (needsConsentFirst(lead)) return "linkedin";
   if (kind === "email") return "email";
   if (kind === "phone_opener") return "phone";
   if (kind === "connection_note") return "linkedin";
   if (lead.best_channel === "email") return "email";
   if (lead.best_channel === "contact_form") return "contact_form";
   return "linkedin";
+}
+
+/** The language a lead is written to by default: English for Polish leads. */
+export function leadLanguage(lead: Pick<PotentialCustomer, "country">): MessageLanguage {
+  return lead.country === "PL" ? "en" : "no";
 }
 
 /** The playbook for a lead: its industry, or fuel for segment F, else generic. */
@@ -114,6 +122,73 @@ export function savedOpener(lead: PotentialCustomer, language: MessageLanguage) 
   return verifiedFacts(lead).some((fact) => fact.fact === research.opener_fact) ? text : null;
 }
 
+/**
+ * The role a lead is advertising for, from a job-ad fact (arbeidsplassen.no),
+ * e.g. "Senior utvikler (.NET / C#)". Null when there's no such fact.
+ */
+export function hiringRole(lead: PotentialCustomer) {
+  const fact = verifiedFacts(lead).find((item) => item.source_url.includes("arbeidsplassen.nav.no"));
+  const quoted = fact?.fact.match(/“([^”]+)”/)?.[1];
+  if (!quoted) return null;
+  // "Senior iOS-utvikler | Trondheim Engineering" -> "Senior iOS-utvikler"
+  const title = quoted.split(" | ")[0].trim();
+  const design = /(design|\bux\b|\bui\b)/i.test(title);
+  // Long, salesy ad titles read badly quoted back — describe the role instead.
+  const quotable = title.length <= 60 && !/[!?]/.test(title);
+  return { title: quotable ? title : null, extracted: quotable ? null : roleFromAdTitle(title), design };
+}
+
+function hiringOpening(
+  role: NonNullable<ReturnType<typeof hiringRole>>,
+  company: string | null,
+  language: MessageLanguage
+) {
+  if (role.title) {
+    return language === "no"
+      ? `Jeg så stillingsannonsen deres for «${role.title}».`
+      : `I saw your job ad for a “${role.title}”.`;
+  }
+  // A sentence-style ad title: name the role in it, e.g. "senior systemutviklere".
+  if (role.extracted) return roleOpening(role.extracted, language);
+  // No clear role: name the company, so the opening is still about them.
+  const who = company ? displayCompanyName(company) : null;
+  return language === "no"
+    ? `Jeg så at ${who ?? "dere"} søker ${role.design ? "designere" : "utviklere"} for tiden.`
+    : `I saw that ${who ?? "you"} ${who ? "is" : "are"} looking for ${role.design ? "designers" : "developers"} at the moment.`;
+}
+
+function hiringQuestion(role: NonNullable<ReturnType<typeof hiringRole>>, language: MessageLanguage) {
+  const kind = role.design ? { no: "design- og UX-kapasitet", en: "design and UX capacity" } : null;
+  return language === "no"
+    ? `Mens dere leter etter rett person – kunne det vært nyttig med ekstra ${kind?.no ?? "utviklingskapasitet"} på prosjektene i mellomtiden?`
+    : `While you look for the right person – would extra ${kind?.en ?? "development capacity"} on your projects in the meantime be useful?`;
+}
+
+/**
+ * The opening sentence, written without AI where possible: the one Claude
+ * saved during research, then the job ad, then a verified fact in the
+ * message's language, then the register profile. Null leaves it to the
+ * caller (a gap to fill by hand, or the plain opening when nothing is known).
+ */
+export function automaticOpening(lead: PotentialCustomer, language: MessageLanguage) {
+  const saved = savedOpener(lead, language);
+  if (saved) return saved;
+  const role = hiringRole(lead);
+  if (role) return hiringOpening(role, lead.company, language);
+  for (const fact of verifiedFacts(lead)) {
+    const opening = factOpening(fact, language);
+    if (opening) return opening;
+  }
+  return profileOpening(
+    {
+      company: lead.company || (lead.name !== lead.company ? null : lead.name),
+      location: lead.location,
+      activity: PLAYBOOKS[leadIndustry(lead)].activity ?? null,
+    },
+    language
+  );
+}
+
 function firstName(lead: PotentialCustomer) {
   // "Johannes & Jarle Sjurseike" -> "Johannes"; a company-only lead -> no name.
   if (!lead.name || lead.name === lead.company) return null;
@@ -128,7 +203,13 @@ export function buildMessage(
 ): { subject: string | null; body: string } {
   const playbook = PLAYBOOKS[leadIndustry(lead)];
   const questions = playbook.openingQuestions;
-  const question = questions[questionIndex % questions.length][language];
+  // A partner lead found through a job ad: open with the ad, ask about the gap.
+  const role = leadIndustry(lead) === "agency_partner" ? hiringRole(lead) : null;
+  const automatic = automaticOpening(lead, language);
+  const question =
+    role && questionIndex === 0
+      ? hiringQuestion(role, language)
+      : questions[questionIndex % questions.length][language];
   // The follow-up asks differently: the next question, or a duplicate-work angle.
   const otherQuestion =
     questions.length > 1
@@ -140,25 +221,28 @@ export function buildMessage(
   const company = lead.company || lead.name;
   const hasFact = verifiedFacts(lead).length > 0;
   const peers = playbook.peers[language];
+  const copy = playbook.copy;
+  const subject = copy?.subject[language].replace("{company}", company ?? "");
 
   if (language === "no") {
     const hi = name ? `Hei ${name}` : "Hei";
     const opening =
-      savedOpener(lead, "no") ??
+      automatic ??
       (hasFact ? OPENER_GAP.no : `Jeg jobber med ${peers}, og tar kontakt for å høre litt om hvordan dere jobber.`);
     switch (kind) {
       case "connection_note":
         return {
           subject: null,
-          body: `${hi}! Jeg jobber med ${peers} om å forenkle arbeidsflyten mellom felt og kontor. Hadde vært fint å koble seg til. – Olga, Enodre`,
+          body: `${hi}! ${copy?.connectionNote.no ?? `Jeg jobber med ${peers} om å forenkle arbeidsflyten mellom felt og kontor. Hadde vært fint å koble seg til.`} – Olga, Enodre`,
         };
       case "follow_up":
         return {
-          subject: `Re: arbeidsflyten hos ${company}`,
+          subject: subject ? `Re: ${subject}` : `Re: arbeidsflyten hos ${company}`,
           body: [
             `Hei igjen${name ? ` ${name}` : ""},`,
             `Jeg sendte deg en kort melding for noen dager siden. Et litt annet spørsmål: ${otherQuestion}`,
-            `Det er ofte her dobbeltarbeidet oppstår hos ${peers}. Hvis det ikke er aktuelt, er det helt greit å si fra.`,
+            copy?.followUpLine.no ??
+              `Det er ofte her dobbeltarbeidet oppstår hos ${peers}. Hvis det ikke er aktuelt, er det helt greit å si fra.`,
             "Olga, Enodre",
           ].join("\n\n"),
         };
@@ -168,19 +252,22 @@ export function buildMessage(
           body: [
             `Hei${name ? ` ${name}` : ""},`,
             "Jeg skal ikke fylle innboksen din, så dette er siste melding fra meg.",
-            "Hvis det blir aktuelt å forenkle arbeidsflyten mellom felt og kontor senere, er det bare å svare her. Og er det ikke relevant, er et kort «nei takk» helt i orden.",
+            copy?.finalLine.no ??
+              "Hvis det blir aktuelt å forenkle arbeidsflyten mellom felt og kontor senere, er det bare å svare her. Og er det ikke relevant, er et kort «nei takk» helt i orden.",
             "Olga, Enodre",
           ].join("\n\n"),
         };
       case "phone_opener":
         return {
           subject: null,
-          body: `Hei, jeg heter Olga fra Enodre. Vi snakker med ${peers} om hvordan informasjonen fra folk ute kommer inn til kontoret. Har du to minutter nå, eller passer det bedre en annen gang?`,
+          body:
+            copy?.phoneOpener.no ??
+            `Hei, jeg heter Olga fra Enodre. Vi snakker med ${peers} om hvordan informasjonen fra folk ute kommer inn til kontoret. Har du to minutter nå, eller passer det bedre en annen gang?`,
         };
       case "first_message":
       case "email":
         return {
-          subject: `Spørsmål om arbeidsflyten hos ${company}`,
+          subject: subject ?? `Spørsmål om arbeidsflyten hos ${company}`,
           body: [
             `${hi},`,
             opening,
@@ -195,21 +282,22 @@ export function buildMessage(
 
   const hi = name ? `Hi ${name}` : "Hi";
   const opening =
-    savedOpener(lead, "en") ??
+    automatic ??
     (hasFact ? OPENER_GAP.en : `I work with ${peers}, and I'm getting in touch to learn a little about how you work.`);
   switch (kind) {
     case "connection_note":
       return {
         subject: null,
-        body: `${hi}! I work with ${peers} on simplifying the workflow between the field and the office. Would be good to connect. – Olga, Enodre`,
+        body: `${hi}! ${copy?.connectionNote.en ?? `I work with ${peers} on simplifying the workflow between the field and the office. Would be good to connect.`} – Olga, Enodre`,
       };
     case "follow_up":
       return {
-        subject: `Re: workflow at ${company}`,
+        subject: subject ? `Re: ${subject}` : `Re: workflow at ${company}`,
         body: [
           `Hi again${name ? ` ${name}` : ""},`,
           `I sent you a short message a few days ago. A slightly different question: ${otherQuestion}`,
-          `That's often where duplicate work creeps in for ${peers}. If it's not relevant, just say so.`,
+          copy?.followUpLine.en ??
+            `That's often where duplicate work creeps in for ${peers}. If it's not relevant, just say so.`,
           "Olga, Enodre",
         ].join("\n\n"),
       };
@@ -219,19 +307,22 @@ export function buildMessage(
         body: [
           `Hi${name ? ` ${name}` : ""},`,
           "I don't want to fill your inbox, so this is my last message.",
-          "If simplifying the workflow between the field and the office becomes relevant later, just reply here. And if it isn't, a short “no thanks” is completely fine.",
+          copy?.finalLine.en ??
+            "If simplifying the workflow between the field and the office becomes relevant later, just reply here. And if it isn't, a short “no thanks” is completely fine.",
           "Olga, Enodre",
         ].join("\n\n"),
       };
     case "phone_opener":
       return {
         subject: null,
-        body: `Hi, this is Olga from Enodre. We're talking to ${peers} about how information from people in the field reaches the office. Do you have two minutes now, or is another time better?`,
+        body:
+          copy?.phoneOpener.en ??
+          `Hi, this is Olga from Enodre. We're talking to ${peers} about how information from people in the field reaches the office. Do you have two minutes now, or is another time better?`,
       };
     case "first_message":
     case "email":
       return {
-        subject: `Question about the workflow at ${company}`,
+        subject: subject ?? `Question about the workflow at ${company}`,
         body: [
           `${hi},`,
           opening,

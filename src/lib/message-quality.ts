@@ -36,7 +36,9 @@ const SALESY = [
 const ASSUMED_PROBLEM =
   /\b(dere (har|sliter med|kaster bort)|deres (problem|utfordring|rot|kaos)|you (have|are struggling|waste)|your (problem|mess|chaos))\b/i;
 const ENGLISH_IN_NORWEGIAN = /\b(the|and|we|your|our|with|this|that|hello|regards)\b/i;
-const VALUE_WORDS = /(forenkl|automatis|dobbeltarbeid|arbeidsflyt|manuell|simplif|automat|duplicate|workflow|manual)/i;
+// Field-service value (workflow, automation) or partner value (extra capacity).
+const VALUE_WORDS =
+  /(forenkl|automatis|dobbeltarbeid|arbeidsflyt|manuell|kapasitet|underleverandør|simplif|automat|duplicate|workflow|manual|capacity|subcontract|white-label)/i;
 // A 5-minute talk is a small ask and fine; longer meetings and demos are flagged.
 const MEETING = /(1[05]\s*minutt|30\s*minutt|møte|demo|book(e)? en|meeting|demo call|book a)/i;
 

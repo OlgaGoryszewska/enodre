@@ -21,7 +21,9 @@ const draftSchema = z.object({
   facts_used: z.array(z.string()).describe("Each verified fact the message relies on, copied exactly. Empty if none."),
 });
 
-const SYSTEM = `You write one short B2B outreach message for Enodre, a small Norwegian software studio that helps companies automate repetitive administrative work and connect workflows between field operations and the office.
+const SYSTEM = `You write one short B2B outreach message for Enodre, a small Norwegian software studio. Enodre has two offers; the brief says which one applies:
+- Field-service companies: Enodre helps automate repetitive administrative work and connect workflows between field operations and the office.
+- Partners (agencies, software houses, consultancies with their own clients): Enodre works as extra development and UX capacity — white-label under their brand or embedded in their team — and the client stays theirs. Ask how they handle capacity peaks or whether they use subcontractors; never imply they can't deliver.
 
 Rules:
 - Use ONLY the verified facts given. Never add numbers, names, customers, events or problems that aren't in them. If no fact is given, open plainly and honestly (who you are, why you're writing) — never pretend to know something.
@@ -73,6 +75,9 @@ export async function generateOutreachDraft(input: z.input<typeof inputSchema>):
 
   const brief = [
     `Message type: ${values.kind}. Language: ${values.language === "no" ? "Norwegian (bokmål)" : "English"}.`,
+    `Offer: ${leadIndustry(lead) === "agency_partner" ? "partner (extra development and UX capacity)" : "field-service workflow automation"}.`,
+    lead.country === "PL" &&
+      "The company is in Poland: keep the first contact a genuine question with a small ask — no sales pitch, no prices.",
     `Company: ${lead.company || lead.name}. Contact: ${lead.name !== lead.company ? lead.name : "unknown"}.`,
     `Industry: ${playbook.label}. Typical workflow (hypothesis, not a fact about them): ${playbook.workflow.join(" → ")}.`,
     `Questions you may adapt: ${playbook.openingQuestions.map((q) => q[values.language]).join(" | ")}`,
@@ -80,7 +85,9 @@ export async function generateOutreachDraft(input: z.input<typeof inputSchema>):
     facts.length
       ? `Verified facts (the only facts you may use):\n${facts.map((f) => `- ${f.fact} (source: ${f.source_url})`).join("\n")}`
       : "Verified facts: none. Use a plain, honest opening.",
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   let costUsd = 0;
   try {

@@ -113,6 +113,7 @@ const segmentStyles: Record<Segment, string> = {
   A: "bg-[#E3F3E6] text-[#1B8A3A]",
   B: "bg-accent/10 text-accent",
   C: "bg-black/5 text-ink-muted",
+  P: "bg-[#FDEBD8] text-[#A65A12]",
 };
 
 function SegmentCell({ lead }: { lead: PotentialCustomer }) {
@@ -378,14 +379,15 @@ function LeadsTable({
               >
                 <thead>
                   <tr className="border-b border-black/10 bg-card text-xs uppercase tracking-widest text-ink-muted">
+                    <th className="px-5 py-3 font-medium">Nr</th>
                     <th className="px-5 py-3 font-medium">Name</th>
+                    <th className="px-5 py-3 font-medium">Status</th>
                     <th className="px-5 py-3 font-medium">Company</th>
                     <th className="px-5 py-3 font-medium">Segment</th>
                     <th className="px-5 py-3 font-medium">Where</th>
                     <th className="px-5 py-3 font-medium">Email</th>
                     <th className="px-5 py-3 font-medium">Phone</th>
                     <th className="px-5 py-3 font-medium">Source</th>
-                    <th className="px-5 py-3 font-medium">Status</th>
                     {showAttitude && <th className="px-5 py-3 font-medium">Attitude</th>}
                     <th className="px-5 py-3 font-medium">Message</th>
                     <th className="px-5 py-3 font-medium">Call</th>
@@ -402,12 +404,29 @@ function LeadsTable({
                   </tr>
                 </thead>
                 <tbody>
-                  {leads.map((lead) => (
+                  {leads.map((lead, index) => (
                     <tr key={lead.id} className="border-b border-black/10 last:border-b-0 hover:bg-card">
+                      <td className="px-5 py-4 tabular-nums text-ink-muted">{index + 1}</td>
                       <td className="px-5 py-4 font-semibold">
                         <Link href={`/admin/marketing/leads/${lead.id}`} className="hover:underline">
                           {lead.name}
                         </Link>
+                      </td>
+                      <td className="px-5 py-4">
+                        <select
+                          value={lead.status}
+                          onChange={(event) => onStatusChange(lead.id, event.target.value as PotentialCustomerStatus)}
+                          className={cn(
+                            "rounded-full border-none px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-accent/40",
+                            statusStyles[lead.status]
+                          )}
+                        >
+                          {POTENTIAL_CUSTOMER_STATUS_VALUES.map((status) => (
+                            <option key={status} value={status}>
+                              {potentialCustomerStatusLabels[status]}
+                            </option>
+                          ))}
+                        </select>
                       </td>
                       <td className="px-5 py-4 text-ink-muted">
                         {lead.company ? (
@@ -432,22 +451,6 @@ function LeadsTable({
                       <td className="px-5 py-4 text-ink-muted">{lead.email || "—"}</td>
                       <td className="px-5 py-4 text-ink-muted">{lead.phone || "—"}</td>
                       <td className="px-5 py-4 text-ink-muted">{lead.source || "—"}</td>
-                      <td className="px-5 py-4">
-                        <select
-                          value={lead.status}
-                          onChange={(event) => onStatusChange(lead.id, event.target.value as PotentialCustomerStatus)}
-                          className={cn(
-                            "rounded-full border-none px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-accent/40",
-                            statusStyles[lead.status]
-                          )}
-                        >
-                          {POTENTIAL_CUSTOMER_STATUS_VALUES.map((status) => (
-                            <option key={status} value={status}>
-                              {potentialCustomerStatusLabels[status]}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
                       {showAttitude && (
                         <td className="px-5 py-4">
                           <select

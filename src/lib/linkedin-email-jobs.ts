@@ -15,11 +15,7 @@ const MAX_CANDIDATES = 15;
 // LinkedIn sends job-alert digests from a few different addresses depending
 // on the alert type (saved search, "jobs for you", single-posting alert) —
 // verified live against the real inbox rather than assumed.
-const SENDERS = [
-  "jobalerts-noreply@linkedin.com",
-  "jobs-noreply@linkedin.com",
-  "jobs-listings@linkedin.com",
-];
+const SENDERS = ["jobalerts-noreply@linkedin.com", "jobs-noreply@linkedin.com", "jobs-listings@linkedin.com"];
 // How far back to look for alert emails — wide enough to catch a day's
 // digest even across a slow mail day, narrow enough to stay "recent".
 const LOOKBACK_DAYS = 3;
@@ -102,7 +98,10 @@ async function isRecentPosting(url: string): Promise<boolean> {
 // genuine and current. Reading what LinkedIn itself already sent sidesteps
 // the fabrication problem entirely; the freshness check above then filters
 // out postings LinkedIn's own alerts included but that are likely stale.
-export async function fetchLinkedInEmailJobs(): Promise<LinkedInEmailJob[]> {
+export async function fetchLinkedInEmailJobs(options: { maxJobs?: number } = {}): Promise<LinkedInEmailJob[]> {
+  const maxJobs = options.maxJobs ?? MAX_JOBS;
+  // Check a few more than needed, since some fail the freshness check.
+  const maxCandidates = Math.max(MAX_CANDIDATES, maxJobs * 2);
   const user = process.env.GMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD;
   if (!user || !pass) {
@@ -139,7 +138,7 @@ export async function fetchLinkedInEmailJobs(): Promise<LinkedInEmailJob[]> {
 
       const jobs = new Map<string, LinkedInEmailJob>();
       for (const uid of recentUids) {
-        if (jobs.size >= MAX_CANDIDATES) break;
+        if (jobs.size >= maxCandidates) break;
 
         const { content } = await client.download(uid, undefined, { uid: true });
         const chunks: Buffer[] = [];
@@ -152,7 +151,7 @@ export async function fetchLinkedInEmailJobs(): Promise<LinkedInEmailJob[]> {
         }
       }
 
-      candidates = [...jobs.values()].slice(0, MAX_CANDIDATES);
+      candidates = [...jobs.values()].slice(0, maxCandidates);
     } finally {
       lock.release();
     }
@@ -165,7 +164,7 @@ export async function fetchLinkedInEmailJobs(): Promise<LinkedInEmailJob[]> {
     const fresh = freshChecks
       .filter((result) => result.isFresh)
       .map((result) => result.job)
-      .slice(0, MAX_JOBS);
+      .slice(0, maxJobs);
 
     return fresh;
   } catch (error) {

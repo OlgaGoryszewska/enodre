@@ -1,7 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertCircle, Check, Copy, ExternalLink, Loader2, Search, Sparkles, UserPlus, X } from "lucide-react";
+import {
+  AlertCircle,
+  Briefcase,
+  Check,
+  Copy,
+  ExternalLink,
+  Loader2,
+  Search,
+  Sparkles,
+  UserPlus,
+  X,
+} from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -9,13 +20,15 @@ import {
   LEAD_COUNTIES,
   LEAD_INDUSTRIES,
   LEAD_SEARCH_DEFAULTS,
+  HIRING_SEARCH_DAYS,
   RESEARCH_BUDGET,
   canStartResearch,
   linkedInSearchUrl,
+  type HiringScope,
   type ResearchOutcome,
   type LeadCandidate,
 } from "@/lib/lead-candidate";
-import type { FindLeadsInput } from "@/app/admin/marketing/lead-agent-actions";
+import type { FindHiringInput, FindLeadsInput } from "@/app/admin/marketing/lead-agent-actions";
 import { MAX_RESEARCH_ATTEMPTS, isStaleProcessing } from "@/lib/gtm-logic";
 
 interface LeadAgentPanelProps {
@@ -23,6 +36,13 @@ interface LeadAgentPanelProps {
   monthSpendUsd: number;
   researchStats: { runs: number; failedRuns: number; rejected: number };
   onFind: (input: FindLeadsInput) => Promise<{ added: number; totalMatches: number }>;
+  onFindHiring: (input: FindHiringInput) => Promise<{
+    added: number;
+    refreshed: number;
+    employers: number;
+    ads: number;
+    signalSaved: boolean;
+  }>;
   onResearch: (id: string) => Promise<ResearchOutcome>;
   onApprove: (id: string) => Promise<void>;
   onReject: (id: string) => Promise<void>;
@@ -52,10 +72,16 @@ export function LeadAgentPanel({
   monthSpendUsd,
   researchStats,
   onFind,
+  onFindHiring,
   onResearch,
   onApprove,
   onReject,
 }: LeadAgentPanelProps) {
+  const [hiringDays, setHiringDays] = useState<FindHiringInput["days"]>(30);
+  const [hiringScope, setHiringScope] = useState<HiringScope>("partners");
+  const [findingHiring, setFindingHiring] = useState(false);
+  const [hiringResult, setHiringResult] = useState<string | null>(null);
+  const [hiringError, setHiringError] = useState<string | null>(null);
   const [industryCodes, setIndustryCodes] = useState<string[]>(LEAD_SEARCH_DEFAULTS.industryCodes);
   const [countyCodes, setCountyCodes] = useState<string[]>(LEAD_SEARCH_DEFAULTS.countyCodes);
   const [minEmployees, setMinEmployees] = useState(LEAD_SEARCH_DEFAULTS.minEmployees);
@@ -99,6 +125,30 @@ export function LeadAgentPanel({
       setFindError(errorMessage(error));
     } finally {
       setFinding(false);
+    }
+  }
+
+  async function runFindHiring() {
+    setFindingHiring(true);
+    setHiringResult(null);
+    setHiringError(null);
+    try {
+      const result = await onFindHiring({ days: hiringDays, scope: hiringScope });
+      setHiringResult(
+        [
+          `${result.ads} matching ads from ${result.employers} companies that fit.`,
+          result.added > 0 ? `Added ${result.added} new.` : "No new companies.",
+          result.refreshed > 0 && `Updated the ads on ${result.refreshed} already in the queue.`,
+          !result.signalSaved && "Run partner_track.sql to keep the job ads with each company.",
+        ]
+          .filter(Boolean)
+          .join(" ")
+      );
+      setTab("found");
+    } catch (error) {
+      setHiringError(errorMessage(error));
+    } finally {
+      setFindingHiring(false);
     }
   }
 
@@ -162,7 +212,8 @@ export function LeadAgentPanel({
         <fieldset className="grid gap-2">
           <legend className="mb-2 text-sm font-medium">Industries</legend>
           <p className="-mt-1 mb-1 text-xs text-ink-muted">
-            F = close to our FuelFlo case study (the research may mention it) · A/B/C = Jobb-til-faktura fit, best first
+            F = close to our FuelFlo case study (the research may mention it) · A/B/C = workflow-automation fit, best
+            first · P = partner track: agencies and software houses that may need extra dev/UX capacity
           </p>
           <div className="flex flex-wrap gap-2">
             {LEAD_INDUSTRIES.map((industry) => (
@@ -261,6 +312,60 @@ export function LeadAgentPanel({
           {findResult && <p className="text-sm text-ink-muted">{findResult}</p>}
           {findError && <p className="text-sm text-danger">{findError}</p>}
         </div>
+      </div>
+
+      {/* Hiring signals */}
+      <div className="grid gap-4 rounded-xl border border-black/10 bg-background p-5">
+        <div>
+          <h3 className="font-semibold">Or: companies hiring developers or designers</h3>
+          <p className="mt-1 text-sm text-ink-muted">
+            Job ads on arbeidsplassen.no (NAV) for developers, UX and designers — a sign a company needs extra hands.
+            Private companies only. Free. Finn.no ads aren&apos;t included. They&apos;re added as partner leads, with
+            the ad as a verified fact for the opening line.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="grid gap-1 text-sm">
+            <span className="font-medium">Ads from the last</span>
+            <select
+              className="h-10 rounded-xl border border-black/10 bg-background px-3 text-sm"
+              value={hiringDays}
+              onChange={(event) => setHiringDays(Number(event.target.value) as FindHiringInput["days"])}
+            >
+              {HIRING_SEARCH_DAYS.map((days) => (
+                <option key={days} value={days}>
+                  {days} days
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span className="font-medium">Which companies</span>
+            <select
+              className="h-10 rounded-xl border border-black/10 bg-background px-3 text-sm"
+              value={hiringScope}
+              onChange={(event) => setHiringScope(event.target.value as HiringScope)}
+            >
+              <option value="partners">Agencies, consultancies, project hires</option>
+              <option value="all">Every private company hiring these roles</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            onClick={() => void runFindHiring()}
+            disabled={findingHiring}
+            className={cn(buttonVariants({ variant: "primary" }), "bg-foreground")}
+          >
+            {findingHiring ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Briefcase className="h-4 w-4" aria-hidden="true" />
+            )}
+            {findingHiring ? "Reading job ads (about a minute)..." : "Find companies hiring"}
+          </button>
+        </div>
+        {hiringResult && <p className="text-sm text-ink-muted">{hiringResult}</p>}
+        {hiringError && <p className="text-sm text-danger">{hiringError}</p>}
       </div>
 
       {/* Queue */}
@@ -515,6 +620,30 @@ function CompanyLine({ candidate }: { candidate: LeadCandidate }) {
           .filter(Boolean)
           .join(" · ")}
       </p>
+      {candidate.hiring_signal?.ads.length ? (
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#FDEBD8] px-2 py-0.5 font-semibold text-[#A65A12]">
+            <Briefcase className="h-3 w-3" aria-hidden="true" />
+            Hiring
+          </span>
+          {candidate.hiring_signal.ads.slice(0, 3).map((ad) => (
+            <a
+              key={ad.url}
+              href={ad.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline"
+              title={ad.engagement ?? undefined}
+            >
+              {ad.title}
+              {ad.engagement && ad.engagement !== "Fast" ? ` (${ad.engagement.toLowerCase()})` : ""}
+            </a>
+          ))}
+          {candidate.hiring_signal.ads.length > 3 && (
+            <span className="text-ink-muted">+{candidate.hiring_signal.ads.length - 3} more</span>
+          )}
+        </p>
+      ) : null}
     </div>
   );
 }

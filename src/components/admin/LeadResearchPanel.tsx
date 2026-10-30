@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PotentialCustomer } from "@/lib/potential-customer";
-import { PLAYBOOKS, RESPONSE_LABELS, RESPONSE_REPLIES, type ResponseType } from "@/lib/industry-playbooks";
+import { PLAYBOOKS, RESPONSE_LABELS, responseLabel, responseReply, type ResponseType } from "@/lib/industry-playbooks";
 import { leadIndustry } from "@/lib/outreach-templates";
 
 const UNKNOWN = <span className="text-ink-muted">Unknown</span>;
@@ -221,8 +221,8 @@ export function LeadResearchPanel({
             <ul className="mt-1 grid gap-2">
               {(Object.keys(RESPONSE_LABELS) as ResponseType[]).map((type) => (
                 <li key={type}>
-                  <span className="font-medium">{RESPONSE_LABELS[type]}:</span>{" "}
-                  <span className="text-ink-muted">{RESPONSE_REPLIES[type]}</span>
+                  <span className="font-medium">{responseLabel(industry, type)}:</span>{" "}
+                  <span className="text-ink-muted">{responseReply(industry, type)}</span>
                 </li>
               ))}
             </ul>

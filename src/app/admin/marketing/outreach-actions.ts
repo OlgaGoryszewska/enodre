@@ -4,9 +4,16 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { fromHeader, getMailer } from "@/lib/mailer";
+import { getCompany } from "@/lib/brreg";
+import { findCompanyEmails, type FoundEmail } from "@/lib/email-discovery";
 import { addBusinessDays, FOLLOW_UP_BUSINESS_DAYS, osloToday } from "@/lib/gtm-logic";
 import { isMissingColumnError, updateLead } from "@/lib/lead-updates";
-import { CLOSED_STATUSES, type PotentialCustomer, type PotentialCustomerStatus } from "@/lib/potential-customer";
+import {
+  CLOSED_STATUSES,
+  needsConsentFirst,
+  type PotentialCustomer,
+  type PotentialCustomerStatus,
+} from "@/lib/potential-customer";
 import {
   MESSAGE_CHANNEL_VALUES,
   MESSAGE_KIND_VALUES,
@@ -274,6 +281,9 @@ export async function sendLeadEmail(
 
   const lead = await loadLead(supabase, values.leadId);
   if (lead.do_not_contact) throw new Error("This lead asked not to be contacted.");
+  if (needsConsentFirst(lead)) {
+    throw new Error("Polish company: no email before they've replied (consent first). Use LinkedIn.");
+  }
   const withChannel = { ...values, channel: "email" as const };
   const approved = await requireApproved(supabase, lead, withChannel);
   const { to } = values;
@@ -365,5 +375,58 @@ export async function removeLeadFact(leadId: string, index: number) {
   const facts = [...(lead.research?.facts ?? [])];
   facts.splice(position, 1);
   await updateLead(supabase, id, { research: { ...(lead.research ?? {}), facts } });
+  refresh();
+}
+
+// ---------------------------------------------------------------------------
+// Email addresses: find the company's general address, or save one by hand.
+
+export type FindEmailResult = { found: FoundEmail[]; saved: string | null };
+
+/**
+ * Looks for the company's email in the register and on its website. A
+ * general address (post@, kontakt@ …) is saved on the lead when it has none.
+ * Personal-looking ones are only returned — §15 needs a company address.
+ */
+export async function findLeadEmail(leadId: string): Promise<FindEmailResult> {
+  const id = z.uuid().parse(leadId);
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in.");
+
+  const lead = await loadLead(supabase, id);
+  const registerCompany = lead.org_number
+    ? await getCompany(lead.org_number.replace(/\s/g, "")).catch(() => null)
+    : null;
+  const { emails: found, website } = await findCompanyEmails({
+    website: lead.website ?? registerCompany?.website ?? null,
+    registerEmail: registerCompany?.email,
+    companyName: lead.company || registerCompany?.name || null,
+    orgNumber: lead.org_number,
+    contactName: lead.name !== lead.company ? lead.name : null,
+  });
+
+  const best = found.find((item) => item.generic);
+  let saved: string | null = null;
+  // A website found along the way is kept too, so the next search is quicker.
+  const newWebsite = !lead.website && website ? { website } : {};
+  if (best && !lead.email) {
+    await updateLead(supabase, id, { email: best.email, ...newWebsite });
+    saved = best.email;
+    refresh();
+  } else if (Object.keys(newWebsite).length > 0) {
+    await updateLead(supabase, id, newWebsite);
+    refresh();
+  }
+  return { found: found.slice(0, 6), saved };
+}
+
+export async function saveLeadEmail(leadId: string, email: string) {
+  const id = z.uuid().parse(leadId);
+  const address = z.email("That doesn't look like a valid email address.").parse(email.trim().toLowerCase());
+  const supabase = await createClient();
+  await updateLead(supabase, id, { email: address });
   refresh();
 }

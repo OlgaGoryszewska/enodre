@@ -3,14 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { getKeyPerson, getMunicipalityNumbers, searchCompanies } from "@/lib/brreg";
+import { getCompany, getKeyPerson, getMunicipalityNumbers, searchCompanies } from "@/lib/brreg";
+import { findHiringAds } from "@/lib/nav-jobs";
+import { findCompanyEmails } from "@/lib/email-discovery";
 import { LeadResearchError, RESEARCH_MODEL, researchLead, type ResearchUsage } from "@/lib/lead-research";
 import {
   LEAD_COUNTIES,
   LEAD_INDUSTRIES,
   RESEARCH_BUDGET,
+  HIRING_SEARCH_DAYS,
   canStartResearch,
+  hiringFact,
+  isExtraHandsProspect,
   startOfMonthIso,
+  type HiringSignal,
   type LeadCandidate,
   type ResearchOutcome,
 } from "@/lib/lead-candidate";
@@ -129,6 +135,124 @@ export async function findLeads(input: FindLeadsInput) {
   return { added: companies.length, totalMatches };
 }
 
+/** "XLENT AS" vs "Xlent Oslo AS": do they share their first real word? */
+function sameCompanyName(adName: string, registerName: string) {
+  const firstWord = (name: string) =>
+    name
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]/gu, " ")
+      .split(/\s+/)
+      .find((word) => word.length >= 3 && !["the", "and", "avd", "as", "asa"].includes(word));
+  const word = firstWord(registerName);
+  return Boolean(word && adName.toLowerCase().includes(word));
+}
+
+const findHiringSchema = z.object({
+  days: z.union(HIRING_SEARCH_DAYS.map((days) => z.literal(days))),
+  scope: z.enum(["partners", "all"]),
+});
+
+export type FindHiringInput = z.infer<typeof findHiringSchema>;
+
+/**
+ * Finder, hiring signals: companies advertising for developers or designers
+ * on arbeidsplassen.no (NAV) -> lead_candidates rows with the ads attached.
+ * Free (no Claude). Companies already in the queue get their signal refreshed.
+ */
+export async function findHiringCompanies(input: FindHiringInput) {
+  const values = findHiringSchema.parse(input);
+  const supabase = await requireAdmin();
+
+  const ads = await findHiringAds(values.days);
+  const byEmployer = new Map<string, typeof ads>();
+  for (const ad of ads) byEmployer.set(ad.employerOrgNumber, [...(byEmployer.get(ad.employerOrgNumber) ?? []), ad]);
+
+  // Ads may name a branch — resolve each employer to its company in the register.
+  const employers = [...byEmployer.entries()];
+  const companies = await Promise.all(employers.map(([orgNumber]) => getCompany(orgNumber).catch(() => null)));
+  const found = new Map<string, { company: NonNullable<(typeof companies)[number]>; signal: HiringSignal }>();
+  // Many companies have no website in the register; the ad often gives one.
+  const homepages = new Map<string, string>();
+  employers.forEach(([, employerAds], index) => {
+    const company = companies[index];
+    if (!company) return;
+    // Only when the ad is posted under the company's own name — a recruiter's
+    // ad (e.g. Ansettr for Spond) carries the recruiter's homepage.
+    const homepage = employerAds.find(
+      (ad) => ad.employerHomepage && sameCompanyName(ad.employerName, company.name)
+    )?.employerHomepage;
+    if (homepage && !homepages.has(company.orgNumber)) homepages.set(company.orgNumber, homepage);
+    const signalAds = employerAds.map(({ title, url, published, engagement }) => ({
+      title,
+      url,
+      published,
+      engagement,
+    }));
+    if (!isExtraHandsProspect(company.industryCode, signalAds, values.scope)) return;
+    const existing = found.get(company.orgNumber);
+    found.set(company.orgNumber, {
+      company,
+      signal: { ads: [...(existing?.signal.ads ?? []), ...signalAds], found_at: new Date().toISOString() },
+    });
+  });
+
+  const { data: existingRows, error: existingError } = await supabase.from(TABLE).select("org_number, status");
+  if (existingError) throw existingError;
+  const known = new Map((existingRows ?? []).map((row) => [row.org_number as string, row.status as string]));
+  const fresh = [...found.values()].filter(({ company }) => !known.has(company.orgNumber));
+  const keyPeople = await Promise.all(fresh.map(({ company }) => getKeyPerson(company.orgNumber).catch(() => null)));
+
+  const rows = fresh.map(({ company, signal }, index) => ({
+    org_number: company.orgNumber,
+    company: company.name,
+    industry_code: company.industryCode,
+    industry_label: company.industryLabel,
+    employees: company.employees,
+    municipality: company.municipality,
+    address: company.address,
+    phone: company.phone,
+    website: company.website ?? homepages.get(company.orgNumber) ?? null,
+    founded: company.founded,
+    contact_name: keyPeople[index]?.name ?? null,
+    contact_role: keyPeople[index]?.role ?? null,
+    hiring_signal: signal,
+  }));
+  let signalSaved = true;
+  if (rows.length > 0) {
+    let { error } = await supabase.from(TABLE).upsert(rows, { onConflict: "org_number", ignoreDuplicates: true });
+    // Before partner_track.sql the column is missing — add the companies without it.
+    if (error && isMissingColumnError(error)) {
+      signalSaved = false;
+      ({ error } = await supabase.from(TABLE).upsert(
+        rows.map((row) => Object.fromEntries(Object.entries(row).filter(([key]) => key !== "hiring_signal"))),
+        { onConflict: "org_number", ignoreDuplicates: true }
+      ));
+    }
+    if (error) throw error;
+  }
+
+  // Already queued (not yet moved to potential customers): refresh the signal.
+  let refreshed = 0;
+  if (signalSaved) {
+    for (const { company, signal } of found.values()) {
+      const status = known.get(company.orgNumber);
+      if (!status || status === "approved" || status === "rejected") continue;
+      const { error } = await supabase
+        .from(TABLE)
+        .update({ hiring_signal: signal, updated_at: new Date().toISOString() })
+        .eq("org_number", company.orgNumber);
+      if (error) {
+        if (isMissingColumnError(error)) break;
+        throw error;
+      }
+      refreshed++;
+    }
+  }
+
+  revalidatePath("/admin/marketing");
+  return { added: rows.length, refreshed, employers: found.size, ads: ads.length, signalSaved };
+}
+
 // Queue columns added by gtm_command_centre.sql. Until it has run, writes
 // retry without them (and without the 'processing' state) instead of failing.
 const QUEUE_COLUMNS = ["research_started_at", "attempts", "error_kind"];
@@ -214,6 +338,7 @@ export async function researchLeadCandidate(id: string): Promise<ResearchOutcome
       founded: candidate.founded,
       contactName: candidate.contact_name,
       contactRole: candidate.contact_role,
+      hiringAds: candidate.hiring_signal?.ads,
     });
 
     // The research is paid for — try twice to save it before giving up.
@@ -316,8 +441,13 @@ export async function approveLeadCandidate(id: string) {
     return;
   }
 
+  // A hiring signal makes it a partner lead, and the ad is a sourced fact.
+  const hiring = candidate.hiring_signal?.ads.length ? candidate.hiring_signal : null;
+  const hiringFactRow = hiring ? hiringFact(hiring) : null;
+
   const notes = [
     candidate.research?.summary,
+    hiring && ["Hiring (arbeidsplassen.no):", ...hiring.ads.map((ad) => `- ${ad.title} — ${ad.url}`)].join("\n"),
     [
       candidate.industry_label,
       candidate.contact_name && candidate.contact_role && `${candidate.contact_role}: ${candidate.contact_name}`,
@@ -329,34 +459,60 @@ export async function approveLeadCandidate(id: string) {
     candidate.website && `Website: ${candidate.website}`,
     candidate.research && `Likely pain: ${candidate.research.likely_pain}`,
     candidate.research && ["Message:", candidate.research.message_no].join("\n"),
-    !candidate.research && "Added from the register without research — find an opener fact before contacting.",
+    !candidate.research &&
+      !hiring &&
+      "Added from the register without research — find an opener fact before contacting.",
   ]
     .filter(Boolean)
     .join("\n\n");
 
+  // The company's general address (register, then website) — free, a few
+  // seconds. Only post@/kontakt@-style addresses are saved (§15).
+  const registerEmail = (await getCompany(candidate.org_number).catch(() => null))?.email ?? null;
+  const search = await findCompanyEmails({
+    website: candidate.website ?? candidate.research?.website ?? null,
+    registerEmail,
+    companyName: candidate.company,
+    orgNumber: candidate.org_number,
+    contactName: candidate.contact_name,
+  }).catch(() => null);
+  const website = candidate.website ?? candidate.research?.website ?? search?.website ?? null;
+  const email = search?.emails.find((item) => item.generic)?.email ?? null;
+
   const baseRow = {
     name: candidate.contact_name ?? candidate.company,
     company: candidate.company,
+    email,
     phone: candidate.phone,
     source: "brreg-agent",
     status: "new",
     notes,
-    segment: LEAD_INDUSTRIES.find((industry) => industry.code === candidate.industry_code)?.priority ?? null,
+    segment: hiring
+      ? "P"
+      : (LEAD_INDUSTRIES.find((industry) => industry.code === candidate.industry_code)?.priority ?? null),
     employees: candidate.employees,
     location: candidate.municipality,
     org_number: candidate.org_number,
-    website: candidate.website ?? candidate.research?.website ?? null,
-    opener_fact: candidate.research?.facts[0]?.fact ?? null,
-    opener_source: candidate.research?.facts[0]?.source_url ?? null,
+    website,
+    opener_fact: candidate.research?.facts[0]?.fact ?? hiringFactRow?.fact ?? null,
+    opener_source: candidate.research?.facts[0]?.source_url ?? hiringFactRow?.source_url ?? null,
   };
+  const researchFacts = [
+    ...(hiringFactRow ? [hiringFactRow] : []),
+    ...(candidate.research?.facts ?? []).filter((fact) => fact.source_url !== hiringFactRow?.source_url),
+  ];
   // The research and industry move onto the lead (outreach_system.sql columns);
   // before that migration, insert without them rather than failing.
   const insertRow = (row: Record<string, unknown>) =>
     supabase.from("potential_customers").insert(row).select("id").single();
   let { data: created, error: insertError } = await insertRow({
     ...baseRow,
-    industry: industryFromCode(candidate.industry_code),
-    research: candidate.research ? { ...candidate.research, researched_at: candidate.researched_at } : null,
+    industry: hiring ? "agency_partner" : industryFromCode(candidate.industry_code),
+    research: candidate.research
+      ? { ...candidate.research, facts: researchFacts, researched_at: candidate.researched_at }
+      : hiringFactRow
+        ? { facts: researchFacts }
+        : null,
   });
   if (insertError && isMissingColumnError(insertError)) {
     ({ data: created, error: insertError } = await insertRow(baseRow));

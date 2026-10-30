@@ -1,4 +1,5 @@
 import type { LeadResearch } from "@/lib/lead-research-schema";
+import { industryFromCode } from "@/lib/industry-playbooks";
 
 // Industries ranked by fit for Jobb-til-faktura (field jobs that end in an
 // invoice). Codes are Brønnøysundregistrene SN2025 codes — the register moved
@@ -21,6 +22,12 @@ export const LEAD_INDUSTRIES = [
   { code: "43.210", label: "Electrical installation", priority: "B" },
   { code: "43.221", label: "Plumbing / VVS", priority: "B" },
   { code: "81.210", label: "Cleaning", priority: "C" },
+  // Partner track (P): agencies and software houses with their own customers
+  // that may need extra development/UX capacity.
+  { code: "62.100", label: "Software development", priority: "P" },
+  { code: "62.200", label: "IT consulting", priority: "P" },
+  { code: "73.110", label: "Advertising / digital agencies", priority: "P" },
+  { code: "74.120", label: "Graphic & visual design", priority: "P" },
 ] as const;
 
 // County codes are the first two digits of a kommunenummer (2024 county map).
@@ -42,12 +49,18 @@ export const LEAD_COUNTIES = [
   { code: "56", name: "Finnmark" },
 ] as const;
 
+export function isPartnerCode(industryCode: string | null) {
+  return LEAD_INDUSTRIES.some((industry) => industry.code === industryCode && industry.priority === "P");
+}
+
 export function isFuelFloSimilar(industryCode: string | null) {
   return LEAD_INDUSTRIES.some((industry) => industry.code === industryCode && industry.priority === "F");
 }
 
 export const LEAD_SEARCH_DEFAULTS = {
-  industryCodes: LEAD_INDUSTRIES.filter((industry) => industry.priority !== "C").map((industry) => industry.code),
+  industryCodes: LEAD_INDUSTRIES.filter((industry) => ["F", "A", "B"].includes(industry.priority)).map(
+    (industry) => industry.code
+  ),
   countyCodes: ["50", "39", "40"],
   minEmployees: 10,
   maxEmployees: 100,
@@ -110,7 +123,47 @@ export type LeadCandidate = {
   research_started_at?: string | null;
   attempts?: number;
   error_kind?: "blocked" | "retryable" | "permanent" | null;
+  // Added by partner_track.sql — undefined until it has run.
+  hiring_signal?: HiringSignal | null;
 };
+
+// ---------------------------------------------------------------------------
+// Hiring signals: companies advertising for developers/designers (NAV feed).
+
+export type HiringSignal = {
+  ads: { title: string; url: string; published: string | null; engagement: string | null }[];
+  found_at: string;
+};
+
+export const HIRING_SEARCH_DAYS = [14, 30, 60] as const;
+// Contract types that mean "we need someone for a while", not a permanent hire.
+const TEMPORARY_ENGAGEMENTS = ["Prosjekt", "Engasjement", "Vikariat"];
+
+export type HiringScope = "partners" | "all";
+
+/**
+ * Is a hiring employer an extra-hands prospect? "partners": agencies and
+ * consultancies (partner codes), consultant brokers (78.x), or anyone hiring on
+ * a project/temporary contract. "all": any private employer hiring our roles.
+ */
+export function isExtraHandsProspect(
+  industryCode: string | null,
+  ads: Pick<HiringSignal["ads"][number], "engagement">[],
+  scope: HiringScope
+) {
+  if (scope === "all") return true;
+  if (industryFromCode(industryCode) === "agency_partner") return true;
+  if (industryCode?.startsWith("78.")) return true;
+  return ads.some((ad) => ad.engagement !== null && TEMPORARY_ENGAGEMENTS.includes(ad.engagement));
+}
+
+/** The hiring signal as a verified fact for the lead (the ad is the source). */
+export function hiringFact(signal: HiringSignal) {
+  const ad = signal.ads[0];
+  const when = ad.published ? ` (published ${ad.published.slice(0, 10)})` : "";
+  const more = signal.ads.length > 1 ? `, and ${signal.ads.length - 1} more developer/design role(s)` : "";
+  return { fact: `Advertising for “${ad.title}”${when}${more}`, source_url: ad.url };
+}
 
 /** What a research run did — the panel uses it to stop a batch on account-wide problems. */
 export type ResearchOutcome = {

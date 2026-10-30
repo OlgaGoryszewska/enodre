@@ -13,6 +13,7 @@ import {
   Phone,
   RotateCcw,
   Save,
+  Search,
   Send,
   Sparkles,
 } from "lucide-react";
@@ -20,10 +21,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { bestChannelLabels, followUpDate, segmentLabels, type PotentialCustomer } from "@/lib/potential-customer";
+import {
+  bestChannelLabels,
+  followUpDate,
+  needsConsentFirst,
+  segmentLabels,
+  type PotentialCustomer,
+} from "@/lib/potential-customer";
 import {
   CONNECTION_NOTE_MAX,
   EMAILABLE_KINDS,
+  leadLanguage,
   MESSAGE_CHANNEL_VALUES,
   MESSAGE_KIND_VALUES,
   OPENER_GAP,
@@ -39,10 +47,11 @@ import {
   type MessageKind,
   type MessageLanguage,
 } from "@/lib/outreach-templates";
-import { PLAYBOOKS, RESPONSE_LABELS, RESPONSE_REPLIES, type ResponseType } from "@/lib/industry-playbooks";
+import { PLAYBOOKS, RESPONSE_LABELS, responseLabel, responseReply, type ResponseType } from "@/lib/industry-playbooks";
 import { checkMessage, isReady } from "@/lib/message-quality";
 import type { DraftInput, SendEmailInput, SentMessageInput } from "@/app/admin/marketing/outreach-actions";
 import type { GenerateDraftResult, GenerateOpenerResult } from "@/app/admin/marketing/outreach-ai-actions";
+import type { FindEmailResult } from "@/app/admin/marketing/outreach-actions";
 
 // The Leads table dispatches this to open the composer on a lead.
 export const COMPOSE_LEAD_EVENT = "enodre:compose-lead";
@@ -58,6 +67,8 @@ export interface MessageComposerProps {
   onRecordResponse: (leadId: string, response: ResponseType) => Promise<void>;
   onStopSequence: (leadId: string, reason: "declined" | "do_not_contact" | "paused") => Promise<void>;
   onGenerateOpener: (leadId: string) => Promise<GenerateOpenerResult>;
+  onFindEmail: (leadId: string) => Promise<FindEmailResult>;
+  onSaveEmail: (leadId: string, email: string) => Promise<void>;
   /** The address emails go out from (null when sending isn't set up). */
   senderAddress?: string | null;
 }
@@ -126,6 +137,8 @@ export function MessageComposer({
   onStopSequence,
   onGenerateOpener,
   senderAddress,
+  onFindEmail,
+  onSaveEmail,
 }: MessageComposerProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const sortedLeads = useMemo(
@@ -158,7 +171,7 @@ export function MessageComposer({
       ).next
     : "first_message";
   const [kind, setKind] = useState<MessageKind>(initialKind);
-  const [language, setLanguage] = useState<MessageLanguage>("no");
+  const [language, setLanguage] = useState<MessageLanguage>(lead ? leadLanguage(lead) : "no");
   const languageRef = useRef(language);
   // Kept current for the opener callback, which resolves after later renders.
   useEffect(() => {
@@ -168,13 +181,21 @@ export function MessageComposer({
   const [draft, setDraft] = useState(() => {
     if (!lead) return { subject: null as string | null, body: "" };
     const saved = openDraftFor(lead.id, initialKind);
-    return saved ? { subject: saved.subject, body: saved.body } : buildMessage(initialKind, "no", lead);
+    return saved ? { subject: saved.subject, body: saved.body } : buildMessage(initialKind, leadLanguage(lead), lead);
   });
   const [channel, setChannel] = useState<MessageChannel>(() => (lead ? defaultChannel(initialKind, lead) : "linkedin"));
   const [busy, setBusy] = useState<"save" | "approve" | "generate" | "send" | "log" | null>(null);
   const [copied, setCopied] = useState(false);
   const [confirmingSend, setConfirmingSend] = useState(false);
   const [recipient, setRecipient] = useState(lead?.email ?? "");
+  // Email lookup / save for the lead shown — cleared when the lead changes.
+  const [emailLookup, setEmailLookup] = useState<{
+    leadId: string;
+    busy: "find" | "save" | null;
+    found?: FindEmailResult["found"];
+    message?: string;
+    error?: string;
+  } | null>(null);
   const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [unlogged, setUnlogged] = useState<SentMessageInput | null>(null);
   const [replyType, setReplyType] = useState<ResponseType | null>(null);
@@ -196,7 +217,8 @@ export function MessageComposer({
             allMessages.filter((m) => m.lead_id === nextLead.id && isSentMessage(m))
           ).next
         : kind);
-    const nextLanguage = next.language ?? language;
+    const nextLanguage =
+      next.language ?? (next.leadId && nextLead && next.leadId !== leadId ? leadLanguage(nextLead) : language);
     setLeadId(nextLeadId);
     setKind(nextKind);
     setLanguage(nextLanguage);
@@ -270,7 +292,8 @@ export function MessageComposer({
   }
 
   const facts = verifiedFacts(lead);
-  const playbook = PLAYBOOKS[leadIndustry(lead)];
+  const industry = leadIndustry(lead);
+  const playbook = PLAYBOOKS[industry];
   const quality = checkMessage({
     kind,
     language,
@@ -290,8 +313,15 @@ export function MessageComposer({
   const to = recipient.trim();
   const validRecipient = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to);
   const blocked = Boolean(lead.do_not_contact);
+  const consentFirst = needsConsentFirst(lead);
   const canSendEmail =
-    approved && !blocked && emailable && validRecipient && Boolean(draft.subject?.trim()) && busy === null;
+    approved &&
+    !blocked &&
+    !consentFirst &&
+    emailable &&
+    validRecipient &&
+    Boolean(draft.subject?.trim()) &&
+    busy === null;
   const personalAddress = Boolean(
     validRecipient && lead.name !== lead.company && looksPersonal(to, lead.name, lead.company)
   );
@@ -306,6 +336,42 @@ export function MessageComposer({
       setNotice({ kind: "error", text: error instanceof Error ? error.message : "Something went wrong." });
     } finally {
       setBusy(null);
+    }
+  }
+
+  const lookup = emailLookup?.leadId === lead.id ? emailLookup : null;
+
+  async function findEmail() {
+    const id = lead!.id;
+    setEmailLookup({ leadId: id, busy: "find" });
+    try {
+      const result = await onFindEmail(id);
+      if (result.saved) setRecipient(result.saved);
+      setEmailLookup({
+        leadId: id,
+        busy: null,
+        found: result.found,
+        message: result.saved
+          ? `Found and saved ${result.saved}.`
+          : result.found.length === 0
+            ? "No address found on their website. Check their contact page or use LinkedIn."
+            : result.found.some((item) => item.generic)
+              ? "Pick an address to use it."
+              : "Only personal-looking addresses found — cold email needs a company address (post@, kontakt@). Use LinkedIn instead.",
+      });
+    } catch (error) {
+      setEmailLookup({ leadId: id, busy: null, error: error instanceof Error ? error.message : "Search failed." });
+    }
+  }
+
+  async function saveEmail(email: string) {
+    const id = lead!.id;
+    setEmailLookup((current) => ({ ...(current?.leadId === id ? current : {}), leadId: id, busy: "save" }));
+    try {
+      await onSaveEmail(id, email);
+      setEmailLookup({ leadId: id, busy: null, message: `Saved ${email} on the lead.` });
+    } catch (error) {
+      setEmailLookup({ leadId: id, busy: null, error: error instanceof Error ? error.message : "Couldn't save." });
     }
   }
 
@@ -385,6 +451,13 @@ export function MessageComposer({
         {blocked && (
           <p className="rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 text-sm font-semibold text-danger">
             {lead.company || lead.name} asked not to be contacted. Sending is turned off.
+          </p>
+        )}
+        {consentFirst && !blocked && (
+          <p className="rounded-xl border border-black/10 bg-black/[0.03] px-4 py-3 text-sm">
+            <span className="font-semibold">Polish company — no cold email or sales call.</span> Polish law (Prawo
+            komunikacji elektronicznej, art. 398) needs their consent first, B2B too. Start on LinkedIn with a question,
+            not an offer. Email unlocks once you&apos;ve recorded that they replied.
           </p>
         )}
         <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
@@ -628,20 +701,49 @@ export function MessageComposer({
         >
           {!approved && <p className="text-sm text-ink-muted">Approve the message to send it or log it as sent.</p>}
           {emailable && (
-            <label className="grid gap-1.5 text-sm">
-              <span className="flex flex-wrap items-baseline justify-between gap-2 font-medium">
-                To
-                {lead.email && to !== lead.email && (
+            <div className="grid gap-1.5 text-sm">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <label htmlFor="composer-to" className="font-medium">
+                  To
+                </label>
+                <div className="flex flex-wrap gap-3">
+                  {lead.email && to !== lead.email && (
+                    <button
+                      type="button"
+                      onClick={() => setRecipient(lead.email ?? "")}
+                      className="text-xs font-semibold text-ink-muted hover:text-foreground"
+                    >
+                      Use saved address ({lead.email})
+                    </button>
+                  )}
+                  {validRecipient && to.toLowerCase() !== (lead.email ?? "").toLowerCase() && (
+                    <button
+                      type="button"
+                      disabled={lookup?.busy != null}
+                      onClick={() => void saveEmail(to)}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-ink-muted hover:text-foreground"
+                    >
+                      {lookup?.busy === "save" && <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />}
+                      Save to lead
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => setRecipient(lead.email ?? "")}
-                    className="text-xs font-semibold text-ink-muted hover:text-foreground"
+                    disabled={lookup?.busy != null}
+                    onClick={() => void findEmail()}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-ink-muted hover:text-foreground"
                   >
-                    Use saved address ({lead.email})
+                    {lookup?.busy === "find" ? (
+                      <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <Search className="h-3 w-3" aria-hidden="true" />
+                    )}
+                    {lookup?.busy === "find" ? "Searching website…" : "Find email"}
                   </button>
-                )}
-              </span>
+                </div>
+              </div>
               <Input
+                id="composer-to"
                 type="email"
                 value={recipient}
                 placeholder="post@company.no"
@@ -650,7 +752,31 @@ export function MessageComposer({
                   setConfirmingSend(false);
                 }}
               />
-            </label>
+              {lookup?.message && <p className="text-xs text-ink-muted">{lookup.message}</p>}
+              {lookup?.error && <p className="text-xs text-danger">{lookup.error}</p>}
+              {lookup?.found && lookup.found.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {lookup.found.map((item) => (
+                    <button
+                      key={item.email}
+                      type="button"
+                      title={`Found on ${item.source}`}
+                      onClick={() => {
+                        setRecipient(item.email);
+                        setConfirmingSend(false);
+                      }}
+                      className={cn(
+                        "rounded-full border px-2.5 py-1 text-xs",
+                        item.generic ? "border-black/15 hover:border-black/40" : "border-danger/30 text-danger"
+                      )}
+                    >
+                      {item.email}
+                      {!item.generic && " · personal?"}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
           <div className="flex flex-wrap items-center gap-2">
             {emailable && (
@@ -899,17 +1025,21 @@ export function MessageComposer({
                     : "border-black/10 hover:border-black/30"
                 )}
               >
-                {RESPONSE_LABELS[type]}
+                {responseLabel(industry, type)}
               </button>
             ))}
           </div>
           {replyType && (
             <div className="mt-1 grid gap-1.5 rounded-lg bg-black/[0.03] p-2">
               <p className="text-xs text-ink-muted">Recorded, follow-ups stopped. Suggested reply:</p>
-              <p className="text-xs leading-5">{RESPONSE_REPLIES[replyType]}</p>
+              <p className="text-xs leading-5">{responseReply(industry, replyType, language)}</p>
               <button
                 type="button"
-                onClick={() => void navigator.clipboard.writeText(RESPONSE_REPLIES[replyType]).catch(() => undefined)}
+                onClick={() =>
+                  void navigator.clipboard
+                    .writeText(responseReply(industry, replyType, language))
+                    .catch(() => undefined)
+                }
                 className="justify-self-start text-xs font-semibold hover:underline"
               >
                 Copy reply

@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { leadResearchSchema, type LeadResearch } from "@/lib/lead-research-schema";
-import { RESEARCH_BUDGET, isFuelFloSimilar } from "@/lib/lead-candidate";
+import { RESEARCH_BUDGET, isFuelFloSimilar, isPartnerCode } from "@/lib/lead-candidate";
 
 // Server-only: imported from server actions. Needs ANTHROPIC_API_KEY.
 
@@ -38,6 +38,13 @@ Enodre helps companies automate repetitive administrative work and connect workf
 Anything unusual still goes to a person for approval. Enodre connects to existing systems rather than replacing them.
 
 For fuel distribution, generator/equipment rental and equipment service companies the same idea applies to deliveries, refuels and service visits: logging them in the field, documentation, client reports and follow-up.
+
+## Partner track (only when the user message says the company is a partner prospect)
+Some companies are not customers for the automation above but potential partners: digital agencies, software houses, IT consultancies and design studios that sell development and UX work to their own clients. For them Enodre offers extra development and UX capacity — white-label under their brand, or embedded in their team — and the client stays theirs. For a partner prospect:
+- Research what they build and for whom (case pages, clients, tech stack), and signs of capacity strain: job ads for developers or designers, many recent projects, a small team relative to their client list.
+- likely_pain = when and why they'd need extra hands (peaks after winning projects, a missing skill such as UX or a stack), as a hypothesis with evidence. how_we_help = the partner model that fits (white-label, embedded, or a fixed-scope part).
+- Fit score: 5 = builds web/app/digital products for clients, growing or hiring, overlapping stack; 3 = some overlap, little evidence; 1 = no client delivery work (e.g. pure hardware resale or internal IT).
+- In the message: part B asks how they handle capacity peaks or whether they use subcontractors — never imply they can't deliver. Part C: "I Enodre jobber vi som ekstra utviklings- og UX-kapasitet for byråer og konsulentselskaper – under deres merkevare eller rett inn i teamet, og kunden forblir deres." Parts A and D as below.
 
 ## Reference work (only when the user message says it applies)
 Enodre has built a field-to-report system for fuel delivery to generators and temporary power sites: every delivery is verified with GPS, timestamp and photo, and client reports are generated in seconds instead of hours. It is built and pilot-ready, not yet in use by paying customers. When told it applies, you may mention in the message — in one short clause, in plain words — that Enodre has built a similar system for fuel delivery and generator operations. Never name the product, and never claim customers, results or time savings from it.
@@ -84,6 +91,8 @@ export type LeadResearchInput = {
   founded: string | null;
   contactName: string | null;
   contactRole: string | null;
+  /** Job ads for developers/designers (NAV) — makes it a partner prospect. */
+  hiringAds?: { title: string; url: string; published: string | null }[];
 };
 
 export type ResearchUsage = {
@@ -136,11 +145,21 @@ export async function researchLead(input: LeadResearchInput): Promise<LeadResear
   const referenceNote = isFuelFloSimilar(input.industryCode)
     ? "The reference work applies to this company's industry — you may mention it as instructed."
     : "The reference work does not apply to this company — don't mention it.";
+  const hiringAds = input.hiringAds ?? [];
+  const trackNote =
+    isPartnerCode(input.industryCode) || hiringAds.length > 0
+      ? "This company is a partner prospect — follow the Partner track instructions."
+      : "This company is a field-service prospect, not a partner prospect.";
+  const hiringNote = hiringAds.length
+    ? `\n\nThey are currently advertising these roles on arbeidsplassen.no (verified — you may record each as a fact with its URL and use one as the opener):\n${hiringAds
+        .map((ad) => `- “${ad.title}”${ad.published ? ` (published ${ad.published.slice(0, 10)})` : ""}: ${ad.url}`)
+        .join("\n")}`
+    : "";
 
   const messages: Anthropic.Beta.BetaMessageParam[] = [
     {
       role: "user",
-      content: `Research this company and draft the outreach message.\n\nRegister data (Brønnøysundregistrene):\n${registerData}\n\n${referenceNote}`,
+      content: `Research this company and draft the outreach message.\n\nRegister data (Brønnøysundregistrene):\n${registerData}${hiringNote}\n\n${referenceNote}\n${trackNote}`,
     },
   ];
 

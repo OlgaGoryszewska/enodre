@@ -582,13 +582,6 @@ export default async function ExecutionPage({ searchParams }: { searchParams: Pr
             />
           )}
 
-          <RescheduleQueue
-            tasks={rescheduling}
-            today={today}
-            onReschedule={rescheduleTask}
-            onStatus={updateTaskStatus}
-          />
-
           {(dueToday.length > 0 || overdue.length > 0) && (
             <Card title="Deadlines">
               <div className="grid gap-4 md:grid-cols-2">

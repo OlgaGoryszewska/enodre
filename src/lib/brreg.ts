@@ -17,6 +17,8 @@ export type BrregCompany = {
   phone: string | null;
   website: string | null;
   founded: string | null;
+  // The email in the register, when the company has given one (often missing).
+  email: string | null;
 };
 
 type BrregAddress = {
@@ -37,6 +39,7 @@ type BrregEntity = {
   mobil?: string;
   hjemmeside?: string;
   stiftelsesdato?: string;
+  epostadresse?: string;
 };
 
 type BrregRole = {
@@ -74,14 +77,13 @@ function toCompany(entity: BrregEntity): BrregCompany {
     phone: entity.telefon ?? entity.mobil ?? null,
     website,
     founded: entity.stiftelsesdato ?? null,
+    email: entity.epostadresse ?? null,
   };
 }
 
 /** Every municipality number in the given counties (first two digits = county). */
 export async function getMunicipalityNumbers(countyCodes: string[]) {
-  const data = await getJson<{ _embedded?: { kommuner: { nummer: string }[] } }>(
-    `${BASE_URL}/kommuner?size=1000`
-  );
+  const data = await getJson<{ _embedded?: { kommuner: { nummer: string }[] } }>(`${BASE_URL}/kommuner?size=1000`);
   return (data._embedded?.kommuner ?? [])
     .map((kommune) => kommune.nummer)
     .filter((nummer) => countyCodes.includes(nummer.slice(0, 2)));
@@ -133,11 +135,28 @@ export async function searchCompanies(params: {
   return { companies, totalMatches };
 }
 
+/**
+ * One company by org number. Job ads often name a branch (underenhet), so
+ * that's resolved to its parent company. Null if it isn't in the register.
+ */
+export async function getCompany(orgNumber: string): Promise<BrregCompany | null> {
+  const fetchEntity = async (path: string) => {
+    const response = await fetch(`${BASE_URL}/${path}`, { headers: { Accept: "application/json" }, cache: "no-store" });
+    if (response.status === 404 || response.status === 410) return null;
+    if (!response.ok) throw new Error(`Brønnøysund API ${response.status} for ${path}`);
+    return response.json();
+  };
+  const entity = (await fetchEntity(`enheter/${orgNumber}`)) as BrregEntity | null;
+  if (entity) return toCompany(entity);
+  const branch = (await fetchEntity(`underenheter/${orgNumber}`)) as { overordnetEnhet?: string } | null;
+  if (!branch?.overordnetEnhet) return null;
+  const parent = (await fetchEntity(`enheter/${branch.overordnetEnhet}`)) as BrregEntity | null;
+  return parent ? toCompany(parent) : null;
+}
+
 /** The current daglig leder (or, failing that, chair of the board), if registered. */
 export async function getKeyPerson(orgNumber: string) {
-  const data = await getJson<{ rollegrupper?: { roller: BrregRole[] }[] }>(
-    `${BASE_URL}/enheter/${orgNumber}/roller`
-  );
+  const data = await getJson<{ rollegrupper?: { roller: BrregRole[] }[] }>(`${BASE_URL}/enheter/${orgNumber}/roller`);
   const roles = (data.rollegrupper ?? []).flatMap((group) => group.roller);
   const active = roles.filter((role) => role.person?.navn && !role.fratraadt && !role.avregistrert);
   const person = active.find((role) => role.type.kode === "DAGL") ?? active.find((role) => role.type.kode === "LEDE");

@@ -12,6 +12,9 @@ export const INDUSTRY_VALUES = [
   "logistics",
   "fuel_energy",
   "cleaning_facility",
+  // Partner track: agencies and software houses that sell the same kind of
+  // work and need extra development/UX hands — not a field-service customer.
+  "agency_partner",
   "other",
 ] as const;
 export type Industry = (typeof INDUSTRY_VALUES)[number];
@@ -33,7 +36,25 @@ export type Playbook = {
   value: { no: string; en: string };
   /** Who we work with, for the generic opening when no fact is verified. */
   peers: { no: string; en: string };
+  /** What they do, after "dere …" / "you …" — for the register-based opening. */
+  activity?: { no: string; en: string };
+  /**
+   * Wording for the other message types when the field-service defaults
+   * (about the workflow between the field and the office) don't fit.
+   * `{company}` in a subject is replaced with the company name.
+   */
+  copy?: {
+    subject: Localized;
+    connectionNote: Localized;
+    followUpLine: Localized;
+    finalLine: Localized;
+    phoneOpener: Localized;
+  };
+  /** Replies by response type that differ from the defaults. */
+  responses?: Partial<Record<ResponseType, { label?: string; reply: Localized }>>;
 };
+
+type Localized = { no: string; en: string };
 
 const GENERIC_VALUE = {
   no: "I Enodre hjelper vi bedrifter med å forenkle arbeidsflyten mellom felt og kontor, slik at mindre tid går til dobbeltarbeid og manuell registrering.",
@@ -91,6 +112,7 @@ export const PLAYBOOKS: Record<Industry, Playbook> = {
     ],
     value: GENERIC_VALUE,
     peers: { no: "entreprenører og byggebedrifter", en: "contractors and construction companies" },
+    activity: { no: "driver med bygg og anlegg", en: "work in construction" },
   },
   electrical_plumbing: {
     label: "Electricians and plumbers",
@@ -138,6 +160,7 @@ export const PLAYBOOKS: Record<Industry, Playbook> = {
     ],
     value: GENERIC_VALUE,
     peers: { no: "elektro- og rørleggerbedrifter", en: "electrical and plumbing companies" },
+    activity: { no: "jobber med elektro- og rørleggeroppdrag", en: "do electrical and plumbing work" },
   },
   equipment_rental: {
     label: "Equipment rental",
@@ -178,6 +201,7 @@ export const PLAYBOOKS: Record<Industry, Playbook> = {
     ],
     value: GENERIC_VALUE,
     peers: { no: "utleiebedrifter", en: "rental companies" },
+    activity: { no: "driver med utleie av maskiner og utstyr", en: "rent out machinery and equipment" },
   },
   technical_service: {
     label: "Technical service and maintenance",
@@ -222,6 +246,7 @@ export const PLAYBOOKS: Record<Industry, Playbook> = {
     ],
     value: GENERIC_VALUE,
     peers: { no: "service- og vedlikeholdsbedrifter", en: "service and maintenance companies" },
+    activity: { no: "driver med service og vedlikehold av utstyr", en: "service and maintain equipment" },
   },
   logistics: {
     label: "Haulage and logistics",
@@ -266,6 +291,7 @@ export const PLAYBOOKS: Record<Industry, Playbook> = {
     ],
     value: GENERIC_VALUE,
     peers: { no: "transport- og logistikkbedrifter", en: "haulage and logistics companies" },
+    activity: { no: "driver med transport og logistikk", en: "work in transport and logistics" },
   },
   fuel_energy: {
     label: "Fuel distribution and energy service",
@@ -308,6 +334,7 @@ export const PLAYBOOKS: Record<Industry, Playbook> = {
       en: "At Enodre we help companies simplify the workflow between the field and the office – among other things we've built a system for documenting fuel deliveries.",
     },
     peers: { no: "drivstoff- og energibedrifter", en: "fuel and energy companies" },
+    activity: { no: "jobber med drivstoff og energi", en: "work with fuel and energy" },
   },
   cleaning_facility: {
     label: "Cleaning and facility services",
@@ -337,6 +364,100 @@ export const PLAYBOOKS: Record<Industry, Playbook> = {
     ],
     value: GENERIC_VALUE,
     peers: { no: "renholds- og driftsbedrifter", en: "cleaning and facility companies" },
+    activity: { no: "driver med renhold og drift", en: "work in cleaning and facility services" },
+  },
+  agency_partner: {
+    label: "Agencies and software houses (partner)",
+    workflow: [
+      "Agency wins a project",
+      "Their team is already booked",
+      "Hire, bring in freelancers, or say no",
+      "Enodre delivers dev/UX under their brand",
+      "The agency keeps the customer",
+    ],
+    manualTasks: [
+      "Saying no to or delaying projects when the team is full",
+      "Hiring for peaks that don't last",
+      "Freelancers of uneven quality and availability",
+      "Senior people pulled into delivery instead of selling",
+    ],
+    bottlenecks: [
+      "Capacity peaks after winning several projects at once",
+      "Months-long hiring for developers and designers",
+      "One project needs a skill they don't have in house (UX research, a stack)",
+    ],
+    automation: [
+      "White-label delivery under their brand — they own the customer",
+      "A developer or UX designer embedded in their team for a period",
+      "A fixed-scope part of a project (frontend, design system, integration)",
+    ],
+    discoveryQuestions: [
+      "Hva gjør dere i dag når dere vinner mer enn teamet rekker å levere?",
+      "Hvilken kompetanse mangler dere oftest i et prosjekt – utvikling, UX eller noe annet?",
+      "Hvordan har erfaringen vært med frilansere eller underleverandører?",
+      "Skal en partner jobbe under deres navn, eller være synlig for kunden?",
+      "Hvilke teknologier og verktøy jobber dere mest i?",
+    ],
+    signals: [
+      "Job ads for developers or designers (a sign the team is stretched)",
+      "Many recent projects or clients on their case page",
+      "A small team relative to their client list",
+      "The same stack as us (React, Next.js, TypeScript, Figma)",
+      "A partner or subcontractor page on their site",
+    ],
+    openingQuestions: [
+      {
+        no: "Hvordan løser dere det når dere vinner flere prosjekter enn teamet har kapasitet til?",
+        en: "How do you handle it when you win more projects than your team has capacity for?",
+      },
+      {
+        no: "Hender det at dere bruker underleverandører eller frilansere på utvikling eller UX når det er travelt?",
+        en: "Do you ever bring in subcontractors or freelancers for development or UX when things get busy?",
+      },
+    ],
+    value: {
+      no: "I Enodre jobber vi som ekstra utviklings- og UX-kapasitet for byråer og konsulentselskaper – under deres merkevare eller rett inn i teamet, og kunden forblir deres.",
+      en: "At Enodre we work as extra development and UX capacity for agencies and consultancies – under your brand or embedded in your team – and the client stays yours.",
+    },
+    peers: { no: "byråer og konsulentselskaper", en: "agencies and consultancies" },
+    activity: { no: "leverer digitale løsninger til egne kunder", en: "deliver digital work for your own clients" },
+    copy: {
+      subject: {
+        no: "Ekstra kapasitet på utvikling og UX – {company}",
+        en: "Extra development and UX capacity – {company}",
+      },
+      connectionNote: {
+        no: "Jeg jobber som ekstra utviklings- og UX-kapasitet for byråer og konsulentselskaper. Hadde vært fint å koble seg til.",
+        en: "I work as extra development and UX capacity for agencies and consultancies. Would be good to connect.",
+      },
+      followUpLine: {
+        no: "For mange byråer kommer behovet i topper rundt nye prosjekter. Hvis det ikke er aktuelt for dere, er det helt greit å si fra.",
+        en: "For many agencies the need comes in peaks around new projects. If it's not relevant for you, just say so.",
+      },
+      finalLine: {
+        no: "Hvis dere en gang trenger ekstra hender på utvikling eller UX, er det bare å svare her. Og er det ikke relevant, er et kort «nei takk» helt i orden.",
+        en: "If you ever need extra hands on development or UX, just reply here. And if it isn't relevant, a short “no thanks” is completely fine.",
+      },
+      phoneOpener: {
+        no: "Hei, jeg heter Olga fra Enodre. Vi jobber som ekstra utviklings- og UX-kapasitet for byråer og konsulentselskaper, under deres merkevare. Har du to minutter nå, eller passer det bedre en annen gang?",
+        en: "Hi, this is Olga from Enodre. We work as extra development and UX capacity for agencies and consultancies, under their brand. Do you have two minutes now, or is another time better?",
+      },
+    },
+    responses: {
+      positive: {
+        reply: {
+          no: "Takk for svaret – så bra å høre. Kunne vi tatt en kort prat på 15–20 minutter, så jeg forstår hva slags prosjekter dere tar på dere og hvordan dere liker å jobbe med en partner?",
+          en: "Thanks for getting back to me – good to hear. Could we have a short 15–20 minute call, so I understand what kind of projects you take on and how you like to work with a partner?",
+        },
+      },
+      has_system: {
+        label: "We have our own team / freelancers",
+        reply: {
+          no: "Så bra at dere har faste folk å spille på. Vi kan være et supplement når de vanlige ressursene er opptatt, eller når et prosjekt trenger UX eller en teknologi dere ikke har i huset. Er det greit at jeg sender en kort oversikt over hva vi gjør, til neste gang det er travelt?",
+          en: "Good that you have people you can rely on. We can be a backup when they're busy, or when a project needs UX or a technology you don't have in house. Would it be OK if I sent a short overview of what we do, for the next busy period?",
+        },
+      },
+    },
   },
   other: {
     label: "Other field operations",
@@ -370,6 +491,8 @@ export function industryFromCode(code: string | null | undefined): Industry {
   if (code.startsWith("49.") || code.startsWith("52.")) return "logistics";
   if (code.startsWith("46.81") || code.startsWith("35.")) return "fuel_energy";
   if (code.startsWith("81.")) return "cleaning_facility";
+  // Programming, IT consulting, advertising agencies, graphic/visual design.
+  if (/^(62\.[129]|73\.1|74\.12)/.test(code)) return "agency_partner";
   return "other";
 }
 
@@ -387,6 +510,18 @@ export const RESPONSE_LABELS: Record<ResponseType, string> = {
   not_relevant: "Not relevant / no thanks",
 };
 
+/** The label for a response type — some playbooks name it differently. */
+export function responseLabel(industry: Industry, type: ResponseType) {
+  return PLAYBOOKS[industry].responses?.[type]?.label ?? RESPONSE_LABELS[type];
+}
+
+/** The suggested reply for a response type — the playbook's own, or the default. */
+export function responseReply(industry: Industry, type: ResponseType, language: "no" | "en" = "no") {
+  const own = PLAYBOOKS[industry].responses?.[type]?.reply;
+  if (own) return own[language];
+  return language === "no" ? RESPONSE_REPLIES[type] : RESPONSE_REPLIES_EN[type];
+}
+
 /** Suggested replies by response type (Norwegian, editable before sending). */
 export const RESPONSE_REPLIES: Record<ResponseType, string> = {
   positive:
@@ -395,4 +530,14 @@ export const RESPONSE_REPLIES: Record<ResponseType, string> = {
   has_system:
     "Så bra at dere har et system på plass. Vi jobber ofte med å koble sammen systemene bedrifter allerede har, slik at informasjonen ikke må tastes inn flere ganger. Er det noe i flyten i dag dere fortsatt gjør manuelt?",
   not_relevant: "Takk for at du svarte – da skal jeg ikke forstyrre mer. Lykke til videre!",
+};
+
+export const RESPONSE_REPLIES_EN: Record<ResponseType, string> = {
+  positive:
+    "Thanks for taking the time to reply – that sounds like something we know well. Could we have a short 15–20 minute call, so I understand how you work today? I won't try to sell you anything on that call.",
+  not_now:
+    "Completely understandable – thanks for letting me know. Would it be OK if I got back in touch in a couple of months?",
+  has_system:
+    "Good that you have a system in place. We often connect the systems companies already have, so information doesn't have to be typed in more than once. Is there anything in the flow today that's still done by hand?",
+  not_relevant: "Thanks for replying – I won't bother you further. All the best!",
 };

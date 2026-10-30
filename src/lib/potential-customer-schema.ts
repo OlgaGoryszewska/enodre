@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BEST_CHANNEL_VALUES, SEGMENT_VALUES } from "@/lib/potential-customer";
+import { BEST_CHANNEL_VALUES, COUNTRY_VALUES, SEGMENT_VALUES } from "@/lib/potential-customer";
 import { INDUSTRY_VALUES } from "@/lib/industry-playbooks";
 
 export const potentialCustomerFormSchema = z.object({
@@ -49,6 +49,8 @@ export const potentialCustomerDetailsSchema = z.object({
   industry: z.enum(INDUSTRY_VALUES).nullable().optional(),
   do_not_contact: z.boolean().optional(),
   deal_value_nok: z.number().min(0).max(100_000_000).nullable().optional(),
+  // Optional: the column only exists once partner_track.sql has run.
+  country: z.enum(COUNTRY_VALUES).nullable().optional(),
 });
 
 export type PotentialCustomerDetails = z.input<typeof potentialCustomerDetailsSchema>;

@@ -67,6 +67,10 @@ export function GtmPlanCard({ marketingTasks, onAddTasks }: GtmPlanCardProps) {
           <dt className="text-xs font-semibold uppercase tracking-wider text-ink-muted">90-day goal</dt>
           <dd className="mt-1">{GTM_SUMMARY.goal}</dd>
         </div>
+        <div className="sm:col-span-3">
+          <dt className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Partner track</dt>
+          <dd className="mt-1">{GTM_SUMMARY.partners}</dd>
+        </div>
       </dl>
 
       <ol className="mt-6 grid gap-3 lg:grid-cols-3">
@@ -88,7 +92,9 @@ export function GtmPlanCard({ marketingTasks, onAddTasks }: GtmPlanCardProps) {
                   {index + 1} · {phase.name}
                 </p>
                 {isCurrent && (
-                  <span className="rounded-full bg-foreground px-2 py-0.5 text-xs font-semibold text-background">Now</span>
+                  <span className="rounded-full bg-foreground px-2 py-0.5 text-xs font-semibold text-background">
+                    Now
+                  </span>
                 )}
                 {isDone && <span className="text-xs text-ink-muted">Done</span>}
               </div>
@@ -122,7 +128,10 @@ export function GtmPlanCard({ marketingTasks, onAddTasks }: GtmPlanCardProps) {
         </div>
         {gtmTasks.length > 0 && (
           <div className="h-1.5 overflow-hidden rounded-full bg-black/10" aria-hidden="true">
-            <div className="h-full rounded-full bg-foreground" style={{ width: `${(doneCount / GTM_TASKS.length) * 100}%` }} />
+            <div
+              className="h-full rounded-full bg-foreground"
+              style={{ width: `${(doneCount / GTM_TASKS.length) * 100}%` }}
+            />
           </div>
         )}
         <GtmTasksButton onAdd={onAddTasks} allAdded={gtmTasks.length >= GTM_TASKS.length} />

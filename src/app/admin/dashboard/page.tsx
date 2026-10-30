@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { TodayWidget } from "@/components/admin/TodayWidget";
+import { JobAgentReportCard, type JobAgentReportRun } from "@/components/admin/JobAgentReportCard";
 import { KanbanBoard } from "@/components/admin/KanbanBoard";
 import { MediaListCard } from "@/components/admin/MediaListCard";
 import { InspiringPeopleCard } from "@/components/admin/InspiringPeopleCard";
@@ -10,7 +11,12 @@ import { AffirmationProvider } from "@/components/admin/AffirmationToast";
 import { createClient } from "@/lib/supabase/server";
 import { getLatestOnPurposeEpisode } from "@/lib/youtube";
 import { addBook, deleteBook, setBookRead, updateBookNote } from "@/app/admin/dashboard/books-actions";
-import { addWatchItem, deleteWatchItem, setWatchItemWatched, updateWatchItemNote } from "@/app/admin/dashboard/watch-actions";
+import {
+  addWatchItem,
+  deleteWatchItem,
+  setWatchItemWatched,
+  updateWatchItemNote,
+} from "@/app/admin/dashboard/watch-actions";
 import {
   addLearningItem,
   deleteLearningItem,
@@ -43,6 +49,14 @@ export const metadata: Metadata = {
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
+
+  // The job agent's latest run (job_agent.sql); no table yet = no card content.
+  const { data: jobAgentRuns } = await supabase
+    .from("job_agent_runs")
+    .select("created_at, trigger, stats, report")
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const lastJobAgentRun = ((jobAgentRuns ?? [])[0] ?? null) as JobAgentReportRun | null;
 
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -145,6 +159,10 @@ export default async function AdminDashboardPage() {
             calories={todayCalories}
             workout={todayWorkout}
           />
+        </div>
+
+        <div className="mt-10">
+          <JobAgentReportCard run={lastJobAgentRun} />
         </div>
 
         <div className="mt-10">

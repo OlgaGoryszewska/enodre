@@ -11,9 +11,12 @@ import { INDUSTRY_VALUES, PLAYBOOKS, type Industry } from "@/lib/industry-playbo
 import type { PotentialCustomerDetails } from "@/lib/potential-customer-schema";
 import {
   BEST_CHANNEL_VALUES,
+  COUNTRY_VALUES,
   SEGMENT_VALUES,
   bestChannelLabels,
+  countryLabels,
   segmentLabels,
+  type Country,
   type PotentialCustomer,
 } from "@/lib/potential-customer";
 
@@ -28,6 +31,10 @@ function hasFollowUpColumns(lead: PotentialCustomer) {
 // Same for industry / do-not-contact / deal value (outreach_system.sql).
 function hasOutreachColumns(lead: PotentialCustomer) {
   return lead.industry !== undefined;
+}
+// And country (partner_track.sql).
+function hasCountryColumn(lead: PotentialCustomer) {
+  return lead.country !== undefined;
 }
 
 function toFormState(lead: PotentialCustomer): FormState {
@@ -49,10 +56,16 @@ function toFormState(lead: PotentialCustomer): FormState {
     industry: text(lead.industry ?? null),
     do_not_contact: lead.do_not_contact ? "true" : "",
     deal_value_nok: text(lead.deal_value_nok ?? null),
+    country: text(lead.country ?? null),
   };
 }
 
-function toDetails(form: FormState, withFollowUp: boolean, withOutreach: boolean): PotentialCustomerDetails {
+function toDetails(
+  form: FormState,
+  withFollowUp: boolean,
+  withOutreach: boolean,
+  withCountry: boolean
+): PotentialCustomerDetails {
   const number = (value: string) => (value.trim() === "" ? null : Number(value));
   const choice = <T extends string>(value: string) => (value === "" ? null : (value as T));
   return {
@@ -75,6 +88,7 @@ function toDetails(form: FormState, withFollowUp: boolean, withOutreach: boolean
           deal_value_nok: number(form.deal_value_nok),
         }
       : {}),
+    ...(withCountry ? { country: choice<Country>(form.country) } : {}),
   };
 }
 
@@ -129,7 +143,10 @@ export function LeadDetailsDialog({
     setSaving(true);
     setError(null);
     try {
-      await onSave(lead.id, toDetails(form, hasFollowUpColumns(lead), hasOutreachColumns(lead)));
+      await onSave(
+        lead.id,
+        toDetails(form, hasFollowUpColumns(lead), hasOutreachColumns(lead), hasCountryColumn(lead))
+      );
       setOpen(false);
     } catch {
       setError("Couldn't save. Check the values and try again.");
@@ -180,6 +197,28 @@ export function LeadDetailsDialog({
                   ))}
                 </select>
               </Field>
+              {hasCountryColumn(lead) && (
+                <Field
+                  label="Country"
+                  hint={
+                    form.country === "PL"
+                      ? "Poland: no email or sales call before they've agreed — start on LinkedIn."
+                      : undefined
+                  }
+                >
+                  <select
+                    className={selectClass}
+                    value={form.country || "NO"}
+                    onChange={(e) => set("country", e.target.value)}
+                  >
+                    {COUNTRY_VALUES.map((value) => (
+                      <option key={value} value={value}>
+                        {countryLabels[value]}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              )}
               <Field label="Employees" hint="Target: 10–100">
                 <Input
                   type="number"
