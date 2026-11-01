@@ -68,6 +68,30 @@ drop policy if exists "Admins read job agent runs" on public.job_agent_runs;
 create policy "Admins read job agent runs" on public.job_agent_runs
   for all to authenticated using (true) with check (true);
 
+-- Every application the agent sent, with its full text — the preview on
+-- Find jobs, and the guard against sending twice: one per job ad, one open
+-- application per company, never twice to the same address.
+create table if not exists public.job_applications_sent (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  kind text not null check (kind in ('ad', 'open')),
+  job_posting_id uuid references public.job_postings (id) on delete set null,
+  org_number text,
+  company text,
+  to_email text not null,
+  subject text not null,
+  body text not null,
+  attachment text
+);
+create unique index if not exists job_applications_sent_one_per_ad
+  on public.job_applications_sent (job_posting_id) where job_posting_id is not null;
+create unique index if not exists job_applications_sent_one_per_address
+  on public.job_applications_sent (lower(to_email));
+alter table public.job_applications_sent enable row level security;
+drop policy if exists "Admins read sent applications" on public.job_applications_sent;
+create policy "Admins read sent applications" on public.job_applications_sent
+  for all to authenticated using (true) with check (true);
+
 -- Your standard answers for application forms (notice period, salary …),
 -- shown with copy buttons on Find jobs.
 create table if not exists public.job_profile (

@@ -17,14 +17,29 @@ import {
   updateHeadhunterNote,
 } from "@/app/admin/dashboard/headhunter-actions";
 import type { JobLead } from "@/lib/job-lead";
-import { JobAgentPanel, type JobAgentRun, type JobPosting } from "@/components/admin/JobAgentPanel";
 import {
+  JobAgentPanel,
+  type JobAgentRun,
+  type JobPosting,
+  type SentApplication,
+} from "@/components/admin/JobAgentPanel";
+import {
+  previewJobAgent,
   runJobAgentNow,
   saveJobProfileAnswer,
   setJobPostingStatus,
   uploadCv,
 } from "@/app/admin/linkedin/job-agent-actions";
 import { ApplicationDetails } from "@/components/admin/ApplicationDetails";
+import { CareerContacts } from "@/components/admin/CareerContacts";
+import {
+  addCareerContact,
+  deleteCareerContact,
+  updateCareerContact,
+} from "@/app/admin/linkedin/career-contacts-actions";
+import type { CareerContact } from "@/lib/career-contact";
+
+const CAREER_REPORT_URL = "https://claude.ai/artifact/Fh9yfH9h19tTg3c2paczgj";
 import { JOB_AGENT } from "@/lib/job-agent";
 
 // "Run now" on the job agent can take a few minutes.
@@ -58,20 +73,27 @@ export default async function AdminLinkedInPage() {
       .limit(200),
     supabase
       .from("job_agent_runs")
-      .select("created_at, trigger, report")
+      .select("id, created_at, trigger, stats, report")
       .order("created_at", { ascending: false })
-      .limit(1),
+      .limit(30),
     supabase.from("open_applications").select("id", { count: "exact", head: true }).eq("status", "sent"),
     supabase.storage.from("private").list("cv"),
     supabase.from("job_profile").select("key, value"),
   ]);
+  const { data: sentData } = await supabase
+    .from("job_applications_sent")
+    .select("id, created_at, kind, company, to_email, subject, body, attachment")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  const sentApplications = (sentData ?? []) as SentApplication[];
+  const contactsResult = await supabase.from("career_contacts").select("*");
   const jobProfile = Object.fromEntries(
     (profileResult.data ?? []).map((row) => [row.key as string, row.value as string])
   );
   const jobAgentSetupMissing = Boolean(postingsResult.error);
   if (postingsResult.error) console.error("Job agent tables missing or unreadable:", postingsResult.error.message);
   const jobPostings = (postingsResult.data ?? []) as JobPosting[];
-  const lastJobAgentRun = ((runResult.data ?? [])[0] ?? null) as JobAgentRun | null;
+  const jobAgentRuns = (runResult.data ?? []) as JobAgentRun[];
   const cvUploaded = (cvList.data ?? []).some((file) => `cv/${file.name}` === JOB_AGENT.cvPath);
 
   if (linkedInJobsError) {
@@ -96,13 +118,26 @@ export default async function AdminLinkedInPage() {
       <div className="mt-10">
         <JobAgentPanel
           postings={jobPostings}
-          lastRun={lastJobAgentRun}
+          runs={jobAgentRuns}
+          sentApplications={sentApplications}
           cvUploaded={cvUploaded}
           openApplicationsSent={openResult.count ?? 0}
           setupMissing={jobAgentSetupMissing}
           onRunNow={runJobAgentNow}
+          onPreview={previewJobAgent}
           onSetStatus={setJobPostingStatus}
           onUploadCv={uploadCv}
+        />
+      </div>
+
+      <div className="mt-10">
+        <CareerContacts
+          contacts={(contactsResult.data ?? []) as CareerContact[]}
+          setupMissing={Boolean(contactsResult.error)}
+          reportUrl={CAREER_REPORT_URL}
+          onAdd={addCareerContact}
+          onUpdate={updateCareerContact}
+          onDelete={deleteCareerContact}
         />
       </div>
 

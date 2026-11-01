@@ -11,7 +11,7 @@ import { buildPerformance, buildPriorities, type ResearchRun } from "@/lib/gtm-d
 import { osloToday, startOfWeek } from "@/lib/gtm-logic";
 import type { DiscoveryCall } from "@/lib/discovery-call";
 import { MessageComposer } from "@/components/admin/MessageComposer";
-import { OutreachAutopilot } from "@/components/admin/OutreachAutopilot";
+import { OutreachAutopilot, type OutreachRunReport } from "@/components/admin/OutreachAutopilot";
 import { runOutreach } from "@/app/admin/marketing/autopilot-actions";
 import {
   approveMessage,
@@ -212,6 +212,14 @@ export default async function MarketingPage() {
     signedUrl: signedUrlByPath.get(file.storage_path) ?? null,
   }));
 
+  // Outreach reports (outreach_runs.sql) — none until it has run.
+  const { data: outreachRunData } = await supabase
+    .from("outreach_runs")
+    .select("id, created_at, mode, sent_new, sent_follow_ups, report")
+    .order("created_at", { ascending: false })
+    .limit(20);
+  const outreachRuns = (outreachRunData ?? []) as OutreachRunReport[];
+
   return (
     <section className="shell py-20 sm:py-28">
       <AdminNav />
@@ -238,7 +246,7 @@ export default async function MarketingPage() {
         onClear={clearFollowUp}
       />
 
-      <OutreachAutopilot onRun={runOutreach} senderAddress={getMailer()?.address ?? null} />
+      <OutreachAutopilot onRun={runOutreach} senderAddress={getMailer()?.address ?? null} history={outreachRuns} />
 
       <GtmPlanCard marketingTasks={marketingTasks} onAddTasks={addGtmTasksToBoard} />
 

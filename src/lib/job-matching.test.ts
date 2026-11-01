@@ -4,16 +4,23 @@ import { adLanguage, applicationEmail, cityOf, coverLetter, notEnglishFriendly, 
 
 test("scores a matching ad high and an unrelated one out", () => {
   const good = scoreJob({
-    title: "Senior Frontend Developer (React / Next.js)",
+    title: "Frontend Developer (React / Next.js)",
     text: "We build with React, Next.js, TypeScript and Supabase. Figma for design.",
   });
   assert.ok(good.score >= 60, String(good.score));
   assert.ok(good.matched.includes("Next.js") && good.matched.includes("Supabase"));
   assert.equal(scoreJob({ title: "PLC Software Engineer", text: "Siemens S7" }).rejected, "Different specialism");
   assert.equal(scoreJob({ title: "Sykepleier", text: "" }).rejected, "Not a developer/UX role");
-  const senior = scoreJob({ title: "Principal React Engineer", text: "React" });
-  const mid = scoreJob({ title: "React Engineer", text: "React" });
-  assert.ok(senior.score < mid.score);
+  assert.equal(scoreJob({ title: "Principal React Engineer", text: "React" }).rejected, "Senior or lead role");
+  assert.equal(scoreJob({ title: "Senior Frontend Developer", text: "React" }).rejected, "Senior or lead role");
+  assert.equal(
+    scoreJob({ title: "Frontend Developer", text: "You have 5+ years of experience with React." }).rejected,
+    "Asks for 5+ years"
+  );
+  assert.equal(
+    scoreJob({ title: "Frontend Developer", text: "You have 2+ years of experience with React." }).rejected,
+    null
+  );
 });
 
 test("places locations in the target cities", () => {
@@ -65,4 +72,28 @@ test("Spain: English-speaking international roles only", () => {
     notEnglishFriendly("Buscamos un desarrollador React con experiencia para nuestra empresa en Madrid."),
     "Ad written in Spanish"
   );
+});
+
+test("HealthTech/BeautyTech roles count only at a health or beauty company", () => {
+  const clinic = scoreJob({ title: "Implementation Specialist", text: "Pabau – software for aesthetic clinics" });
+  assert.equal(clinic.rejected, null);
+  assert.ok(clinic.score >= 45, String(clinic.score));
+  assert.equal(scoreJob({ title: "Customer Success Manager", text: "Doctolib, patient booking" }).rejected, null);
+  assert.equal(scoreJob({ title: "Associate Product Manager", text: "Digital health platform" }).rejected, null);
+  assert.equal(
+    scoreJob({ title: "Customer Success Manager", text: "Logistics software for hauliers" }).rejected,
+    "Not a health or beauty company"
+  );
+  assert.equal(scoreJob({ title: "Senior Product Manager", text: "Healthtech" }).rejected, "Senior or lead role");
+  const letter = coverLetter({ title: "Implementation Specialist", company: "Pabau", matched: [], language: "en" });
+  assert.ok(letter.includes("13 years") && letter.includes("at Pabau"));
+  assert.ok(!letter.includes("Public Health"));
+});
+
+test("staff perks don't make a company a health company", () => {
+  const perk = scoreJob({
+    title: "Customer Success Manager",
+    text: "Logistics SaaS. We offer private health insurance.",
+  });
+  assert.equal(perk.rejected, "Not a health or beauty company");
 });

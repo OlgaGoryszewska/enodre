@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, Eye, Loader2, Rocket } from "lucide-react";
+import { AlertCircle, Eye, Loader2, Repeat, Rocket } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AUTOPILOT } from "@/lib/outreach-autopilot";
@@ -26,26 +26,40 @@ const RESULT_STYLES: Record<AutopilotItem["result"], string> = {
 };
 
 /** One button for the whole outreach routine — preview first, then run. */
+export type OutreachRunReport = {
+  id: string;
+  created_at: string;
+  mode: "all" | "follow_ups";
+  sent_new: number;
+  sent_follow_ups: number;
+  report: string;
+};
+
 export function OutreachAutopilot({
   onRun,
   senderAddress,
+  history,
 }: {
-  onRun: (input: { dryRun: boolean; findNew: boolean }) => Promise<AutopilotResult>;
+  onRun: (input: { dryRun: boolean; findNew: boolean; mode?: "all" | "follow_ups" }) => Promise<AutopilotResult>;
   senderAddress: string | null;
+  history: OutreachRunReport[];
 }) {
+  const [confirmingFollowUps, setConfirmingFollowUps] = useState(false);
+  const [openHistory, setOpenHistory] = useState<string | null>(null);
   const [findNew, setFindNew] = useState(true);
-  const [busy, setBusy] = useState<"preview" | "run" | null>(null);
+  const [busy, setBusy] = useState<"preview" | "run" | "follow_ups" | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [result, setResult] = useState<AutopilotResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSkipped, setShowSkipped] = useState(false);
 
-  async function run(dryRun: boolean) {
-    setBusy(dryRun ? "preview" : "run");
+  async function run(dryRun: boolean, mode: "all" | "follow_ups" = "all") {
+    setBusy(mode === "follow_ups" ? "follow_ups" : dryRun ? "preview" : "run");
     setConfirming(false);
+    setConfirmingFollowUps(false);
     setError(null);
     try {
-      setResult(await onRun({ dryRun, findNew }));
+      setResult(await onRun({ dryRun, findNew: mode === "all" && findNew, mode }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -137,6 +151,39 @@ export function OutreachAutopilot({
             </button>
           </div>
         )}
+        {!confirmingFollowUps ? (
+          <button
+            type="button"
+            onClick={() => setConfirmingFollowUps(true)}
+            disabled={busy !== null}
+            className={cn(buttonVariants({ variant: "outline" }), "px-4 py-2 text-sm")}
+          >
+            {busy === "follow_ups" ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Repeat className="h-4 w-4" aria-hidden="true" />
+            )}
+            {busy === "follow_ups" ? "Sending follow-ups…" : "Send follow-ups"}
+          </button>
+        ) : (
+          <div role="alertdialog" aria-label="Confirm follow-ups" className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="font-medium">Send every follow-up due today?</span>
+            <button
+              type="button"
+              onClick={() => void run(false, "follow_ups")}
+              className={cn(buttonVariants({ variant: "primary" }), "bg-foreground px-4 py-2 text-sm")}
+            >
+              Yes, send
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingFollowUps(false)}
+              className={cn(buttonVariants({ variant: "outline" }), "px-4 py-2 text-sm")}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
 
       {error && (
@@ -148,6 +195,12 @@ export function OutreachAutopilot({
 
       {result && (
         <div className="mt-6 grid gap-3">
+          <div className="rounded-xl border border-foreground/20 bg-background p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Report</p>
+            <pre className="mt-2 max-h-96 overflow-auto whitespace-pre-wrap font-sans text-sm leading-6">
+              {result.report}
+            </pre>
+          </div>
           <p className="text-sm">
             {result.dryRun ? (
               <>
@@ -194,6 +247,43 @@ export function OutreachAutopilot({
             </div>
           )}
         </div>
+      )}
+
+      {history.length > 0 && (
+        <details className="mt-6 text-sm">
+          <summary className="cursor-pointer font-semibold">Earlier reports ({history.length})</summary>
+          <ul className="mt-2 grid gap-1.5">
+            {history.map((run) => (
+              <li key={run.id} className="rounded-xl border border-black/10 bg-background p-3 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setOpenHistory((current) => (current === run.id ? null : run.id))}
+                  className="flex w-full flex-wrap items-baseline gap-x-3 text-left"
+                >
+                  <span className="font-semibold">
+                    {new Date(run.created_at).toLocaleString("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      timeZone: "Europe/Oslo",
+                    })}
+                  </span>
+                  <span className="text-ink-muted">{run.mode === "follow_ups" ? "Follow-ups" : "Run outreach"}</span>
+                  <span>
+                    {run.sent_follow_ups} follow-up{run.sent_follow_ups === 1 ? "" : "s"}
+                    {run.mode === "all" ? ` · ${run.sent_new} first message${run.sent_new === 1 ? "" : "s"}` : ""}
+                  </span>
+                </button>
+                {openHistory === run.id && (
+                  <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-black/[0.03] p-3 font-sans leading-5">
+                    {run.report}
+                  </pre>
+                )}
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
     </div>
   );

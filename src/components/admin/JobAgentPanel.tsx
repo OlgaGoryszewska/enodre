@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Bot, Check, Copy, ExternalLink, FileUp, Loader2, RotateCcw, X } from "lucide-react";
+import { Bot, Check, Copy, ExternalLink, Eye, FileUp, Loader2, RotateCcw, X } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TARGET_CITIES } from "@/lib/job-matching";
+import type { JobAgentPreview } from "@/lib/job-agent";
 
 export type JobPosting = {
   id: string;
@@ -51,7 +52,39 @@ function byFetchDay(jobs: JobPosting[]) {
     .map(([day, list]) => [day, [...list].sort((x, y) => y.score - x.score)] as const);
 }
 
-export type JobAgentRun = { created_at: string; trigger: string; report: string | null };
+export type JobAgentRun = {
+  id: string;
+  created_at: string;
+  trigger: string;
+  stats: { saved?: number; emailed?: unknown[]; openApplications?: unknown[]; cleared?: number } | null;
+  report: string | null;
+};
+
+export type PreviewResult = {
+  stats: { found: number; matched: number; cleared: number; problems: string[] };
+  report: string;
+  preview: JobAgentPreview;
+};
+
+export type SentApplication = {
+  id: string;
+  created_at: string;
+  kind: "ad" | "open";
+  company: string | null;
+  to_email: string;
+  subject: string;
+  body: string;
+  attachment: string | null;
+};
+
+const dateTime = (iso: string) =>
+  new Date(iso).toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Oslo",
+  });
 
 const STATUS_LABELS: Record<JobPosting["status"], string> = {
   new: "New",
@@ -64,20 +97,24 @@ const STATUS_LABELS: Record<JobPosting["status"], string> = {
 /** The job agent: what it found this morning, one click to apply, and its report. */
 export function JobAgentPanel({
   postings,
-  lastRun,
+  runs,
+  sentApplications,
   cvUploaded,
   openApplicationsSent,
   setupMissing,
   onRunNow,
+  onPreview,
   onSetStatus,
   onUploadCv,
 }: {
   postings: JobPosting[];
-  lastRun: JobAgentRun | null;
+  runs: JobAgentRun[];
+  sentApplications: SentApplication[];
   cvUploaded: boolean;
   openApplicationsSent: number;
   setupMissing: boolean;
   onRunNow: () => Promise<{ saved: number; emailed: number; openApplications: number }>;
+  onPreview: () => Promise<PreviewResult>;
   onSetStatus: (id: string, status: JobPosting["status"]) => Promise<void>;
   onUploadCv: (formData: FormData) => Promise<void>;
 }) {
@@ -88,7 +125,13 @@ export function JobAgentPanel({
   const [openLetter, setOpenLetter] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const [showReport, setShowReport] = useState(true);
+  const lastRun = runs[0] ?? null;
+  const [openReport, setOpenReport] = useState<string | null>(runs[0]?.id ?? null);
+  const [openSent, setOpenSent] = useState<string | null>(null);
+  const [previewing, setPreviewing] = useState(false);
+  const [previewResult, setPreviewResult] = useState<PreviewResult | null>(null);
+  const [previewLetter, setPreviewLetter] = useState<number | null>(null);
+  const [confirmRun, setConfirmRun] = useState(false);
 
   if (setupMissing) {
     return (
@@ -107,7 +150,25 @@ export function JobAgentPanel({
   );
   const applied = postings.filter((job) => job.status === "applied" || job.status === "interview");
 
-  async function run() {
+  async function runPreview() {
+    setPreviewing(true);
+    setError(null);
+    setMessage(null);
+    try {
+      setPreviewResult(await onPreview());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "The preview failed.");
+    } finally {
+      setPreviewing(false);
+    }
+  }
+
+  async function run(confirmed = false) {
+    if (
+      !confirmed &&
+      !window.confirm("Run the agent now? It sends the applications it finds. Use Preview to see them first.")
+    )
+      return;
     setRunning(true);
     setError(null);
     setMessage(null);
@@ -181,8 +242,21 @@ export function JobAgentPanel({
           </form>
           <button
             type="button"
+            onClick={() => void runPreview()}
+            disabled={running || previewing}
+            className={cn(buttonVariants({ variant: "outline" }), "px-4 py-2 text-sm")}
+          >
+            {previewing ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Eye className="h-4 w-4" aria-hidden="true" />
+            )}
+            {previewing ? "Searching — a few minutes…" : "Preview (sends nothing)"}
+          </button>
+          <button
+            type="button"
             onClick={() => void run()}
-            disabled={running}
+            disabled={running || previewing}
             className={cn(buttonVariants({ variant: "primary" }), "bg-foreground px-4 py-2 text-sm")}
           >
             {running ? (
@@ -201,24 +275,137 @@ export function JobAgentPanel({
         </p>
       )}
       {message && <p className="mt-4 text-sm text-ink-muted">{message}</p>}
-      {error && <p className="mt-4 text-sm font-semibold text-danger">{error}</p>}
 
-      {lastRun?.report && (
-        <div className="mt-4">
-          <button
-            type="button"
-            onClick={() => setShowReport((current) => !current)}
-            className="text-sm font-semibold text-ink-muted hover:text-foreground"
-          >
-            {showReport ? "Hide" : "Show"} the last report
-          </button>
-          {showReport && (
-            <pre className="mt-2 max-h-96 overflow-auto whitespace-pre-wrap rounded-xl bg-black/[0.03] p-4 text-xs leading-5">
-              {lastRun.report}
-            </pre>
+      {previewResult && (
+        <div className="mt-4 grid gap-4 rounded-xl border border-foreground/20 bg-background p-4 text-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="font-semibold">Preview — nothing was saved or sent</p>
+              <p className="text-xs text-ink-muted">
+                {previewResult.stats.found} ads found · {previewResult.stats.matched} fit your CV ·{" "}
+                {previewResult.preview.jobs.length} would be added · {previewResult.preview.applications.length}{" "}
+                application{previewResult.preview.applications.length === 1 ? "" : "s"} would be sent
+                {previewResult.stats.cleared ? ` · ${previewResult.stats.cleared} would be cleared` : ""}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {!confirmRun ? (
+                <button
+                  type="button"
+                  onClick={() => setConfirmRun(true)}
+                  disabled={running}
+                  className={cn(buttonVariants({ variant: "primary" }), "bg-foreground px-3 py-1.5 text-xs")}
+                >
+                  Run and send
+                </button>
+              ) : (
+                <>
+                  <span className="text-xs font-semibold">Send these applications now?</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConfirmRun(false);
+                      setPreviewResult(null);
+                      void run(true);
+                    }}
+                    className={cn(buttonVariants({ variant: "primary" }), "bg-foreground px-3 py-1.5 text-xs")}
+                  >
+                    Yes, send
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmRun(false)}
+                    className={cn(buttonVariants({ variant: "outline" }), "px-3 py-1.5 text-xs")}
+                  >
+                    Cancel
+                  </button>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={() => setPreviewResult(null)}
+                aria-label="Close preview"
+                className="rounded-full p-1 text-ink-muted hover:text-foreground"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+
+          {previewResult.stats.problems.length > 0 && (
+            <ul className="grid gap-1 rounded-lg border border-danger/30 bg-danger/5 px-3 py-2 text-xs text-danger">
+              {previewResult.stats.problems.map((problem) => (
+                <li key={problem}>{problem}</li>
+              ))}
+            </ul>
           )}
+
+          <div>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-ink-muted">
+              Applications it would send ({previewResult.preview.applications.length})
+            </p>
+            {previewResult.preview.applications.length === 0 ? (
+              <p className="text-xs text-ink-muted">None this time.</p>
+            ) : (
+              <ul className="grid gap-1.5">
+                {previewResult.preview.applications.map((application, index) => (
+                  <li key={`${application.to}-${index}`} className="rounded-lg border border-black/10 p-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewLetter((current) => (current === index ? null : index))}
+                      className="flex w-full flex-wrap items-baseline gap-x-2 text-left"
+                    >
+                      <span className="font-semibold">{application.kind === "ad" ? "Job ad" : "Open application"}</span>
+                      <span>{application.company ?? ""}</span>
+                      <span className="text-ink-muted">→ {application.to}</span>
+                    </button>
+                    {previewLetter === index && (
+                      <div className="mt-2 grid gap-1 rounded bg-black/[0.03] p-2">
+                        <p>
+                          <span className="text-ink-muted">Subject:</span> {application.subject}
+                        </p>
+                        <pre className="whitespace-pre-wrap font-sans leading-5">{application.body}</pre>
+                        <p className="text-ink-muted">Attached: your CV</p>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-ink-muted">
+              Jobs it found ({previewResult.preview.jobs.length})
+            </p>
+            {previewResult.preview.jobs.length === 0 ? (
+              <p className="text-xs text-ink-muted">No new matching jobs.</p>
+            ) : (
+              <ul className="grid gap-1">
+                {previewResult.preview.jobs.map((job) => (
+                  <li key={job.url} className="flex flex-wrap items-baseline gap-x-2 text-xs">
+                    <span className="w-8 shrink-0 font-semibold tabular-nums">{job.score}</span>
+                    <a href={job.url} target="_blank" rel="noopener noreferrer" className="font-medium hover:underline">
+                      {job.title}
+                    </a>
+                    <span className="text-ink-muted">
+                      {[job.company, job.city ?? job.location, job.source].filter(Boolean).join(" · ")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <details className="text-xs">
+            <summary className="cursor-pointer font-semibold">Full preview report</summary>
+            <pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap rounded-lg bg-black/[0.03] p-3 leading-5">
+              {previewResult.report}
+            </pre>
+          </details>
         </div>
       )}
+      {error && <p className="mt-4 text-sm font-semibold text-danger">{error}</p>}
 
       <div className="mt-6 flex flex-wrap gap-1.5">
         {["all", ...TARGET_CITIES, "LinkedIn", "FINN"].map((value) => (
@@ -381,6 +568,84 @@ export function JobAgentPanel({
           </ul>
         </details>
       )}
+
+      <details className="mt-6 text-sm" open={sentApplications.length > 0 && sentApplications.length <= 5}>
+        <summary className="cursor-pointer font-semibold">Sent applications ({sentApplications.length})</summary>
+        <p className="mt-1 text-xs text-ink-muted">
+          Every application the agent emailed, exactly as sent. One per job ad, one per company and never twice to the
+          same address.
+        </p>
+        {sentApplications.length === 0 ? (
+          <p className="mt-2 text-xs text-ink-muted">None yet.</p>
+        ) : (
+          <ul className="mt-2 grid gap-1.5">
+            {sentApplications.map((item) => (
+              <li key={item.id} className="rounded-xl border border-black/10 bg-background p-3 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setOpenSent((current) => (current === item.id ? null : item.id))}
+                  className="flex w-full flex-wrap items-baseline gap-x-2 gap-y-1 text-left"
+                >
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 font-semibold",
+                      item.kind === "ad" ? "bg-[#E3F3E6] text-[#1B8A3A]" : "bg-accent/10 text-accent"
+                    )}
+                  >
+                    {item.kind === "ad" ? "Job ad" : "Open application"}
+                  </span>
+                  <span className="font-semibold">{item.company ?? item.to_email}</span>
+                  <span className="text-ink-muted">→ {item.to_email}</span>
+                  <span className="ml-auto text-ink-muted">{dateTime(item.created_at)}</span>
+                </button>
+                {openSent === item.id && (
+                  <div className="mt-3 grid gap-2 rounded-lg bg-black/[0.03] p-3">
+                    <p>
+                      <span className="text-ink-muted">Subject:</span>{" "}
+                      <span className="font-medium">{item.subject}</span>
+                    </p>
+                    <pre className="whitespace-pre-wrap font-sans leading-5">{item.body}</pre>
+                    {item.attachment && <p className="text-ink-muted">Attached: {item.attachment}</p>}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </details>
+
+      <details className="mt-4 text-sm" open>
+        <summary className="cursor-pointer font-semibold">Reports ({runs.length})</summary>
+        <p className="mt-1 text-xs text-ink-muted">A report after every search — the daily run and every “Run now”.</p>
+        {runs.length === 0 ? (
+          <p className="mt-2 text-xs text-ink-muted">No runs yet.</p>
+        ) : (
+          <ul className="mt-2 grid gap-1.5">
+            {runs.map((run) => (
+              <li key={run.id} className="rounded-xl border border-black/10 bg-background p-3 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setOpenReport((current) => (current === run.id ? null : run.id))}
+                  className="flex w-full flex-wrap items-baseline gap-x-3 gap-y-1 text-left"
+                >
+                  <span className="font-semibold">{dateTime(run.created_at)}</span>
+                  <span className="text-ink-muted">{run.trigger === "cron" ? "daily run" : "Run now"}</span>
+                  <span>
+                    {run.stats?.saved ?? 0} new · {run.stats?.emailed?.length ?? 0} applied by email ·{" "}
+                    {run.stats?.openApplications?.length ?? 0} open applications
+                    {run.stats?.cleared ? ` · ${run.stats.cleared} cleared` : ""}
+                  </span>
+                </button>
+                {openReport === run.id && run.report && (
+                  <pre className="mt-2 max-h-96 overflow-auto whitespace-pre-wrap rounded-lg bg-black/[0.03] p-3 leading-5">
+                    {run.report}
+                  </pre>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </details>
     </div>
   );
 }

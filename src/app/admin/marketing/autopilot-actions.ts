@@ -26,7 +26,12 @@ import { approveMessage, findLeadEmail, sendLeadEmail } from "@/app/admin/market
 // send it from info@enodre.com. Rules in src/lib/outreach-autopilot.ts.
 // Free: no Claude. Preview runs the same checks and sends nothing.
 
-const inputSchema = z.object({ dryRun: z.boolean(), findNew: z.boolean() });
+// "all": the whole routine. "follow_ups": only the follow-ups due today.
+const inputSchema = z.object({
+  dryRun: z.boolean(),
+  findNew: z.boolean().default(false),
+  mode: z.enum(["all", "follow_ups"]).default("all"),
+});
 
 export type AutopilotItem = {
   company: string;
@@ -38,6 +43,9 @@ export type AutopilotItem = {
 
 export type AutopilotResult = {
   dryRun: boolean;
+  mode: "all" | "follow_ups";
+  /** Plain-text report of the run — shown after it, and saved (outreach_runs). */
+  report: string;
   items: AutopilotItem[];
   found: { added: number; employers: number } | null;
   sentNew: number;
@@ -53,7 +61,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const errorText = (error: unknown) => (error instanceof Error ? error.message : "Something went wrong.");
 
 export async function runOutreach(input: z.input<typeof inputSchema>): Promise<AutopilotResult> {
-  const { dryRun, findNew } = inputSchema.parse(input);
+  const { dryRun, findNew, mode } = inputSchema.parse(input);
   const supabase = await createClient();
   const {
     data: { user },
@@ -65,6 +73,8 @@ export async function runOutreach(input: z.input<typeof inputSchema>): Promise<A
   const items: AutopilotItem[] = [];
   const result: AutopilotResult = {
     dryRun,
+    mode,
+    report: "",
     items,
     found: null,
     sentNew: 0,
@@ -80,7 +90,7 @@ export async function runOutreach(input: z.input<typeof inputSchema>): Promise<A
   }
 
   // 1. Find companies hiring developers/designers (free, about a minute).
-  if (findNew && !dryRun) {
+  if (mode === "all" && findNew && !dryRun) {
     try {
       const found = await findHiringCompanies({ days: AUTOPILOT.findDays, scope: "partners" });
       result.found = { added: found.added, employers: found.employers };
@@ -90,7 +100,7 @@ export async function runOutreach(input: z.input<typeof inputSchema>): Promise<A
   }
 
   // 2. Queued companies with a hiring signal or finished research become leads.
-  {
+  if (mode === "all") {
     // "*": hiring_signal only exists once partner_track.sql has run.
     const { data, error } = await supabase
       .from("lead_candidates")
@@ -129,7 +139,7 @@ export async function runOutreach(input: z.input<typeof inputSchema>): Promise<A
   // 3. New leads without an email: the register, their website, or a likely
   // domain that names them. Runs in Preview too — saving a company address
   // sends nothing, and the preview then shows what would really go out.
-  {
+  if (mode === "all") {
     const { data, error } = await supabase
       .from("potential_customers")
       .select("id, name, company")
@@ -205,8 +215,16 @@ export async function runOutreach(input: z.input<typeof inputSchema>): Promise<A
       isCompanyAddress(lead.email, { company: lead.company, person: lead.name !== lead.company ? lead.name : null })
     );
     const step = nextAutoStep(lead, own.filter(isSent), companyAddress, today);
-    if ("kind" in step) planned.push({ lead, kind: step.kind });
-    else if (lead.email && !step.skip.startsWith("Follow-up due") && step.skip !== "Sequence finished") {
+    const inSequence = own.some((message) => isSent(message) && FIRST_CONTACT.includes(message.kind));
+    if ("kind" in step) {
+      if (mode === "follow_ups" && step.kind === "first_message") continue;
+      planned.push({ lead, kind: step.kind });
+    } else if (
+      lead.email &&
+      (mode === "all" || inSequence) &&
+      !step.skip.startsWith("Follow-up due") &&
+      step.skip !== "Sequence finished"
+    ) {
       items.push({
         company: lead.company || lead.name,
         leadId: lead.id,
@@ -327,7 +345,52 @@ export async function runOutreach(input: z.input<typeof inputSchema>): Promise<A
   }
 
   result.newLeftToday = newLeft;
+  result.report = outreachReport(result);
+  if (!dryRun) {
+    // Saved for the history on the dashboard; a missing table (outreach_runs.sql) just isn't saved.
+    const { error } = await supabase.from("outreach_runs").insert({
+      mode,
+      sent_new: result.sentNew,
+      sent_follow_ups: result.sentFollowUps,
+      report: result.report,
+    });
+    if (error) console.error("Outreach report not saved:", error.message);
+  }
   revalidatePath("/admin/marketing", "layout");
   revalidatePath("/admin/execution");
   return result;
+}
+
+/** The run as plain text: what was sent, what failed, and why the rest was skipped. */
+function outreachReport(result: AutopilotResult) {
+  const when = new Date().toLocaleString("en-GB", { timeZone: "Europe/Oslo" });
+  const title = result.mode === "follow_ups" ? "Follow-ups" : "Run outreach";
+  const lines: string[] = [`${title}${result.dryRun ? " (preview — nothing sent)" : ""} · ${when}`, ""];
+  const sent = result.items.filter((item) => item.result === "sent" || item.result === "would_send");
+  lines.push(
+    result.dryRun
+      ? `Would send: ${sent.length}`
+      : `Sent: ${result.sentFollowUps} follow-up${result.sentFollowUps === 1 ? "" : "s"}` +
+          (result.mode === "all" ? `, ${result.sentNew} first message${result.sentNew === 1 ? "" : "s"}` : "")
+  );
+  for (const item of sent) lines.push(`- ${item.step}: ${item.company} — ${item.detail}`);
+  const failed = result.items.filter((item) => item.result === "failed");
+  if (failed.length) {
+    lines.push("", `Failed: ${failed.length}`);
+    for (const item of failed) lines.push(`- ${item.step}: ${item.company} — ${item.detail}`);
+  }
+  const skipped = result.items.filter((item) => item.result === "skipped");
+  if (skipped.length) {
+    const reasons = new Map<string, number>();
+    for (const item of skipped) {
+      const reason = item.detail.startsWith("Needs you:") ? item.detail.split(";")[0] : item.detail.split(":")[0];
+      reasons.set(reason, (reasons.get(reason) ?? 0) + 1);
+    }
+    lines.push("", `Skipped: ${skipped.length}`);
+    for (const [reason, count] of [...reasons.entries()].sort((a, b) => b[1] - a[1]))
+      lines.push(`- ${count}× ${reason}`);
+  }
+  if (result.stopped) lines.push("", result.stopped);
+  if (!sent.length && !failed.length) lines.push("", "Nothing was due.");
+  return lines.join("\n");
 }

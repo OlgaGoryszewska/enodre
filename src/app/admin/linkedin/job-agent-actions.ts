@@ -68,3 +68,14 @@ export async function saveJobProfileAnswer(key: string, value: string) {
   if (error) throw error;
   revalidatePath("/admin/linkedin");
 }
+
+/** Preview: the full search and plan, but nothing saved and nothing sent. */
+export async function previewJobAgent() {
+  const supabase = await requireAdmin();
+  const { stats, report, preview } = await runJobAgent(supabase, "manual", { dryRun: true });
+  return {
+    stats: { found: stats.found, matched: stats.matched, cleared: stats.cleared ?? 0, problems: stats.problems },
+    report,
+    preview,
+  };
+}

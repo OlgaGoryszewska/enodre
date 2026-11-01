@@ -45,6 +45,8 @@ export type JobAgentStats = {
   emailed: { title: string; company: string | null; to: string }[];
   openApplications: { company: string; to: string }[];
   openWithoutEmail: number;
+  /** Waiting jobs cleared because they no longer fit (e.g. senior roles). */
+  cleared?: number;
   problems: string[];
 };
 
@@ -60,7 +62,31 @@ async function loadCv(supabase: SupabaseClient) {
   return Buffer.from(await data.arrayBuffer());
 }
 
-export async function runJobAgent(supabase: SupabaseClient, trigger: "cron" | "manual") {
+export type JobAgentPreview = {
+  jobs: {
+    title: string;
+    company: string | null;
+    city: string | null;
+    location: string;
+    source: string;
+    score: number;
+    matched: string[];
+    url: string;
+  }[];
+  applications: { kind: "ad" | "open"; company: string | null; to: string; subject: string; body: string }[];
+};
+
+/**
+ * One run. With `dryRun` it searches and plans exactly as a real run would
+ * but writes nothing, sends nothing and emails no report — the Preview.
+ */
+export async function runJobAgent(
+  supabase: SupabaseClient,
+  trigger: "cron" | "manual",
+  options: { dryRun?: boolean } = {}
+) {
+  const dryRun = options.dryRun ?? false;
+  const preview: JobAgentPreview = { jobs: [], applications: [] };
   const started = Date.now();
   const timeLeft = () => Date.now() - started < JOB_AGENT.timeBudgetMs;
   const stats: JobAgentStats = {
@@ -119,13 +145,39 @@ export async function runJobAgent(supabase: SupabaseClient, trigger: "cron" | "m
     if (seenIds.has(`${job.source}:${job.externalId}`) || seenTitles.has(titleKey)) continue;
     // Spain: English-speaking, international roles only.
     if (job.city === "Spain" && notEnglishFriendly(`${job.title}\n${job.text}`)) continue;
-    const { score, matched, rejected } = scoreJob({ title: job.title, text: job.text });
+    const { score, matched, rejected } = scoreJob({
+      title: job.title,
+      text: `${job.company ?? ""}\n${job.text}`,
+    });
     if (rejected || score < JOB_AGENT.minScore) continue;
     const current = fresh.get(titleKey);
     if (!current || current.score < score) fresh.set(titleKey, { ...job, score, matched });
   }
   stats.matched = fresh.size;
   const keep = [...fresh.values()].sort((a, b) => b.score - a.score).slice(0, JOB_AGENT.newPerRun);
+
+  // Jobs still waiting in the list are re-checked with today's rules (e.g.
+  // senior roles are out) — those that no longer fit are cleared away.
+  {
+    const { data: waiting } = await supabase
+      .from("job_postings")
+      .select("id, title, company, snippet")
+      .eq("status", "new");
+    const outdated = (waiting ?? [])
+      .filter(
+        (row) => scoreJob({ title: row.title as string, text: `${row.company ?? ""}\n${row.snippet ?? ""}` }).rejected
+      )
+      .map((row) => row.id as string);
+    if (outdated.length > 0) {
+      if (!dryRun) {
+        await supabase
+          .from("job_postings")
+          .update({ status: "dismissed", updated_at: new Date().toISOString() })
+          .in("id", outdated);
+      }
+      stats.cleared = outdated.length;
+    }
+  }
 
   // 3. Save them, each with its cover letter.
   const rows = keep.map((job) => {
@@ -156,7 +208,27 @@ export async function runJobAgent(supabase: SupabaseClient, trigger: "cron" | "m
     language: string;
     cover_letter: string | null;
   }[] = [];
-  if (rows.length > 0) {
+  preview.jobs = rows.map((row) => ({
+    title: row.title,
+    company: row.company,
+    city: row.city,
+    location: row.location,
+    source: row.source,
+    score: row.score,
+    matched: row.matched,
+    url: row.url,
+  }));
+  if (dryRun) {
+    saved = rows.map((row, index) => ({
+      id: `preview-${index}`,
+      title: row.title,
+      company: row.company,
+      apply_email: row.apply_email,
+      score: row.score,
+      language: row.language,
+      cover_letter: row.cover_letter,
+    }));
+  } else if (rows.length > 0) {
     const { data, error } = await supabase
       .from("job_postings")
       .upsert(rows, { onConflict: "source,external_id", ignoreDuplicates: true })
@@ -174,8 +246,90 @@ export async function runJobAgent(supabase: SupabaseClient, trigger: "cron" | "m
   const cv = await loadCv(supabase);
   if (!mailer) stats.problems.push("Gmail isn't set up (GMAIL_USER / GMAIL_APP_PASSWORD) — nothing was sent.");
   if (!cv) stats.problems.push("No CV uploaded yet — upload it on Find jobs. Nothing was sent.");
-  const canSend = Boolean(mailer && cv);
+
+  // Everything sent so far: the guard against applying twice.
+  const { data: sentRows, error: sentError } = await supabase
+    .from("job_applications_sent")
+    .select("to_email, job_posting_id, org_number, company");
+  if (sentError) stats.problems.push("Run job_agent.sql again (sent-applications log missing) — nothing was sent.");
+  const sentTo = new Set((sentRows ?? []).map((row) => (row.to_email as string).toLowerCase()));
+  const sentJobs = new Set((sentRows ?? []).map((row) => row.job_posting_id as string | null).filter(Boolean));
+  const sentOrgs = new Set((sentRows ?? []).map((row) => row.org_number as string | null).filter(Boolean));
+  const sentCompanies = new Set((sentRows ?? []).map((row) => normalise(row.company as string | null)).filter(Boolean));
+  // The preview plans applications even before the CV is uploaded, so you can see them.
+  const canSend = dryRun ? !sentError : Boolean(mailer && cv && !sentError);
   const attachment = cv ? [{ filename: JOB_AGENT.cvFileName, content: cv, contentType: "application/pdf" }] : [];
+
+  /**
+   * Sends one application — at most once per job ad, per company and per
+   * address. The log row is written first (a unique index backs it up), and
+   * removed again if the email fails, so a retry is possible but a double never.
+   */
+  async function sendOnce(application: {
+    kind: "ad" | "open";
+    jobPostingId?: string;
+    orgNumber?: string;
+    company: string | null;
+    to: string;
+    subject: string;
+    body: string;
+  }): Promise<boolean> {
+    const to = application.to.toLowerCase();
+    const company = normalise(application.company);
+    if (
+      sentTo.has(to) ||
+      (application.jobPostingId && sentJobs.has(application.jobPostingId)) ||
+      (application.orgNumber && sentOrgs.has(application.orgNumber)) ||
+      (company && sentCompanies.has(company))
+    ) {
+      return false;
+    }
+    if (dryRun) {
+      preview.applications.push({
+        kind: application.kind,
+        company: application.company,
+        to,
+        subject: application.subject,
+        body: application.body,
+      });
+      sentTo.add(to);
+      if (application.orgNumber) sentOrgs.add(application.orgNumber);
+      if (company) sentCompanies.add(company);
+      return true;
+    }
+    const { data: logged, error } = await supabase
+      .from("job_applications_sent")
+      .insert({
+        kind: application.kind,
+        job_posting_id: application.jobPostingId ?? null,
+        org_number: application.orgNumber ?? null,
+        company: application.company,
+        to_email: to,
+        subject: application.subject,
+        body: application.body,
+        attachment: JOB_AGENT.cvFileName,
+      })
+      .select("id")
+      .single();
+    if (error || !logged) return false; // already sent (unique index) or not logged: don't send
+    try {
+      await mailer!.transporter.sendMail({
+        from: `"Olga Goryszewska" <${mailer!.address}>`,
+        to,
+        subject: application.subject,
+        text: application.body,
+        attachments: attachment,
+      });
+    } catch (sendError) {
+      await supabase.from("job_applications_sent").delete().eq("id", logged.id);
+      throw sendError;
+    }
+    sentTo.add(to);
+    if (application.jobPostingId) sentJobs.add(application.jobPostingId);
+    if (application.orgNumber) sentOrgs.add(application.orgNumber);
+    if (company) sentCompanies.add(company);
+    return true;
+  }
 
   // 4. Apply by email where the ad asks for it.
   if (canSend) {
@@ -185,22 +339,26 @@ export async function runJobAgent(supabase: SupabaseClient, trigger: "cron" | "m
     for (const row of byEmail) {
       if (!timeLeft()) break;
       try {
-        await mailer!.transporter.sendMail({
-          from: `"Olga Goryszewska" <${mailer!.address}>`,
+        const sent = await sendOnce({
+          kind: "ad",
+          jobPostingId: row.id,
+          company: row.company,
           to: row.apply_email!,
           subject: row.language === "no" ? `Søknad: ${row.title}` : `Application: ${row.title}`,
-          text: row.cover_letter ?? "",
-          attachments: attachment,
+          body: row.cover_letter ?? "",
         });
-        await supabase
-          .from("job_postings")
-          .update({
-            status: "applied",
-            applied_via: "email",
-            applied_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", row.id);
+        if (!sent) continue;
+        if (!dryRun) {
+          await supabase
+            .from("job_postings")
+            .update({
+              status: "applied",
+              applied_via: "email",
+              applied_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", row.id);
+        }
         stats.emailed.push({ title: row.title, company: row.company, to: row.apply_email! });
       } catch (error) {
         stats.problems.push(`Couldn't email ${row.apply_email}: ${error instanceof Error ? error.message : "failed"}`);
@@ -209,7 +367,7 @@ export async function runJobAgent(supabase: SupabaseClient, trigger: "cron" | "m
   }
 
   // 5. Open applications to Oslo agencies and consultancies — not the ones
-  // in Enodre's outreach pipeline, and never the same company twice.
+  // in Enodre's outreach pipeline, and never a company already applied to.
   if (canSend && timeLeft()) {
     try {
       const [done, candidates, leads] = await Promise.all([
@@ -222,6 +380,7 @@ export async function runJobAgent(supabase: SupabaseClient, trigger: "cron" | "m
           .map((row) => (row.org_number as string | null)?.replace(/\s/g, ""))
           .filter((value): value is string => Boolean(value))
       );
+      for (const org of sentOrgs) exclude.add(org as string);
       const { companies } = await searchCompanies({
         industryCodes: LEAD_INDUSTRIES.filter((industry) => industry.priority === "P").map((industry) => industry.code),
         municipalityNumbers: ["0301"], // Oslo
@@ -241,23 +400,29 @@ export async function runJobAgent(supabase: SupabaseClient, trigger: "cron" | "m
         const to = search?.emails.find((item) => item.generic)?.email ?? null;
         if (!to) {
           stats.openWithoutEmail++;
-          await supabase
-            .from("open_applications")
-            .insert({ org_number: company.orgNumber, company: company.name, status: "no_email" });
+          if (!dryRun) {
+            await supabase
+              .from("open_applications")
+              .insert({ org_number: company.orgNumber, company: company.name, status: "no_email" });
+          }
           continue;
         }
         const letter = openApplication(company.name);
         try {
-          await mailer!.transporter.sendMail({
-            from: `"Olga Goryszewska" <${mailer!.address}>`,
+          const sent = await sendOnce({
+            kind: "open",
+            orgNumber: company.orgNumber,
+            company: company.name,
             to,
             subject: letter.subject,
-            text: letter.body,
-            attachments: attachment,
+            body: letter.body,
           });
-          await supabase
-            .from("open_applications")
-            .insert({ org_number: company.orgNumber, company: company.name, email: to, status: "sent" });
+          if (!sent) continue;
+          if (!dryRun) {
+            await supabase
+              .from("open_applications")
+              .insert({ org_number: company.orgNumber, company: company.name, email: to, status: "sent" });
+          }
           stats.openApplications.push({ company: company.name, to });
         } catch (error) {
           const message = error instanceof Error ? error.message : "failed";
@@ -274,6 +439,11 @@ export async function runJobAgent(supabase: SupabaseClient, trigger: "cron" | "m
     } catch (error) {
       stats.problems.push(`Open applications: ${error instanceof Error ? error.message : "failed"}`);
     }
+  }
+
+  if (dryRun) {
+    const report = buildReport(stats, [...preview.jobs].slice(0, 15), true);
+    return { stats, report, preview };
   }
 
   // 6. The report — saved, and emailed to you.
@@ -295,27 +465,32 @@ export async function runJobAgent(supabase: SupabaseClient, trigger: "cron" | "m
       })
       .catch((error) => console.error("Job agent report email failed:", error));
   }
-  return { stats, report };
+  return { stats, report, preview };
 }
 
 function buildReport(
   stats: JobAgentStats,
-  top: { title: string; company: string | null; city: string | null; score: number; url: string }[]
+  top: { title: string; company: string | null; city: string | null; score: number; url: string }[],
+  isPreview = false
 ) {
   const lines: string[] = [];
-  lines.push(`New matches saved: ${stats.saved} (of ${stats.found} ads found, ${stats.matched} fit your CV)`);
+  if (isPreview) lines.push("PREVIEW — nothing was saved or sent.", "");
+  lines.push(
+    `${isPreview ? "New matches found" : "New matches saved"}: ${stats.saved} (of ${stats.found} ads found, ${stats.matched} fit your CV)`
+  );
   const cities = Object.entries(stats.byCity).map(([city, count]) => `${city} ${count}`);
   if (cities.length) lines.push(`By city: ${cities.join(" · ")}`);
   lines.push(
-    `Applications emailed: ${stats.emailed.length} · Open applications (Oslo): ${stats.openApplications.length}`
+    `${isPreview ? "Would apply by email" : "Applications emailed"}: ${stats.emailed.length} · Open applications (Oslo): ${stats.openApplications.length}`
   );
+  if (stats.cleared) lines.push(`Cleared from your list (no longer fit, e.g. senior roles): ${stats.cleared}`);
   if (stats.emailed.length) {
-    lines.push("", "Applied by email:");
+    lines.push("", isPreview ? "Would apply by email:" : "Applied by email:");
     for (const item of stats.emailed)
       lines.push(`- ${item.title}${item.company ? `, ${item.company}` : ""} → ${item.to}`);
   }
   if (stats.openApplications.length) {
-    lines.push("", "Open applications sent:");
+    lines.push("", isPreview ? "Would send open applications to:" : "Open applications sent:");
     for (const item of stats.openApplications) lines.push(`- ${item.company} → ${item.to}`);
   }
   if (top.length) {

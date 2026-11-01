@@ -24,9 +24,13 @@ const STYRK_CODES = new Set([
 ]);
 // Cheap title prefilter before fetching each ad's details.
 const TITLE_HINT =
-  /(utvikler|developer|engineer|ingeni|frontend|backend|fullstack|full-stack|\bux\b|\bui\b|designer|designar|programm|software|tjenestedesign|produktdesign)/i;
-// Design roles the STYRK coding often misses.
-const DESIGN_TITLE = /(\bux\b|tjenestedesign|produktdesign|interaksjonsdesign|product designer|service designer)/i;
+  /(utvikler|developer|engineer|ingeni|frontend|backend|fullstack|full-stack|\bux\b|\bui\b|designer|designar|programm|software|tjenestedesign|produktdesign|produktspesialist|product specialist|product manager|implementering|implementation|kundesuksess|customer success|applikasjonsspesialist|application specialist)/i;
+// Design and health/beauty product roles the STYRK coding often misses.
+// Job-agent roles that say nothing about needing dev/UX hands (Enodre's hiring search skips them).
+const BUSINESS_TITLE =
+  /(produktspesialist|product specialist|product manager|implementering|implementation|kundesuksess|customer success|applikasjonsspesialist|application specialist)/i;
+const DESIGN_TITLE =
+  /(\bux\b|tjenestedesign|produktdesign|interaksjonsdesign|product designer|service designer|produktspesialist|product specialist|product manager|implementering|implementation|kundesuksess|customer success|applikasjonsspesialist|application specialist)/i;
 
 export type HiringAd = {
   title: string;
@@ -132,7 +136,7 @@ const adLink = (ad: AdContent) => ad.link ?? `https://arbeidsplassen.nav.no/stil
  */
 export async function findHiringAds(days: number): Promise<HiringAd[]> {
   return (await fetchDevAds(days))
-    .filter((ad) => ad.employer?.orgnr && ad.sector !== "Offentlig")
+    .filter((ad) => ad.employer?.orgnr && ad.sector !== "Offentlig" && !BUSINESS_TITLE.test(ad.title))
     .map((ad) => ({
       title: ad.title.trim(),
       url: adLink(ad),

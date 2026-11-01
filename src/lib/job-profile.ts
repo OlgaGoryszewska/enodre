@@ -13,7 +13,7 @@ export const FIXED_DETAILS: { label: string; value: string }[] = [
   { label: "Portfolio", value: "https://enodre.com" },
   { label: "Behance", value: "https://www.behance.net/olgagoryszewska" },
   { label: "Current title", value: "Full Stack Developer & Product Engineer" },
-  { label: "Years of experience", value: "3+" },
+  { label: "Years of experience", value: "3 (hands-on projects: freelance and sole builder of FuelFlo)" },
   { label: "Languages", value: "Polish (native), English (fluent), Norwegian (fluent), German (elementary)" },
   {
     label: "Education",

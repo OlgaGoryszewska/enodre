@@ -28,11 +28,27 @@ export function cityOf(location: string): TargetCity | null {
 // The role must be ours: developer / engineer / UX / product designer work.
 const ROLE =
   /(developer|utvikler|programmer|programmerer|software engineer|frontend|front-end|backend|back-end|full[ -]?stack|web engineer|mobile engineer|product engineer|react|next\.?js|typescript|javascript|ux|ui designer|product designer|interaction designer|tjenestedesigner|produktdesigner|programista)/i;
+// HealthTech/BeautyTech roles where clinic experience is the edge. These count
+// only at a health or beauty company (DOMAIN) — "customer success" alone is too broad.
+export const DOMAIN_ROLE =
+  /(product specialist|produktspesialist|product manager|product operations|product ops|implementation|implementering|onboarding specialist|solutions? (consultant|specialist)|application specialist|applikasjonsspesialist|customer success|kundesuksess|customer experience|clinical systems|business analyst|digital (product|solutions) specialist|project coordinator)/i;
+const DOMAIN =
+  /(health|medtech|medical|clinic|clinical|patient|hospital|helse|pasient|sykehus|klinikk|aesthetic|beauty|skincare|skin care|cosmetic|dermatolog|medspa|\bsalon\b|wellness|doctolib|doctoralia|docplanner|dignio|pabau|clinicminds|nextmotion|fresha|booksy|treatwell|phorest|zenoti|haut\.ai)/i;
+// Staff perks mention health too — they say nothing about the company.
+const PERKS =
+  /(private |medical |dental |mental )?(health|healthcare|medical)[ -]?(insurance|care|benefits?|cover(age)?|plan|allowance|stipend)|(wellness|wellbeing)[ -]?(stipend|allowance|programs?|benefits?|budget)/gi;
 // Roles that share words with ours but aren't our work.
 const REJECT =
   /(plc|automasjon|automation engineer|embedded|firmware|hardware|electrical|elektro|mechanical|mekanisk|sap\b|salesforce|dynamics 365|mainframe|cobol|nurse|sykepleier|recruiter|sourcer|sales|selger|account manager|teacher|lærer|data scientist|machine learning researcher|game developer|unity|unreal|blockchain|solidity|qa tester|support engineer|helpdesk)/i;
 // Far more senior than 3+ years.
-const TOO_SENIOR = /(principal|staff engineer|head of|director|vp of|chief|cto|10\+ years|8\+ years)/i;
+// Three years of hands-on project experience, not corporate seniority:
+// senior/lead titles and ads asking for 5+ years are out.
+const SENIOR_TITLE =
+  /\b(senior|sr\.?|seniorutvikler|lead|tech lead|team lead|principal|staff|head of|director|vp|chief|cto|architect|arkitekt|engineering manager|it manager|leder)\b/i;
+const YEARS_REQUIRED =
+  /\b(?:minimum|min\.?|at least|minst|over)?\s*([5-9]|1\d)\s*\+?\s*(?:-\s*\d+\s*)?(?:years?|yrs|års?|lat)\b[^.]{0,40}\b(?:experience|erfaring|doświadczenia|of professional|in software|as a)/i;
+// Mid-level and junior-friendly wording is a small plus.
+const MID_LEVEL = /\b(junior|mid|mid-level|medior|intermediate|regular|2\+ years|3\+ years|2-4 years|3-5 years)\b/i;
 
 // Skills from the CV, weighted by how central they are.
 const SKILLS: [string, RegExp, number][] = [
@@ -62,13 +78,25 @@ export type JobScore = { score: number; matched: string[]; rejected: string | nu
 /** 0–100: how well an ad fits the CV, with the skills it matched — or why it's out. */
 export function scoreJob(job: JobInput): JobScore {
   const all = `${job.title}\n${job.text}`;
-  if (!ROLE.test(job.title)) return { score: 0, matched: [], rejected: "Not a developer/UX role" };
+  const domainRole = DOMAIN_ROLE.test(job.title);
+  const domain = DOMAIN.test(all.replace(PERKS, " "));
+  if (!ROLE.test(job.title) && !domainRole) return { score: 0, matched: [], rejected: "Not a developer/UX role" };
+  if (domainRole && !ROLE.test(job.title) && !domain) {
+    return { score: 0, matched: [], rejected: "Not a health or beauty company" };
+  }
   if (REJECT.test(job.title)) return { score: 0, matched: [], rejected: "Different specialism" };
+  if (SENIOR_TITLE.test(job.title)) return { score: 0, matched: [], rejected: "Senior or lead role" };
+  if (YEARS_REQUIRED.test(job.text)) return { score: 0, matched: [], rejected: "Asks for 5+ years" };
   const matched = SKILLS.filter(([, pattern]) => pattern.test(all)).map(([name]) => name);
   let score = SKILLS.filter(([, pattern]) => pattern.test(all)).reduce((sum, [, , weight]) => sum + weight, 0);
   // A skill in the title counts double — it's what the role is about.
   score += SKILLS.filter(([, pattern]) => pattern.test(job.title)).reduce((sum, [, , weight]) => sum + weight, 0);
-  if (TOO_SENIOR.test(job.title)) score -= 25;
+  if (MID_LEVEL.test(all)) score += 8;
+  // Health or beauty is where your background counts most.
+  if (domain) {
+    score += domainRole ? 45 : 20;
+    matched.unshift("Health/beauty");
+  }
   return { score: Math.max(0, Math.min(100, score)), matched, rejected: null };
 }
 
@@ -117,8 +145,8 @@ export function applicationEmail(text: string): string | null {
 }
 
 const CV_HIGHLIGHT = {
-  no: "Jeg har 3+ års erfaring med å bygge web- og mobilprodukter fra idé til drift – sist FuelFlo, en plattform for feltoperasjoner med Next.js-portal, offline PWA og React Native-app på en felles Supabase/PostgreSQL-backend.",
-  en: "I have 3+ years of experience building web and mobile products from idea to production – most recently FuelFlo, a field-operations platform with a Next.js portal, an offline PWA and a React Native app on a shared Supabase/PostgreSQL backend.",
+  no: "Jeg har tre års praktisk erfaring fra egne prosjekter, der jeg har bygget web- og mobilprodukter fra idé til drift – som frilansutvikler og som eneste utvikler bak FuelFlo, en plattform for feltoperasjoner med Next.js-portal, offline PWA og React Native-app på en felles Supabase/PostgreSQL-backend.",
+  en: "I have three years of hands-on project experience building web and mobile products from idea to production – as a freelance developer and as the sole builder of FuelFlo, a field-operations platform with a Next.js portal, an offline PWA and a React Native app on a shared Supabase/PostgreSQL backend.",
 };
 
 /** A short, specific cover letter for one ad. */
@@ -128,7 +156,8 @@ export function coverLetter(input: {
   matched: string[];
   language: "no" | "en";
 }) {
-  const skills = input.matched.slice(0, 4);
+  if (DOMAIN_ROLE.test(input.title)) return domainLetter(input);
+  const skills = input.matched.filter((skill) => skill !== "Health/beauty").slice(0, 4);
   const skillList =
     skills.length > 1
       ? `${skills.slice(0, -1).join(", ")} ${input.language === "no" ? "og" : "and"} ${skills.at(-1)}`
@@ -153,6 +182,28 @@ export function coverLetter(input: {
       ? `I work with ${skillList} every day, and I'm at my best owning the whole journey – from UX and architecture to development and launch.`
       : "I'm at my best owning the whole journey – from UX and architecture to development and launch.",
     "My CV is attached, and you'll find my portfolio at enodre.com and github.com/OlgaGoryszewska. I'd be glad to talk.",
+    "Best regards,\nOlga Goryszewska\n+47 483 38 779",
+  ].join("\n\n");
+}
+
+/** Product, implementation and customer-success roles: the clinic years come first. */
+function domainLetter(input: { title: string; company: string | null; language: "no" | "en" }) {
+  if (input.language === "no") {
+    return [
+      "Hei,",
+      `Jeg søker på stillingen som ${input.title}${input.company ? ` hos ${input.company}` : ""}.`,
+      "I 13 år drev jeg min egen klinikk for medisinsk mikropigmentering i Bergen, så jeg kjenner hverdagen til kundene deres: konsultasjoner, journal, oppfølging og forventningsavklaring. De siste tre årene har jeg jobbet praktisk med produktutvikling, og som eneste utvikler bygget jeg FuelFlo, en plattform for feltoperasjoner, fra brukerinnsikt og UX til lansering.",
+      "Jeg har også jobbet som assistent ved en psykiatrisk avdeling i Bergen kommune, og snakker norsk, polsk og engelsk.",
+      "Denne kombinasjonen gjør at jeg forstår både menneskene som bruker produktet og teknologien bak det. CV-en min ligger vedlagt. Jeg tar gjerne en prat.",
+      "Med vennlig hilsen\nOlga Goryszewska\n+47 483 38 779",
+    ].join("\n\n");
+  }
+  return [
+    "Hello,",
+    `I'm applying for the ${input.title} role${input.company ? ` at ${input.company}` : ""}.`,
+    "For 13 years I ran my own medical micropigmentation clinic in Bergen, so I know your customers' daily reality: consultations, records, follow-up and managing expectations. For the past three years I've worked hands-on in product development, and as sole builder I took FuelFlo, a field-operations platform, from user research and UX to launch.",
+    "I've also worked as an assistant in a psychiatric department at Bergen Kommune, and I speak Norwegian, Polish and English.",
+    "That mix means I understand both the people using the product and the technology behind it. My CV is attached, and I'd be glad to talk.",
     "Best regards,\nOlga Goryszewska\n+47 483 38 779",
   ].join("\n\n");
 }

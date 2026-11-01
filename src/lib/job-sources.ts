@@ -29,7 +29,16 @@ export type FoundJob = {
 
 export type SourceReport = { source: JobSource; found: number; error?: string; skipped?: string };
 
-const KEYWORDS = ["react developer", "frontend developer", "full stack developer", "ux designer"];
+const KEYWORDS = [
+  "react developer",
+  "frontend developer",
+  "full stack developer",
+  "ux designer",
+  "implementation specialist healthcare",
+  "product specialist healthcare",
+  "customer success healthtech",
+  "aesthetic clinic software",
+];
 const TIMEOUT_MS = 15_000;
 // Remote ads must be open to someone living in one of the target countries.
 const REMOTE_OK =
@@ -91,7 +100,7 @@ async function fromAdzuna(days: number): Promise<FoundJob[]> {
         app_id: appId,
         app_key: appKey,
         results_per_page: "50",
-        what_or: "react frontend javascript typescript fullstack next.js ux",
+        what_or: "react frontend javascript typescript fullstack next.js ux healthtech medtech implementation",
         max_days_old: String(days),
         "content-type": "application/json",
         ...(search.where ? { where: search.where } : {}),
@@ -177,7 +186,17 @@ type HimalayasJob = {
 async function fromHimalayas(days: number): Promise<FoundJob[]> {
   const since = Date.now() - days * 86_400_000;
   const pages = await Promise.all(
-    ["react", "next.js", "frontend", "full stack", "react native", "ux designer"]
+    [
+      "react",
+      "next.js",
+      "frontend",
+      "full stack",
+      "react native",
+      "ux designer",
+      "implementation specialist",
+      "customer success",
+      "product specialist",
+    ]
       .flatMap((q) => [1, 2, 3].map((page) => ({ q, page })))
       .map(({ q, page }) =>
         getJson<{ jobs?: HimalayasJob[] }>(
@@ -222,7 +241,7 @@ type RemotiveJob = {
 async function fromRemotive(days: number): Promise<FoundJob[]> {
   const since = Date.now() - days * 86_400_000;
   const lists = await Promise.all(
-    ["software-dev", "design"].map((category) =>
+    ["software-development", "design", "product"].map((category) =>
       getJson<{ jobs?: RemotiveJob[] }>(`https://remotive.com/api/remote-jobs?category=${category}`)
     )
   );
