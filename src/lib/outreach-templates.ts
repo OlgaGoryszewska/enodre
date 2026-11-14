@@ -10,6 +10,9 @@ import { displayCompanyName, factOpening, profileOpening, roleFromAdTitle, roleO
 //   D. A small, low-pressure ask: a 5-minute talk — not a full meeting.
 // Follow-ups add context or ask differently; the final one makes declining easy.
 
+// Window event: open the message composer on a lead.
+export const COMPOSE_LEAD_EVENT = "enodre:compose-lead";
+
 export const MESSAGE_KIND_VALUES = [
   "connection_note",
   "first_message",

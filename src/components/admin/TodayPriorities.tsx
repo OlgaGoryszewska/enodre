@@ -7,13 +7,15 @@ import { cn } from "@/lib/utils";
 import type { PriorityTask } from "@/lib/gtm-dashboard";
 
 interface TodayPrioritiesProps {
+  /** Inside an accordion, which brings its own card and title. */
+  bare?: boolean;
   tasks: PriorityTask[];
   onSnooze: (leadId: string, businessDays: number) => Promise<void>;
   onClear: (leadId: string) => Promise<void>;
 }
 
 /** Today's priorities — derived from the database on every load, most urgent first. */
-export function TodayPriorities({ tasks, onSnooze, onClear }: TodayPrioritiesProps) {
+export function TodayPriorities({ tasks, onSnooze, onClear, bare = false }: TodayPrioritiesProps) {
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,9 +32,9 @@ export function TodayPriorities({ tasks, onSnooze, onClear }: TodayPrioritiesPro
   }
 
   return (
-    <div className="mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
+    <div className={bare ? undefined : "mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8"}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-lg font-semibold tracking-tight">Today&apos;s priorities</h2>
+        {!bare && <h2 className="text-lg font-semibold tracking-tight">Today&apos;s priorities</h2>}
         <p className="text-sm text-ink-muted">
           {tasks.length === 0
             ? "Nothing urgent — find or research new companies."

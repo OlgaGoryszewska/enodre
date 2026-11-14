@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,13 +11,15 @@ import { buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { osloToday } from "@/lib/gtm-logic";
+import { followUpStage, type FollowUpStage } from "@/lib/outreach-autopilot";
+import type { LeadMessage } from "@/lib/outreach-templates";
 import {
   potentialCustomerFormSchema,
   type PotentialCustomerDetails,
   type PotentialCustomerFormValues,
 } from "@/lib/potential-customer-schema";
 import { LeadDetailsDialog } from "@/components/admin/LeadDetailsDialog";
-import { COMPOSE_LEAD_EVENT } from "@/components/admin/MessageComposer";
+import { COMPOSE_LEAD_EVENT } from "@/lib/outreach-templates";
 import {
   SEGMENT_VALUES,
   WEEK_4_BAR_HOURS,
@@ -33,6 +35,8 @@ import {
   type PotentialCustomerAttitude,
 } from "@/lib/potential-customer";
 
+type FollowUpFilter = "followup_due" | "followup_sent";
+
 interface PotentialCustomersTableProps {
   leads: PotentialCustomer[];
   onAdd: (formData: FormData) => Promise<void>;
@@ -44,6 +48,7 @@ interface PotentialCustomersTableProps {
   onSetAttitude: (id: string, attitude: string | null) => Promise<void>;
   onUpdateNote: (id: string, notes: string) => Promise<void>;
   onUpdateDetails: (id: string, details: PotentialCustomerDetails) => Promise<void>;
+  messages: Pick<LeadMessage, "lead_id" | "kind" | "status">[];
 }
 
 type TriFilter = "all" | "yes" | "no";
@@ -142,6 +147,21 @@ function FollowUpCell({ lead, today }: { lead: PotentialCustomer; today: string 
   );
 }
 
+/** The follow-up step under a lead's status: what's due, or what's been sent. */
+function FollowUpStatus({ stage }: { stage: FollowUpStage | null }) {
+  if (!stage) return null;
+  return (
+    <p
+      className={cn(
+        "mt-1 whitespace-nowrap px-1 text-xs",
+        stage.tone === "due" ? "font-semibold text-danger" : "text-ink-muted"
+      )}
+    >
+      {stage.label}
+    </p>
+  );
+}
+
 function Week4Cell({ lead }: { lead: PotentialCustomer }) {
   if (lead.admin_hours_per_week == null) return <span className="text-xs text-ink-muted">Not asked</span>;
   const meets = lead.admin_hours_per_week >= WEEK_4_BAR_HOURS;
@@ -203,6 +223,7 @@ interface LeadsTableProps {
   onToggleResponded: (id: string, value: boolean) => void;
   onUpdateNote: (id: string, notes: string) => Promise<void>;
   onUpdateDetails: (id: string, details: PotentialCustomerDetails) => Promise<void>;
+  stageOf: (lead: PotentialCustomer) => FollowUpStage | null;
   onDelete: (id: string) => void;
   deletingId: string | null;
 }
@@ -223,6 +244,7 @@ function LeadsTable({
   onUpdateDetails,
   onDelete,
   deletingId,
+  stageOf,
 }: LeadsTableProps) {
   const today = osloToday();
   return (
@@ -283,6 +305,7 @@ function LeadsTable({
                   </div>
                 )}
 
+                <FollowUpStatus stage={stageOf(lead)} />
                 <div className="grid gap-2 sm:grid-cols-2">
                   <select
                     value={lead.status}
@@ -427,6 +450,7 @@ function LeadsTable({
                             </option>
                           ))}
                         </select>
+                        <FollowUpStatus stage={stageOf(lead)} />
                       </td>
                       <td className="px-5 py-4 text-ink-muted">
                         {lead.company ? (
@@ -555,6 +579,7 @@ export function PotentialCustomersTable({
   onSetAttitude,
   onUpdateNote,
   onUpdateDetails,
+  messages,
 }: PotentialCustomersTableProps) {
   const [leads, setLeads] = useState(initialLeads);
   // Pick up server refreshes (e.g. a company added from the lead finder).
@@ -568,7 +593,7 @@ export function PotentialCustomersTable({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
 
-  const [statusFilter, setStatusFilter] = useState<PotentialCustomerStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<PotentialCustomerStatus | FollowUpFilter | "all">("all");
   const [messageFilter, setMessageFilter] = useState<TriFilter>("all");
   const [callFilter, setCallFilter] = useState<TriFilter>("all");
   const [segmentFilter, setSegmentFilter] = useState<Segment | "all">("all");
@@ -705,10 +730,34 @@ export function PotentialCustomersTable({
     setLeads((current) => current.map((lead) => (lead.id === id ? { ...lead, ...normalised } : lead)));
   }
 
+  // What was sent to each lead, for the follow-up step shown with the status.
+  const sentKinds = useMemo(() => {
+    const kinds = new Map<string, string[]>();
+    for (const message of messages) {
+      if ((message.status ?? "sent") !== "sent") continue;
+      kinds.set(message.lead_id, [...(kinds.get(message.lead_id) ?? []), message.kind]);
+    }
+    return kinds;
+  }, [messages]);
+  const stageOf = useCallback(
+    (lead: PotentialCustomer) =>
+      followUpStage(lead, sentKinds.get(lead.id) ?? [], followUpDate(lead), osloToday(), formatDay),
+    [sentKinds]
+  );
+
   const filteredLeads = useMemo(
     () =>
       leads.filter((lead) => {
-        if (statusFilter !== "all" && lead.status !== statusFilter) return false;
+        if (statusFilter === "followup_due" && !stageOf(lead)?.due) return false;
+        if (statusFilter === "followup_sent" && !stageOf(lead)?.sent) return false;
+        if (
+          statusFilter !== "all" &&
+          statusFilter !== "followup_due" &&
+          statusFilter !== "followup_sent" &&
+          lead.status !== statusFilter
+        ) {
+          return false;
+        }
         if (segmentFilter !== "all" && lead.segment !== segmentFilter) return false;
         if (messageFilter === "yes" && !lead.message_sent) return false;
         if (messageFilter === "no" && lead.message_sent) return false;
@@ -716,7 +765,7 @@ export function PotentialCustomersTable({
         if (callFilter === "no" && lead.call_made) return false;
         return true;
       }),
-    [leads, statusFilter, segmentFilter, messageFilter, callFilter]
+    [leads, statusFilter, segmentFilter, messageFilter, callFilter, stageOf]
   );
 
   const pendingLeads = filteredLeads.filter((lead) => !lead.responded);
@@ -728,7 +777,9 @@ export function PotentialCustomersTable({
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as PotentialCustomerStatus | "all")}
+            onChange={(event) =>
+              setStatusFilter(event.target.value as PotentialCustomerStatus | FollowUpFilter | "all")
+            }
             className="rounded-full border border-black/10 bg-background px-3 py-1.5 text-xs font-semibold text-ink-muted focus:outline-none focus:ring-2 focus:ring-accent/40"
           >
             <option value="all">All statuses</option>
@@ -737,6 +788,8 @@ export function PotentialCustomersTable({
                 {potentialCustomerStatusLabels[status]}
               </option>
             ))}
+            <option value="followup_due">Follow-up due</option>
+            <option value="followup_sent">Follow-up sent</option>
           </select>
           <select
             value={messageFilter}
@@ -835,6 +888,7 @@ export function PotentialCustomersTable({
           onToggleResponded={handleToggleResponded}
           onUpdateNote={onUpdateNote}
           onUpdateDetails={handleUpdateDetails}
+          stageOf={stageOf}
           onDelete={handleDelete}
           deletingId={deletingId}
         />
@@ -855,6 +909,7 @@ export function PotentialCustomersTable({
           onToggleResponded={handleToggleResponded}
           onUpdateNote={onUpdateNote}
           onUpdateDetails={handleUpdateDetails}
+          stageOf={stageOf}
           onDelete={handleDelete}
           deletingId={deletingId}
         />

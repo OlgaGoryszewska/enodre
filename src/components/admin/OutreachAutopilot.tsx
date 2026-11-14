@@ -39,10 +39,13 @@ export function OutreachAutopilot({
   onRun,
   senderAddress,
   history,
+  bare = false,
 }: {
   onRun: (input: { dryRun: boolean; findNew: boolean; mode?: "all" | "follow_ups" }) => Promise<AutopilotResult>;
   senderAddress: string | null;
   history: OutreachRunReport[];
+  /** Inside an accordion, which brings its own card and title. */
+  bare?: boolean;
 }) {
   const [confirmingFollowUps, setConfirmingFollowUps] = useState(false);
   const [openHistory, setOpenHistory] = useState<string | null>(null);
@@ -73,10 +76,10 @@ export function OutreachAutopilot({
   const wouldSend = items.filter((item) => item.result === "would_send").length;
 
   return (
-    <div className="mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
+    <div className={bare ? undefined : "mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8"}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-2xl">
-          <h2 className="text-lg font-semibold tracking-tight">Run outreach</h2>
+          {!bare && <h2 className="text-lg font-semibold tracking-tight">Run outreach</h2>}
           <p className="mt-1 text-sm text-ink-muted">
             Does the routine in one go: finds companies hiring developers/designers, adds them as leads (with email
             search), writes each due email from the template, checks it and sends it from{" "}

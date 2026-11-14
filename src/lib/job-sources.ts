@@ -10,6 +10,7 @@
 
 import { findNavJobs } from "@/lib/nav-jobs";
 import { fetchLinkedInEmailJobs } from "@/lib/linkedin-email-jobs";
+import { fetchLinkedInHiringPosts } from "@/lib/linkedin-email-posts";
 import { fetchFinnEmailJobs } from "@/lib/finn-email-jobs";
 import { cityOf, type TargetCity } from "@/lib/job-matching";
 
@@ -25,6 +26,8 @@ export type FoundJob = {
   url: string;
   text: string;
   publishedAt: string | null;
+  /** A person's hiring post, not a job ad: there's no title to judge, only the text. */
+  hiringPost?: boolean;
 };
 
 export type SourceReport = { source: JobSource; found: number; error?: string; skipped?: string };
@@ -200,7 +203,8 @@ async function fromHimalayas(days: number): Promise<FoundJob[]> {
       .flatMap((q) => [1, 2, 3].map((page) => ({ q, page })))
       .map(({ q, page }) =>
         getJson<{ jobs?: HimalayasJob[] }>(
-          `https://himalayas.app/jobs/api/search?q=${encodeURIComponent(q)}&page=${page}`
+          // Newest first: by relevance, almost nothing passes the freshness filter.
+          `https://himalayas.app/jobs/api/search?q=${encodeURIComponent(q)}&sort=recent&page=${page}`
         ).catch(() => ({ jobs: [] as HimalayasJob[] }))
       )
   );
@@ -267,19 +271,33 @@ async function fromRemotive(days: number): Promise<FoundJob[]> {
 }
 
 async function fromLinkedIn(): Promise<FoundJob[]> {
-  // Your LinkedIn job alerts (set them up per city on LinkedIn) — read from Gmail.
-  const jobs = await fetchLinkedInEmailJobs({ maxJobs: 40 });
-  return jobs.map((job) => ({
-    source: "linkedin" as const,
-    externalId: job.url.match(/\/jobs\/view\/(\d+)/)?.[1] ?? job.url,
-    title: job.title,
-    company: job.company,
-    location: "LinkedIn alert",
-    city: null,
-    url: job.url,
-    text: "",
-    publishedAt: null,
-  }));
+  // Your LinkedIn job alerts and "… are hiring" posts — both read from Gmail.
+  const [jobs, posts] = await Promise.all([fetchLinkedInEmailJobs({ maxJobs: 60 }), fetchLinkedInHiringPosts()]);
+  return [
+    ...jobs.map((job) => ({
+      source: "linkedin" as const,
+      externalId: job.url.match(/\/jobs\/view\/(\d+)/)?.[1] ?? job.url,
+      title: job.title,
+      company: job.company,
+      location: job.location ?? "LinkedIn alert",
+      city: cityOf(`${job.title} ${job.location ?? ""}`),
+      url: job.url,
+      text: job.location ?? "",
+      publishedAt: null,
+    })),
+    ...posts.map((post) => ({
+      source: "linkedin" as const,
+      externalId: `post-${post.id}`,
+      title: `Hiring post: ${post.author || "LinkedIn"}`.slice(0, 140),
+      company: post.author.match(/@\s*([^\s,|•]+)/)?.[1] ?? null,
+      location: "LinkedIn post",
+      city: null,
+      url: post.url,
+      text: post.text,
+      publishedAt: null,
+      hiringPost: true,
+    })),
+  ];
 }
 
 async function fromFinn(): Promise<FoundJob[]> {

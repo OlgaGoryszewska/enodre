@@ -72,6 +72,11 @@ const SKILLS: [string, RegExp, number][] = [
   ["AWS/Vercel", /\b(aws|vercel)\b/i, 3],
 ];
 
+/** For hiring posts: does the text name a role we'd apply for, without a senior-only ask? */
+export function mentionsOurRole(text: string) {
+  return (ROLE.test(text) || DOMAIN_ROLE.test(text)) && !SENIOR_TITLE.test(text.slice(0, 200));
+}
+
 export type JobInput = { title: string; text: string };
 export type JobScore = { score: number; matched: string[]; rejected: string | null };
 
@@ -144,81 +149,324 @@ export function applicationEmail(text: string): string | null {
   return null;
 }
 
+const BACKGROUND_LINE = {
+  no: "Før det eide og drev jeg en klinikk for medisinsk mikropigmentering i 13 år, i samarbeid med medisinske og estetiske klinikker, og jeg har en bachelorgrad i folkehelse. Derfor forstår jeg både forretningen og menneskene som bruker produktene.",
+  en: "Before that I owned and ran a medical micropigmentation clinic for 13 years, collaborating with medical and aesthetic clinics, and I hold a bachelor's degree in Public Health. So I understand both the business and the people using the products.",
+};
+
+// Short version, for open applications.
 const CV_HIGHLIGHT = {
   no: "Jeg har tre års praktisk erfaring fra egne prosjekter, der jeg har bygget web- og mobilprodukter fra idé til drift – som frilansutvikler og som eneste utvikler bak FuelFlo, en plattform for feltoperasjoner med Next.js-portal, offline PWA og React Native-app på en felles Supabase/PostgreSQL-backend.",
   en: "I have three years of hands-on project experience building web and mobile products from idea to production – as a freelance developer and as the sole builder of FuelFlo, a field-operations platform with a Next.js portal, an offline PWA and a React Native app on a shared Supabase/PostgreSQL backend.",
 };
 
-/** A short, specific cover letter for one ad. */
-export function coverLetter(input: {
+type LetterInput = {
   title: string;
   company: string | null;
   matched: string[];
   language: "no" | "en";
-}) {
+};
+
+const FUELFLO_STORY = {
+  no: "Prosjektet jeg er mest stolt av er FuelFlo. Jeg bygget det fra start til slutt, helt alene, for drivstoffteknikere som jobber på arrangementer og byggeprosjekter, ofte uten dekning og uten tålmodighet for tungvint programvare. Det ble en Next.js-portal, en offline-først PWA, en React Native-app for iOS og Android, og en Supabase/PostgreSQL-backend som holder alles data synkronisert når de er tilbake på nett. Det jeg likte best var å designe det slik at en tekniker kan logge en levering på sekunder i stedet for å fylle ut papirskjemaer.",
+  en: "The project I'm proudest of is FuelFlo. I built it end to end, on my own, for fuel technicians who work at event sites and construction projects, often with no signal and no patience for clunky software. It became a Next.js operations portal, an offline-first PWA, a React Native app for iOS and Android, and a Supabase/PostgreSQL backend that keeps everyone's data in sync when they get back online. Designing it so a technician can log a delivery in seconds, instead of filling in paper forms, was the part I loved most.",
+};
+
+const CLINIC_STORY = {
+  no: "Før teknologien eide og drev jeg en klinikk for medisinsk mikropigmentering i 13 år, og samarbeidet med medisinske og estetiske klinikker. Jeg var i kontakt med kunder hver eneste dag, og det ga meg ferdigheter jeg fortsatt bruker: å lytte nøye, forklare ting tydelig, avklare forventninger og holde roen når ting blir kompliserte. Med en bachelorgrad i folkehelse i bunnen var det også dette som førte meg til UX og frontend-utvikling hos Noroff, for folk bryr seg ikke om hvor smart et system er, de bryr seg om det gjør dagen deres enklere.",
+  en: "Before tech, I spent 13 years owning and running a medical micropigmentation clinic and collaborating with medical and aesthetic clinics, in contact with clients every single day. That career gave me skills I still use all the time: listening carefully, explaining things clearly, managing expectations, and staying calm when things get complicated. Together with my bachelor's degree in Public Health, it's also what pulled me into UX and frontend development at Noroff, because people don't care how clever a system is, they care whether it makes their day easier.",
+};
+
+const TEAM_STORY = {
+  no: "I et team er jeg den som stiller spørsmålene tidlig, deler fremdrift åpent og passer på at designere, utviklere og interessenter snakker om det samme. Jeg liker å samarbeide tett, gi og få ærlige tilbakemeldinger og hjelpe andre å vokse, noe jeg gjorde som mentor hos Noroff.",
+  en: "In a team, I'm the person who asks the questions early, shares progress openly and makes sure designers, developers and stakeholders are talking about the same thing. I enjoy pairing, giving and receiving honest feedback, and helping others grow, which I did as a mentor at Noroff.",
+};
+
+const LIFE_STORY = {
+  no: "Utenom jobb prøver jeg å holde livet i balanse. Jeg er glad i yoga og meditasjon, trives ute i naturen, og deler dagene mine med to labradoodler som sørger for at jeg aldri hopper over en tur.",
+  en: "Outside work, I try to keep my life balanced. I'm a yoga and meditation enthusiast, I love being out in nature, and I share my days with my two Labradoodles, who make sure I never skip a walk.",
+};
+
+const CLOSING = {
+  no: "Jeg jobber gjerne hybrid eller remote, og setter stor pris på en prat, selv en kort en, for å høre mer om teamet og det dere bygger.\n\nCV-en min ligger vedlagt. Takk for at du leste, og jeg håper vi snakkes snart.\n\nVennlig hilsen\nOlga Goryszewska\n+47 483 38 779 · olga.goryszewska@gmail.com",
+  en: "I'm happy to work remotely or in a hybrid setup, and I'd really enjoy a conversation, even a short one, to hear more about the team and what you're building.\n\nMy CV is attached. Thank you for reading, and I hope to speak with you soon.\n\nWarm regards,\nOlga Goryszewska\n+47 483 38 779 · olga.goryszewska@gmail.com",
+};
+
+/** The subject when the agent emails an application to a job ad. */
+export const adSubject = (title: string, language: string) =>
+  language === "no" ? `Søknad: ${title}` : `Application: ${title}`;
+
+/** A warm, personal cover letter for one ad, in Olga's own voice. */
+export function coverLetter(input: LetterInput) {
   if (DOMAIN_ROLE.test(input.title)) return domainLetter(input);
   const skills = input.matched.filter((skill) => skill !== "Health/beauty").slice(0, 4);
+  const main = skills[0] ?? "frontend";
+  const design = /(ux|ui designer|product designer|produktdesigner|tjenestedesigner)/i.test(input.title);
+  const no = input.language === "no";
   const skillList =
-    skills.length > 1
-      ? `${skills.slice(0, -1).join(", ")} ${input.language === "no" ? "og" : "and"} ${skills.at(-1)}`
-      : skills[0];
-  if (input.language === "no") {
-    return [
-      "Hei,",
-      `Jeg søker på stillingen som ${input.title}${input.company ? ` hos ${input.company}` : ""}.`,
-      CV_HIGHLIGHT.no,
-      skillList
-        ? `Jeg jobber daglig med ${skillList}, og liker best å eie hele løpet – fra UX og arkitektur til utvikling og lansering.`
-        : "Jeg liker best å eie hele løpet – fra UX og arkitektur til utvikling og lansering.",
-      "CV-en min ligger vedlagt, og porteføljen finner du på enodre.com og github.com/OlgaGoryszewska. Jeg tar gjerne en prat.",
-      "Med vennlig hilsen\nOlga Goryszewska\n+47 483 38 779",
-    ].join("\n\n");
-  }
-  return [
-    "Hello,",
-    `I'm applying for the ${input.title} role${input.company ? ` at ${input.company}` : ""}.`,
-    CV_HIGHLIGHT.en,
-    skillList
-      ? `I work with ${skillList} every day, and I'm at my best owning the whole journey – from UX and architecture to development and launch.`
-      : "I'm at my best owning the whole journey – from UX and architecture to development and launch.",
-    "My CV is attached, and you'll find my portfolio at enodre.com and github.com/OlgaGoryszewska. I'd be glad to talk.",
-    "Best regards,\nOlga Goryszewska\n+47 483 38 779",
-  ].join("\n\n");
+    skills.length > 1 ? `${skills.slice(0, -1).join(", ")} ${no ? "og" : "and"} ${skills.at(-1)}` : skills[0];
+  const at = input.company ? (no ? ` hos ${input.company}` : ` at ${input.company}`) : "";
+  const parts = no
+    ? [
+        "Hei,",
+        `Jeg søker på stillingen som ${input.title}${at}, fordi jeg ser etter et team der jeg kan fortsette å vokse mens jeg jobber med løsninger ekte mennesker er avhengige av.`,
+        CLINIC_STORY.no,
+        FUELFLO_STORY.no,
+        skillList
+          ? `Til daglig jobber jeg med ${skillList}. Polsk er morsmålet mitt, og jeg jobber komfortabelt på norsk og engelsk, så jeg er vant til å bygge broer mellom mennesker så vel som i kode.`
+          : "Polsk er morsmålet mitt, og jeg jobber komfortabelt på norsk og engelsk, så jeg er vant til å bygge broer mellom mennesker så vel som i kode.",
+        `${input.company ? `Hos ${input.company} vil jeg bidra` : "Jeg vil bidra"} med ${design ? "gjennomtenkt, brukertestet design" : `pålitelig, godt testet ${main}-kode`}, og være en lagkamerat som kommuniserer tydelig med både kunder og kolleger.`,
+        TEAM_STORY.no,
+        LIFE_STORY.no,
+        CLOSING.no,
+      ]
+    : [
+        "Hi,",
+        `I'm applying for the ${input.title} role${at} because I'm looking for a team where I can keep growing while working on things real people depend on.`,
+        CLINIC_STORY.en,
+        FUELFLO_STORY.en,
+        skillList
+          ? `Day to day I work with ${skillList}. Polish is my native language and I work comfortably in English and Norwegian, so I'm used to bridging people as well as code.`
+          : "Polish is my native language and I work comfortably in English and Norwegian, so I'm used to bridging people as well as code.",
+        `${input.company ? `At ${input.company}, I'd contribute` : "I'd contribute"} ${design ? "thoughtful, user-tested design" : `reliable, well-tested ${main} code`}, and I'd be a teammate who communicates clearly with both clients and colleagues.`,
+        TEAM_STORY.en,
+        LIFE_STORY.en,
+        CLOSING.en,
+      ];
+  return parts.join("\n\n");
 }
 
-/** Product, implementation and customer-success roles: the clinic years come first. */
-function domainLetter(input: { title: string; company: string | null; language: "no" | "en" }) {
-  if (input.language === "no") {
-    return [
-      "Hei,",
-      `Jeg søker på stillingen som ${input.title}${input.company ? ` hos ${input.company}` : ""}.`,
-      "I 13 år drev jeg min egen klinikk for medisinsk mikropigmentering i Bergen, så jeg kjenner hverdagen til kundene deres: konsultasjoner, journal, oppfølging og forventningsavklaring. De siste tre årene har jeg jobbet praktisk med produktutvikling, og som eneste utvikler bygget jeg FuelFlo, en plattform for feltoperasjoner, fra brukerinnsikt og UX til lansering.",
-      "Jeg har også jobbet som assistent ved en psykiatrisk avdeling i Bergen kommune, og snakker norsk, polsk og engelsk.",
-      "Denne kombinasjonen gjør at jeg forstår både menneskene som bruker produktet og teknologien bak det. CV-en min ligger vedlagt. Jeg tar gjerne en prat.",
-      "Med vennlig hilsen\nOlga Goryszewska\n+47 483 38 779",
-    ].join("\n\n");
-  }
-  return [
-    "Hello,",
-    `I'm applying for the ${input.title} role${input.company ? ` at ${input.company}` : ""}.`,
-    "For 13 years I ran my own medical micropigmentation clinic in Bergen, so I know your customers' daily reality: consultations, records, follow-up and managing expectations. For the past three years I've worked hands-on in product development, and as sole builder I took FuelFlo, a field-operations platform, from user research and UX to launch.",
-    "I've also worked as an assistant in a psychiatric department at Bergen Kommune, and I speak Norwegian, Polish and English.",
-    "That mix means I understand both the people using the product and the technology behind it. My CV is attached, and I'd be glad to talk.",
-    "Best regards,\nOlga Goryszewska\n+47 483 38 779",
-  ].join("\n\n");
+/** Product, implementation and customer-success roles: the clinic years lead. */
+function domainLetter(input: LetterInput) {
+  const no = input.language === "no";
+  const at = input.company ? (no ? ` hos ${input.company}` : ` at ${input.company}`) : "";
+  const parts = no
+    ? [
+        "Hei,",
+        `Jeg søker på stillingen som ${input.title}${at}, fordi jeg kjenner begge sider av produkter som deres: hverdagen til dem som bruker dem, og teknologien bak.`,
+        CLINIC_STORY.no,
+        FUELFLO_STORY.no,
+        "Polsk er morsmålet mitt, og jeg jobber komfortabelt på norsk og engelsk. Jeg har også jobbet som assistent ved en psykiatrisk avdeling i Bergen kommune, så jeg er vant til å møte folk der de er.",
+        `${input.company ? `Hos ${input.company} vil jeg bidra` : "Jeg vil bidra"} med forståelse for kundene deres og evnen til å oversette behovene deres til løsninger som faktisk blir tatt i bruk.`,
+        TEAM_STORY.no,
+        LIFE_STORY.no,
+        CLOSING.no,
+      ]
+    : [
+        "Hi,",
+        `I'm applying for the ${input.title} role${at} because I know both sides of products like yours: the daily reality of the people using them, and the technology behind them.`,
+        CLINIC_STORY.en,
+        FUELFLO_STORY.en,
+        "Polish is my native language and I work comfortably in English and Norwegian. I've also worked as an assistant in a psychiatric department at Bergen Kommune, so I'm used to meeting people where they are.",
+        `${input.company ? `At ${input.company}, I'd bring` : "I'd bring"} an understanding of your customers and the ability to turn their needs into solutions they actually adopt.`,
+        TEAM_STORY.en,
+        LIFE_STORY.en,
+        CLOSING.en,
+      ];
+  return parts.join("\n\n");
 }
+
+type CareerVariant = "aesthetics" | "beauty" | "health" | "device" | "ai";
+
+/** Which story fits a company, from its tracker entry. */
+export function careerVariant(contact: { industry?: string | null; specialisation?: string | null }): CareerVariant {
+  const about = contact.specialisation ?? "";
+  if (contact.industry === "BeautyTech") return /(aesthetic|clinic|medspa)/i.test(about) ? "aesthetics" : "beauty";
+  if (/(\bMRI\b|cardiac|device|diagnostic)/i.test(about)) return "device";
+  if (/\bAI\b/.test(about)) return "ai";
+  return "health";
+}
+
+const CAREER_COPY: Record<
+  CareerVariant,
+  { no: { field: string; background: string; goal: string }; en: { field: string; background: string; goal: string } }
+> = {
+  aesthetics: {
+    en: {
+      field: "medical aesthetics and technology",
+      background:
+        "giving me first-hand experience of the challenges involved in managing an aesthetics business, working with clients and delivering treatments",
+      goal: "joining a company developing technology for the medical aesthetics industry",
+    },
+    no: {
+      field: "medisinsk estetikk og teknologi",
+      background:
+        "og vet av egen erfaring hva det innebærer å drive en estetisk virksomhet, jobbe med klienter og utføre behandlinger",
+      goal: "bli med i et selskap som utvikler teknologi for den medisinske estetikkbransjen",
+    },
+  },
+  beauty: {
+    en: {
+      field: "beauty and technology",
+      background:
+        "giving me first-hand experience of what clients expect from a beauty business and how the customer experience works in practice",
+      goal: "joining a company developing technology for the beauty industry",
+    },
+    no: {
+      field: "skjønnhet og teknologi",
+      background:
+        "og vet av egen erfaring hva kunder forventer av en skjønnhetsvirksomhet, og hvordan kundeopplevelsen fungerer i praksis",
+      goal: "bli med i et selskap som utvikler teknologi for skjønnhetsbransjen",
+    },
+  },
+  health: {
+    en: {
+      field: "healthcare and technology",
+      background:
+        "and I have since worked as an assistant in a psychiatric department at Bergen Kommune, so I understand both patient-facing work and how care is organised day to day",
+      goal: "joining a company developing technology for healthcare",
+    },
+    no: {
+      field: "helse og teknologi",
+      background:
+        "og har siden jobbet som assistent ved en psykiatrisk avdeling i Bergen kommune, så jeg kjenner både pasientnært arbeid og hvordan hverdagen i helsetjenesten er organisert",
+      goal: "bli med i et selskap som utvikler teknologi for helsesektoren",
+    },
+  },
+  device: {
+    en: {
+      field: "clinical practice and technology",
+      background:
+        "which taught me how clinical work happens in practice and what makes people adopt a new product or procedure",
+      goal: "joining a company bringing new technology into clinical environments",
+    },
+    no: {
+      field: "klinisk praksis og teknologi",
+      background:
+        "og har lært hvordan klinisk arbeid foregår i praksis, og hva som gjør at folk tar i bruk et nytt produkt",
+      goal: "bli med i et selskap som tar ny teknologi inn i kliniske miljøer",
+    },
+  },
+  ai: {
+    en: {
+      field: "healthcare and AI-driven products",
+      background:
+        "and I have since worked as an assistant in a psychiatric department at Bergen Kommune, so I understand the people these products are built for",
+      goal: "joining a company building AI-powered products for healthcare",
+    },
+    no: {
+      field: "helse og AI-drevne produkter",
+      background:
+        "og har siden jobbet som assistent ved en psykiatrisk avdeling i Bergen kommune, så jeg kjenner menneskene disse produktene lages for",
+      goal: "bli med i et selskap som bygger AI-drevne produkter for helsesektoren",
+    },
+  },
+};
+
+/**
+ * First contact from the Recruiters & companies tracker: an introduction, not
+ * a job request. Clinic years first, then proof of product work, then an open
+ * ask. Norwegian for Norway contacts, English otherwise.
+ */
+export function careerApplication(contact: {
+  kind: "agency" | "recruiter" | "company";
+  name: string;
+  coverage: string | null;
+  industry?: string | null;
+  specialisation?: string | null;
+}) {
+  const norwegian = /\b(norway|oslo|bergen|norge)\b/i.test(contact.coverage ?? "");
+  const company = contact.kind === "company";
+  const greetingName = contact.kind === "recruiter" ? contact.name.split(/\s/)[0] : null;
+  const variant = company ? careerVariant(contact) : "health";
+  if (norwegian) {
+    const copy = CAREER_COPY[variant].no;
+    return {
+      subject: `Introduksjon: ${copy.field}`,
+      body: [
+        greetingName ? `Hei ${greetingName},` : "Hei,",
+        company
+          ? `Jeg tar kontakt med ${contact.name} fordi arbeidet deres ligger i skjæringspunktet mellom to felt jeg kjenner godt: ${copy.field}.`
+          : "Jeg tar kontakt fordi jeg kombinerer to felt jeg kjenner godt: helse og estetikk, og teknologi.",
+        `I 13 år eide og drev jeg en klinikk for medisinsk mikropigmentering i Norge og samarbeidet med medisinske og estetiske klinikker, ${copy.background}. Jeg har også en bachelorgrad i folkehelse.`,
+        "De siste tre årene har jeg gått over til teknologi og digital produktutvikling, med UX-design og frontend-utvikling. Jeg har også på egen hånd designet og bygget FuelFlo, en programvareplattform for å styre komplekse operative prosesser.",
+        `Nå vil jeg forene disse to verdenene og ${copy.goal}. Jeg er særlig interessert i muligheter innen produkt, implementering, kundesuksess eller digitale løsninger.`,
+        "Jeg snakker flytende norsk og polsk, og avansert engelsk.",
+        company
+          ? "Er du åpen for en kort prat, eller kan du vise meg til den som har ansvar for produkt, partnerskap eller rekruttering?"
+          : "Er du åpen for en kort prat om hvilke selskaper dette kan passe for?",
+        "CV-en min ligger vedlagt, og jeg presenterer meg gjerne nærmere.",
+        "Med vennlig hilsen\nOlga Goryszewska\n+47 483 38 779 · linkedin.com/in/olga-goryszewska",
+      ].join("\n\n"),
+    };
+  }
+  const copy = CAREER_COPY[variant].en;
+  return {
+    subject: `Introduction: ${copy.field}`,
+    body: [
+      greetingName ? `Hi ${greetingName},` : "Hello,",
+      company
+        ? `I'm reaching out to ${contact.name} because your work sits at the intersection of two fields I know well: ${copy.field}.`
+        : "I'm reaching out because I combine two fields I know well: health and aesthetics, and technology.",
+      `For 13 years, I owned and ran a medical micropigmentation clinic in Norway and collaborated with medical and aesthetic clinics, ${copy.background}. I also hold a bachelor's degree in Public Health.`,
+      "Over the past three years, I've moved into technology and digital product development, combining UX design and frontend development. I've also independently designed and built FuelFlo, a software platform for managing complex operational processes.",
+      `I'm now looking to bring these two worlds together by ${copy.goal}. I'd be particularly interested in opportunities across product, implementation, customer success or digital solutions.`,
+      "I speak fluent Norwegian and Polish, as well as advanced English.",
+      company
+        ? "Would you be open to a short conversation, or could you point me towards the person responsible for product, partnerships or recruitment?"
+        : "Would you be open to a short conversation about which companies this could suit?",
+      "I've attached my CV and would love to introduce myself.",
+      "Best regards,\nOlga Goryszewska\n+47 483 38 779 · linkedin.com/in/olga-goryszewska",
+    ].join("\n\n"),
+  };
+}
+
+// Why this kind of company, by its industry code in the register.
+const OPEN_REASON: { code: RegExp; reason: (company: string) => string }[] = [
+  {
+    code: /^62\.1/,
+    reason: (company) =>
+      `Jeg sender en åpen søknad til ${company} fordi dere utvikler programvare, og det er der jeg trives best: å følge et produkt fra idé til noe folk faktisk bruker hver dag.`,
+  },
+  {
+    code: /^62\.2/,
+    reason: (company) =>
+      `Jeg sender en åpen søknad til ${company} fordi dere leverer utvikling og rådgivning til kunder, og jeg vil gjerne jobbe som utvikler på kundeprosjekter – fast, på prosjekt eller som konsulent.`,
+  },
+  {
+    code: /^73\.1/,
+    reason: (company) =>
+      `Jeg sender en åpen søknad til ${company} fordi jeg kombinerer det et byrå trenger: UX-design og utvikling. Jeg tar gjerne en idé fra skisse i Figma til en ferdig løsning i React og Next.js.`,
+  },
+  {
+    code: /^74\.1/,
+    reason: (company) =>
+      `Jeg sender en åpen søknad til ${company} fordi dere jobber med design, og jeg er en utvikler med UX-bakgrunn som kan gjøre gode design om til raske, ferdige løsninger på nett og mobil.`,
+  },
+];
 
 /** An open application to an agency or consultancy that hasn't advertised a role. */
-export function openApplication(company: string) {
+export function openApplication(company: string, industryCode: string | null = null) {
+  const reason =
+    OPEN_REASON.find((item) => industryCode && item.code.test(industryCode))?.reason(company) ??
+    `Jeg sender en åpen søknad til ${company}, i tilfelle dere trenger en fullstack-utvikler eller produktutvikler nå eller fremover – fast, på prosjekt eller som konsulent.`;
   return {
     subject: "Åpen søknad – fullstack-utvikler og produktutvikler (React, Next.js, React Native)",
     body: [
       "Hei,",
-      `Jeg sender en åpen søknad til ${company}, i tilfelle dere trenger en fullstack-utvikler eller produktutvikler nå eller fremover – fast, på prosjekt eller som konsulent.`,
+      reason,
       CV_HIGHLIGHT.no,
+      BACKGROUND_LINE.no,
       "Jeg jobber med React, Next.js, TypeScript, React Native, Node.js og Supabase/PostgreSQL, og har bakgrunn i UX (Figma, brukertesting).",
       "CV-en min ligger vedlagt, og porteføljen finner du på enodre.com. Passer det med en kort prat?",
       "Med vennlig hilsen\nOlga Goryszewska\n+47 483 38 779 · linkedin.com/in/olga-goryszewska",
     ].join("\n\n"),
   };
+}
+
+/**
+ * A LinkedIn connection note (LinkedIn allows 300 characters). Personal and
+ * short: written to be sent by you, one at a time.
+ */
+export function linkedinNote(contact: {
+  kind: "agency" | "recruiter" | "company";
+  name: string;
+  organisation?: string | null;
+}) {
+  const first = contact.kind === "recruiter" ? contact.name.split(/\s/)[0] : null;
+  const note =
+    contact.kind === "company"
+      ? `Hi, I'm Olga: 13 years running a medical aesthetics clinic, now a UX designer and React developer building health and beauty tech. I follow ${contact.name}'s work and would love to connect.`
+      : `Hi${first ? ` ${first}` : ""}, I'm Olga: 13 years running a medical aesthetics clinic, now a UX designer and React developer for health and beauty tech. I'd love to connect and hear which roles you're recruiting for.`;
+  return note.length <= 300 ? note : `${note.slice(0, 297).trimEnd()}…`;
 }

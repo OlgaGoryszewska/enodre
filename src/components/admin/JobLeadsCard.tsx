@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowUpRight, Check, Loader2, Plus, Trash2 } from "lucide-react";
+import { Accordion } from "@/components/admin/Accordion";
 import { FormField } from "@/components/challenge/FormField";
 import { Input } from "@/components/ui/input";
 import { buttonVariants } from "@/components/ui/button";
@@ -118,16 +119,8 @@ export function JobLeadsCard({
   }
 
   return (
-    <div className="min-w-0 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            {icon}
-            <h2 className="text-lg font-semibold tracking-tight">{heading}</h2>
-          </div>
-          <p className="mt-1 text-sm text-ink-muted">{subtitle}</p>
-        </div>
-
+    <Accordion icon={icon} title={`${heading} (${jobs.length})`} subtitle={subtitle} keepMounted>
+      <div className="flex justify-end">
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
             <button type="button" className={cn(buttonVariants({ variant: "outline" }), "shrink-0")}>
@@ -198,7 +191,7 @@ export function JobLeadsCard({
       ) : (
         <p className="mt-6 text-sm text-ink-muted">No jobs added yet.</p>
       )}
-    </div>
+    </Accordion>
   );
 }
 

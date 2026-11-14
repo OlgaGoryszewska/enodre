@@ -25,6 +25,7 @@ import { isMissingColumnError } from "@/lib/lead-updates";
 import { industryFromCode } from "@/lib/industry-playbooks";
 
 const TABLE = "lead_candidates";
+const EMAIL_SEARCH_LIMIT_MS = 12_000;
 const RUNS_TABLE = "lead_research_runs";
 
 const findLeadsSchema = z
@@ -414,6 +415,22 @@ export async function researchLeadCandidate(id: string): Promise<ResearchOutcome
  * finder has on it (register data, plus the research if it was run), then
  * marks it approved so it leaves the finder queue and isn't found again.
  */
+/**
+ * "Add to customers" from the dashboard. Returns the failure rather than
+ * throwing: Next.js hides thrown messages in production, and the reason is
+ * what's needed to fix it.
+ */
+export async function addCandidateToPipeline(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await approveLeadCandidate(id);
+    return { ok: true };
+  } catch (error) {
+    console.error("Couldn't add candidate to the pipeline:", error);
+    const message = (error as { message?: string } | null)?.message;
+    return { ok: false, error: message || "Couldn't add the company." };
+  }
+}
+
 export async function approveLeadCandidate(id: string) {
   const supabase = await requireAdmin();
 
@@ -468,14 +485,21 @@ export async function approveLeadCandidate(id: string) {
 
   // The company's general address (register, then website) — free, a few
   // seconds. Only post@/kontakt@-style addresses are saved (§15).
-  const registerEmail = (await getCompany(candidate.org_number).catch(() => null))?.email ?? null;
-  const search = await findCompanyEmails({
-    website: candidate.website ?? candidate.research?.website ?? null,
-    registerEmail,
-    companyName: candidate.company,
-    orgNumber: candidate.org_number,
-    contactName: candidate.contact_name,
-  }).catch(() => null);
+  // Capped, so a slow website can't hold up the add: the lead is saved without
+  // an address, and Run outreach or "Find email" looks again later.
+  const search = await Promise.race([
+    (async () => {
+      const registerEmail = (await getCompany(candidate.org_number).catch(() => null))?.email ?? null;
+      return findCompanyEmails({
+        website: candidate.website ?? candidate.research?.website ?? null,
+        registerEmail,
+        companyName: candidate.company,
+        orgNumber: candidate.org_number,
+        contactName: candidate.contact_name,
+      }).catch(() => null);
+    })(),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), EMAIL_SEARCH_LIMIT_MS)),
+  ]);
   const website = candidate.website ?? candidate.research?.website ?? search?.website ?? null;
   const email = search?.emails.find((item) => item.generic)?.email ?? null;
 
@@ -516,6 +540,10 @@ export async function approveLeadCandidate(id: string) {
   });
   if (insertError && isMissingColumnError(insertError)) {
     ({ data: created, error: insertError } = await insertRow(baseRow));
+  }
+  // A segment or industry the database doesn't allow yet shouldn't lose the lead.
+  if (insertError?.code === CHECK_VIOLATION) {
+    ({ data: created, error: insertError } = await insertRow({ ...baseRow, segment: null }));
   }
   if (insertError || !created) throw insertError ?? new Error("Couldn't add the lead.");
 

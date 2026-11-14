@@ -11,6 +11,23 @@ import { buildPerformance, buildPriorities, type ResearchRun } from "@/lib/gtm-d
 import { osloToday, startOfWeek } from "@/lib/gtm-logic";
 import type { DiscoveryCall } from "@/lib/discovery-call";
 import { MessageComposer } from "@/components/admin/MessageComposer";
+import { Accordion } from "@/components/admin/Accordion";
+import { EmailReplies, type EmailReply } from "@/components/admin/EmailReplies";
+import { isGulfAddress } from "@/lib/email-replies";
+import { checkRepliesNow, setReplyAutomatic } from "@/app/admin/reply-actions";
+import { COMPOSE_LEAD_EVENT } from "@/lib/outreach-templates";
+import {
+  BarChart3,
+  Inbox,
+  ListChecks,
+  Paperclip,
+  PenLine,
+  Search,
+  Send,
+  SquareKanban,
+  StickyNote as StickyNoteIcon,
+  Users,
+} from "lucide-react";
 import { OutreachAutopilot, type OutreachRunReport } from "@/components/admin/OutreachAutopilot";
 import { runOutreach } from "@/app/admin/marketing/autopilot-actions";
 import {
@@ -46,7 +63,7 @@ import {
   clearFollowUp,
 } from "@/app/admin/marketing/potential-customers-actions";
 import {
-  approveLeadCandidate,
+  addCandidateToPipeline,
   findHiringCompanies,
   findLeads,
   rejectLeadCandidate,
@@ -220,6 +237,21 @@ export default async function MarketingPage() {
     .limit(20);
   const outreachRuns = (outreachRunData ?? []) as OutreachRunReport[];
 
+  const repliesResult = await supabase
+    .from("email_replies")
+    .select("id, from_email, from_name, subject, received_at, snippet, is_auto, lead_id, company_key, company")
+    .eq("kind", "lead")
+    .order("received_at", { ascending: false })
+    .limit(100);
+
+  const priorities = buildPriorities({
+    leads,
+    candidates: allCandidates,
+    calls: discoveryCalls,
+    messages: leadMessages,
+    today,
+  });
+
   return (
     <section className="shell py-20 sm:py-28">
       <AdminNav />
@@ -234,37 +266,75 @@ export default async function MarketingPage() {
         </Link>
       </div>
 
-      <TodayPriorities
-        tasks={buildPriorities({
-          leads,
-          candidates: allCandidates,
-          calls: discoveryCalls,
-          messages: leadMessages,
-          today,
-        })}
-        onSnooze={snoozeFollowUp}
-        onClear={clearFollowUp}
-      />
+      <div className="mt-10">
+        <Accordion
+          icon={<ListChecks className="h-4 w-4" aria-hidden="true" />}
+          title="Today's priorities"
+          subtitle={`${priorities.length} to do`}
+          defaultOpen
+          keepMounted
+        >
+          <TodayPriorities bare tasks={priorities} onSnooze={snoozeFollowUp} onClear={clearFollowUp} />
+        </Accordion>
+      </div>
 
-      <OutreachAutopilot onRun={runOutreach} senderAddress={getMailer()?.address ?? null} history={outreachRuns} />
+      <div className="mt-10">
+        <EmailReplies
+          title="Replies from leads"
+          inbox="info@enodre.com"
+          replies={((repliesResult.data ?? []) as EmailReply[]).filter((reply) => !isGulfAddress(reply.from_email))}
+          setupMissing={Boolean(repliesResult.error)}
+          onCheck={checkRepliesNow}
+          onSetAutomatic={setReplyAutomatic}
+        />
+      </div>
+
+      <div className="mt-10">
+        <Accordion
+          icon={<Send className="h-4 w-4" aria-hidden="true" />}
+          title="Run outreach"
+          subtitle="Find, write, check and send in one go"
+          keepMounted
+        >
+          <OutreachAutopilot
+            bare
+            onRun={runOutreach}
+            senderAddress={getMailer()?.address ?? null}
+            history={outreachRuns}
+          />
+        </Accordion>
+      </div>
 
       <GtmPlanCard marketingTasks={marketingTasks} onAddTasks={addGtmTasksToBoard} />
 
-      <GtmPerformance
-        performance={buildPerformance({
-          leads,
-          candidates: allCandidates,
-          calls: discoveryCalls,
-          runs: researchRuns,
-          messages: leadMessages,
-          today,
-        })}
-      />
+      <div className="mt-10">
+        <Accordion
+          icon={<BarChart3 className="h-4 w-4" aria-hidden="true" />}
+          title="GTM performance"
+          subtitle="Funnel, this week and the week-4 gate"
+        >
+          <GtmPerformance
+            bare
+            performance={buildPerformance({
+              leads,
+              candidates: allCandidates,
+              calls: discoveryCalls,
+              runs: researchRuns,
+              messages: leadMessages,
+              today,
+            })}
+          />
+        </Accordion>
+      </div>
 
-      <div id="leads" className="mt-10 scroll-mt-24 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
-        <h2 className="text-lg font-semibold tracking-tight">Leads pipeline</h2>
-        <p className="mt-1 text-sm text-ink-muted">A separate list from People, not a filtered view of it.</p>
-        <div className="mt-6">
+      <div className="mt-10">
+        <Accordion
+          id="leads"
+          keepMounted
+          icon={<Users className="h-4 w-4" aria-hidden="true" />}
+          title={`Leads pipeline (${leads.length})`}
+          subtitle="A separate list from People, not a filtered view of it."
+        >
           <PotentialCustomersTable
             leads={leads}
             onAdd={addPotentialCustomer}
@@ -276,17 +346,24 @@ export default async function MarketingPage() {
             onSetAttitude={setPotentialCustomerAttitude}
             onUpdateNote={updatePotentialCustomerNote}
             onUpdateDetails={updatePotentialCustomerDetails}
+            messages={leadMessages}
           />
-        </div>
+        </Accordion>
       </div>
 
-      <div id="composer" className="mt-10 scroll-mt-24 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
-        <h2 className="text-lg font-semibold tracking-tight">Message composer</h2>
-        <p className="mt-1 text-sm text-ink-muted">
-          Draft outreach from a lead&apos;s details. Write the opener yourself from their researched fact, check it,
-          then send it from LinkedIn, email or the phone and mark it as sent here.
-        </p>
-        <div className="mt-6">
+      <div className="mt-10">
+        <Accordion
+          id="composer"
+          keepMounted
+          openOnEvent={COMPOSE_LEAD_EVENT}
+          icon={<PenLine className="h-4 w-4" aria-hidden="true" />}
+          title="Message composer"
+          subtitle="Write, check and send a message to a lead"
+        >
+          <p className="mb-6 text-sm text-ink-muted">
+            Draft outreach from a lead&apos;s details. Write the opener yourself from their researched fact, check it,
+            then send it from LinkedIn, email or the phone and mark it as sent here.
+          </p>
           <MessageComposer
             leads={leads}
             messages={leadMessages}
@@ -302,18 +379,23 @@ export default async function MarketingPage() {
             onSaveEmail={saveLeadEmail}
             senderAddress={getMailer()?.address ?? null}
           />
-        </div>
+        </Accordion>
       </div>
 
       <OutreachPlaybooks />
 
-      <div id="lead-finder" className="mt-10 scroll-mt-24 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
-        <h2 className="text-lg font-semibold tracking-tight">Lead finder agents</h2>
-        <p className="mt-1 text-sm text-ink-muted">
-          Find companies in the public register, research each one with Claude, then approve the good ones into the
-          pipeline. Nothing is sent automatically.
-        </p>
-        <div className="mt-6">
+      <div className="mt-10">
+        <Accordion
+          id="lead-finder"
+          keepMounted
+          icon={<Search className="h-4 w-4" aria-hidden="true" />}
+          title="Lead finder agents"
+          subtitle="Find, research and approve companies. Nothing is sent automatically."
+        >
+          <p className="mb-6 text-sm text-ink-muted">
+            Find companies in the public register, research each one with Claude, then approve the good ones into the
+            pipeline.
+          </p>
           <LeadAgentPanel
             candidates={leadCandidates}
             monthSpendUsd={researchSpendThisMonth}
@@ -321,37 +403,60 @@ export default async function MarketingPage() {
             onFind={findLeads}
             onFindHiring={findHiringCompanies}
             onResearch={researchLeadCandidate}
-            onApprove={approveLeadCandidate}
+            onApprove={addCandidateToPipeline}
             onReject={rejectLeadCandidate}
           />
-        </div>
+        </Accordion>
       </div>
 
-      <div className="mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight">Customers who reached us</h2>
-            <p className="mt-1 text-sm text-ink-muted">
-              Inbound — submitted the site&apos;s contact form, rather than us reaching out.
-            </p>
+      <div className="mt-10">
+        <Accordion
+          icon={<Inbox className="h-4 w-4" aria-hidden="true" />}
+          title={`Customers who reached us (${inboundContacts.length})`}
+          subtitle="Submitted the site's contact form, rather than us reaching out."
+        >
+          <div className="mb-4 flex justify-end">
+            <Link href="/admin" className="text-sm font-semibold text-accent hover:underline">
+              Open full inbox →
+            </Link>
           </div>
-          <Link href="/admin" className="text-sm font-semibold text-accent hover:underline">
-            Open full inbox →
-          </Link>
-        </div>
-        <div className="mt-6">
           <ContactsTable contacts={inboundContacts} />
-        </div>
+        </Accordion>
       </div>
 
-      <div className="mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
-        <MarketingKanbanBoard initialTasks={marketingTasks} />
+      <div className="mt-10">
+        <Accordion
+          icon={<SquareKanban className="h-4 w-4" aria-hidden="true" />}
+          title="Marketing kanban"
+          subtitle={`${marketingTasks.length} tasks`}
+          keepMounted
+        >
+          <MarketingKanbanBoard initialTasks={marketingTasks} />
+        </Accordion>
       </div>
 
       {businessProfileId && (
         <>
-          <CustomerFilesSection customerId={businessProfileId} initialFiles={filesWithUrls} />
-          <StickyNotesBoard customerId={businessProfileId} initialNotes={stickyNotes} />
+          <div className="mt-10">
+            <Accordion
+              icon={<Paperclip className="h-4 w-4" aria-hidden="true" />}
+              title={`Files (${filesWithUrls.length})`}
+              subtitle="Images and documents for Enodre"
+              keepMounted
+            >
+              <CustomerFilesSection bare customerId={businessProfileId} initialFiles={filesWithUrls} />
+            </Accordion>
+          </div>
+          <div className="mt-10">
+            <Accordion
+              icon={<StickyNoteIcon className="h-4 w-4" aria-hidden="true" />}
+              title={`Sticky notes (${stickyNotes.length})`}
+              subtitle="Drag notes around, jot down anything"
+              keepMounted
+            >
+              <StickyNotesBoard bare customerId={businessProfileId} initialNotes={stickyNotes} />
+            </Accordion>
+          </div>
         </>
       )}
 

@@ -11,6 +11,7 @@ import {
   ListChecks,
   Target,
   Users,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,7 @@ const links: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/admin/health", label: "Health", icon: HeartPulse },
   { href: "/admin/linkedin", label: "Applying for jobs", icon: Briefcase },
+  { href: "/admin/pmu", label: "PMU jobs", icon: Sparkles },
   { href: "/admin/marketing", label: "Marketing", icon: Target },
   { href: "/admin/execution", label: "Daily Execution", icon: ListChecks },
 ];

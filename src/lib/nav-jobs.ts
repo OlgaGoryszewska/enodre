@@ -88,7 +88,15 @@ async function feedToken() {
 }
 
 /** Every active ad for developers and designers changed in the last `days` days (full details). */
-async function fetchDevAds(days: number): Promise<AdContent[]> {
+function fetchDevAds(days: number): Promise<AdContent[]> {
+  return fetchFeedAds(days, TITLE_HINT, (ad) => {
+    const styrk = (ad.categoryList ?? []).filter((c) => c.categoryType === "STYRK08").map((c) => c.code);
+    return styrk.some((code) => STYRK_CODES.has(code)) || DESIGN_TITLE.test(ad.title);
+  });
+}
+
+/** Active ads changed in the last `days` days whose title passes `titleHint` and whose details pass `keep`. */
+async function fetchFeedAds(days: number, titleHint: RegExp, keep: (ad: AdContent) => boolean): Promise<AdContent[]> {
   const token = await feedToken();
   const get = async <T>(path: string, headers: Record<string, string> = {}) => {
     const response = await fetch(`${BASE_URL}${path}`, {
@@ -109,7 +117,7 @@ async function fetchDevAds(days: number): Promise<AdContent[]> {
     page = await get<FeedPage>(page.next_url);
   }
   const candidates = [...latest.values()].filter(
-    (item) => item._feed_entry.status === "ACTIVE" && TITLE_HINT.test(item.title)
+    (item) => item._feed_entry.status === "ACTIVE" && titleHint.test(item.title)
   );
 
   const ads: AdContent[] = [];
@@ -120,8 +128,7 @@ async function fetchDevAds(days: number): Promise<AdContent[]> {
     for (const detail of details) {
       const ad = detail?.ad_content;
       if (!ad) continue;
-      const styrk = (ad.categoryList ?? []).filter((c) => c.categoryType === "STYRK08").map((c) => c.code);
-      if (!styrk.some((code) => STYRK_CODES.has(code)) && !DESIGN_TITLE.test(ad.title)) continue;
+      if (!keep(ad)) continue;
       ads.push(ad);
     }
   }
@@ -163,6 +170,28 @@ export type NavJob = {
 /** Active developer/design jobs (public sector too — for the job agent), with location and text. */
 export async function findNavJobs(days: number): Promise<NavJob[]> {
   return (await fetchDevAds(days)).map((ad) => ({
+    id: ad.uuid,
+    title: ad.title.trim(),
+    company: ad.employer?.name ?? null,
+    location: (ad.workLocations ?? [])
+      .map((place) => [place.city, place.municipal, place.county].filter(Boolean).join(", "))
+      .join("; "),
+    url: adLink(ad),
+    applicationUrl: ad.applicationUrl || null,
+    description: ad.description ?? "",
+    published: ad.published ?? null,
+    expires: ad.expires ?? null,
+  }));
+}
+
+// Beauty titles PMU work hides under; the ad text then has to mention PMU itself.
+const BEAUTY_TITLE =
+  /(permanent|pmu|microblad|mikroblad|bryn|vipp|hudpleie|hudterapeut|hudterapi|kosmetolog|kosmetiker|tatover|skjønnhet|beauty|estetisk|salong)/i;
+
+/** Active beauty ads from NAV (for the PMU agent); `mentionsPmu` decides which count. */
+export async function findNavBeautyJobs(days: number, mentionsPmu: (text: string) => boolean): Promise<NavJob[]> {
+  const ads = await fetchFeedAds(days, BEAUTY_TITLE, (ad) => mentionsPmu(`${ad.title} ${ad.description ?? ""}`));
+  return ads.map((ad) => ({
     id: ad.uuid,
     title: ad.title.trim(),
     company: ad.employer?.name ?? null,

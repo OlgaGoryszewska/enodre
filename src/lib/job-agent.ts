@@ -2,16 +2,20 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { collectJobs, type FoundJob, type SourceReport } from "@/lib/job-sources";
 import {
   adLanguage,
+  adSubject,
   applicationEmail,
   coverLetter,
   openApplication,
   scoreJob,
   type TargetCity,
+  mentionsOurRole,
   notEnglishFriendly,
 } from "@/lib/job-matching";
 import { getGmailMailer } from "@/lib/mailer";
 import { searchCompanies } from "@/lib/brreg";
 import { findCompanyEmails } from "@/lib/email-discovery";
+import { addressProblem, isForeignBranch, osloStartOfDay } from "@/lib/application-address";
+import { displayCompanyName } from "@/lib/opener-templates";
 import { LEAD_INDUSTRIES } from "@/lib/lead-candidate";
 
 // The daily job agent: finds new developer/UX ads in the target cities,
@@ -27,13 +31,17 @@ export const JOB_AGENT = {
   /** Applications sent by email only for good matches. */
   emailApplyMinScore: 50,
   emailAppliesPerRun: 20,
-  openApplicationsPerRun: 10,
+  /** Open applications a day, across the morning run and every Run now. */
+  openApplicationsPerDay: 10,
   /** First run looks back a week; after that, two days (overlap is de-duplicated). */
   firstRunDays: 7,
   dailyDays: 2,
   cvPath: "cv/cv.pdf",
   cvFileName: "Olga_Goryszewska_CV.pdf",
-  timeBudgetMs: 240_000,
+  // Leaves time for the clean-up and the report inside Vercel's 300 s limit.
+  timeBudgetMs: 200_000,
+  /** One company's email search, at most. */
+  emailSearchMs: 15_000,
 };
 
 export type JobAgentStats = {
@@ -56,7 +64,7 @@ const normalise = (text: string | null) =>
     .replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim();
 
-async function loadCv(supabase: SupabaseClient) {
+export async function loadCv(supabase: SupabaseClient) {
   const { data, error } = await supabase.storage.from("private").download(JOB_AGENT.cvPath);
   if (error || !data) return null;
   return Buffer.from(await data.arrayBuffer());
@@ -145,11 +153,17 @@ export async function runJobAgent(
     if (seenIds.has(`${job.source}:${job.externalId}`) || seenTitles.has(titleKey)) continue;
     // Spain: English-speaking, international roles only.
     if (job.city === "Spain" && notEnglishFriendly(`${job.title}\n${job.text}`)) continue;
+    // A hiring post has no job title: it counts only if its text names our kind of role.
+    if (job.hiringPost && !mentionsOurRole(job.text)) continue;
     const { score, matched, rejected } = scoreJob({
-      title: job.title,
+      title: job.hiringPost ? "Developer" : job.title,
       text: `${job.company ?? ""}\n${job.text}`,
     });
-    if (rejected || score < JOB_AGENT.minScore) continue;
+    if (rejected) continue;
+    // Alert emails give a title and little else, so few skills can match; you
+    // set those searches up yourself, so a role that passes the rules is kept.
+    const fromAlert = (job.source === "linkedin" || job.source === "finn") && !job.hiringPost;
+    if (score < JOB_AGENT.minScore && !fromAlert) continue;
     const current = fresh.get(titleKey);
     if (!current || current.score < score) fresh.set(titleKey, { ...job, score, matched });
   }
@@ -196,7 +210,10 @@ export async function runJobAgent(
       matched: job.matched,
       language,
       apply_email: applicationEmail(job.text),
-      cover_letter: coverLetter({ title: job.title, company: job.company, matched: job.matched, language }),
+      // A post needs a personal reply, so no generated letter.
+      cover_letter: job.hiringPost
+        ? null
+        : coverLetter({ title: job.title, company: job.company, matched: job.matched, language }),
     };
   });
   let saved: {
@@ -256,6 +273,17 @@ export async function runJobAgent(
   const sentJobs = new Set((sentRows ?? []).map((row) => row.job_posting_id as string | null).filter(Boolean));
   const sentOrgs = new Set((sentRows ?? []).map((row) => row.org_number as string | null).filter(Boolean));
   const sentCompanies = new Set((sentRows ?? []).map((row) => normalise(row.company as string | null)).filter(Boolean));
+  // Open applications from before this log existed (until 2 Nov 2026) are only
+  // in open_applications: count those addresses and companies as done too.
+  const { data: olderOpen } = await supabase
+    .from("open_applications")
+    .select("email, company, org_number")
+    .eq("status", "sent");
+  for (const row of olderOpen ?? []) {
+    if (row.email) sentTo.add(String(row.email).toLowerCase());
+    if (row.company) sentCompanies.add(normalise(row.company as string));
+    if (row.org_number) sentOrgs.add(row.org_number as string);
+  }
   // The preview plans applications even before the CV is uploaded, so you can see them.
   const canSend = dryRun ? !sentError : Boolean(mailer && cv && !sentError);
   const attachment = cv ? [{ filename: JOB_AGENT.cvFileName, content: cv, contentType: "application/pdf" }] : [];
@@ -344,7 +372,7 @@ export async function runJobAgent(
           jobPostingId: row.id,
           company: row.company,
           to: row.apply_email!,
-          subject: row.language === "no" ? `Søknad: ${row.title}` : `Application: ${row.title}`,
+          subject: adSubject(row.title, row.language),
           body: row.cover_letter ?? "",
         });
         if (!sent) continue;
@@ -368,7 +396,17 @@ export async function runJobAgent(
 
   // 5. Open applications to Oslo agencies and consultancies — not the ones
   // in Enodre's outreach pipeline, and never a company already applied to.
-  if (canSend && timeLeft()) {
+  // The daily limit counts what earlier runs today already sent.
+  const { count: sentToday } = await supabase
+    .from("job_applications_sent")
+    .select("id", { count: "exact", head: true })
+    .eq("kind", "open")
+    .gte("created_at", osloStartOfDay().toISOString());
+  const openLeftToday = Math.max(0, JOB_AGENT.openApplicationsPerDay - (sentToday ?? 0));
+  if (canSend && openLeftToday === 0) {
+    stats.problems.push(`Today's ${JOB_AGENT.openApplicationsPerDay} open applications are already sent.`);
+  }
+  if (canSend && openLeftToday > 0 && timeLeft()) {
     try {
       const [done, candidates, leads] = await Promise.all([
         supabase.from("open_applications").select("org_number"),
@@ -386,28 +424,38 @@ export async function runJobAgent(
         municipalityNumbers: ["0301"], // Oslo
         minEmployees: 5,
         maxEmployees: 300,
-        limit: JOB_AGENT.openApplicationsPerRun * 3,
+        limit: openLeftToday * 3,
         exclude,
       });
       for (const company of companies) {
-        if (stats.openApplications.length >= JOB_AGENT.openApplicationsPerRun || !timeLeft()) break;
-        const search = await findCompanyEmails({
-          website: company.website,
-          registerEmail: company.email,
-          companyName: company.name,
-          orgNumber: company.orgNumber,
-        }).catch(() => null);
-        const to = search?.emails.find((item) => item.generic)?.email ?? null;
+        if (stats.openApplications.length >= openLeftToday || !timeLeft()) break;
+        if (isForeignBranch(company)) continue;
+        const search = await Promise.race([
+          findCompanyEmails({
+            website: company.website,
+            registerEmail: company.email,
+            companyName: company.name,
+            orgNumber: company.orgNumber,
+          }).catch(() => null),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), JOB_AGENT.emailSearchMs)),
+        ]);
+        // A general address on the company's own domain, not a support or sales desk.
+        const site = { name: company.name, website: search?.website ?? company.website ?? null };
+        const general = search?.emails.filter((item) => item.generic) ?? [];
+        const to = general.find((item) => !addressProblem(item.email, site))?.email ?? null;
         if (!to) {
           stats.openWithoutEmail++;
+          const why = general.length
+            ? general.map((item) => `${item.email}: ${addressProblem(item.email, site)}`).join("; ")
+            : null;
           if (!dryRun) {
             await supabase
               .from("open_applications")
-              .insert({ org_number: company.orgNumber, company: company.name, status: "no_email" });
+              .insert({ org_number: company.orgNumber, company: company.name, status: "no_email", error: why });
           }
           continue;
         }
-        const letter = openApplication(company.name);
+        const letter = openApplication(displayCompanyName(company.name), company.industryCode);
         try {
           const sent = await sendOnce({
             kind: "open",
@@ -451,6 +499,8 @@ export async function runJobAgent(
     .from("job_postings")
     .select("title, company, city, score, url, status")
     .eq("status", "new")
+    // Found this week: older matches are already on Find jobs.
+    .gte("created_at", new Date(Date.now() - 7 * 86_400_000).toISOString())
     .order("score", { ascending: false })
     .limit(15);
   const report = buildReport(stats, top ?? []);

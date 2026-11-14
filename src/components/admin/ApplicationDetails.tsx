@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ComponentProps } from "react";
 import { Check, ClipboardList, Copy, Loader2 } from "lucide-react";
+import { Accordion } from "@/components/admin/Accordion";
+import { LetterPersonaliser } from "@/components/admin/LetterPersonaliser";
+import { FillBookmark } from "@/components/admin/FillBookmark";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { FIXED_DETAILS, PROFILE_FIELDS, type JobProfile } from "@/lib/job-profile";
+import { EXAMPLE_COVER_LETTER, FIXED_DETAILS, PROFILE_FIELDS, type JobProfile } from "@/lib/job-profile";
 
 function CopyButton({ text, label }: { text: string; label: string }) {
   const [copied, setCopied] = useState(false);
@@ -42,9 +45,11 @@ function CopyButton({ text, label }: { text: string; label: string }) {
 export function ApplicationDetails({
   profile,
   onSave,
+  onWriteLetter,
 }: {
   profile: JobProfile;
   onSave: (key: string, value: string) => Promise<void>;
+  onWriteLetter: ComponentProps<typeof LetterPersonaliser>["onWrite"];
 }) {
   const [values, setValues] = useState<JobProfile>(profile);
   const [saving, setSaving] = useState<string | null>(null);
@@ -68,16 +73,12 @@ export function ApplicationDetails({
   const missing = PROFILE_FIELDS.filter((field) => !(values[field.key] ?? "").trim()).length;
 
   return (
-    <details className="rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
-      <summary className="flex cursor-pointer flex-wrap items-center gap-2 text-lg font-semibold tracking-tight">
-        <ClipboardList className="h-5 w-5 text-accent" aria-hidden="true" />
-        My details for application forms
-        {missing > 0 && (
-          <span className="rounded-full bg-danger/10 px-2 py-0.5 text-xs font-semibold text-danger">
-            {missing} answer{missing === 1 ? "" : "s"} to fill in
-          </span>
-        )}
-      </summary>
+    <Accordion
+      icon={<ClipboardList className="h-4 w-4" aria-hidden="true" />}
+      title="My details for application forms"
+      subtitle={missing > 0 ? `${missing} answer${missing === 1 ? "" : "s"} to fill in` : undefined}
+      keepMounted
+    >
       <p className="mt-2 text-sm text-ink-muted">
         Copy each field into the form. The cover letter for each job is under its “Cover letter” button.
       </p>
@@ -94,6 +95,18 @@ export function ApplicationDetails({
           </li>
         ))}
       </ul>
+
+      <details className="mt-6 rounded-xl border border-black/10 bg-background p-3 text-sm">
+        <summary className="cursor-pointer font-semibold">Example cover letter</summary>
+        <div className="mt-3 flex items-start gap-3">
+          <pre className="min-w-0 flex-1 whitespace-pre-wrap font-sans text-xs leading-5">{EXAMPLE_COVER_LETTER}</pre>
+          <CopyButton text={EXAMPLE_COVER_LETTER} label="example cover letter" />
+        </div>
+      </details>
+
+      <FillBookmark answers={profile} />
+
+      <LetterPersonaliser onWrite={onWriteLetter} />
 
       <h3 className="mt-6 text-sm font-semibold">Your answers</h3>
       <p className="text-xs text-ink-muted">
@@ -127,6 +140,6 @@ export function ApplicationDetails({
         ))}
       </ul>
       {error && <p className="mt-2 text-sm text-danger">{error}</p>}
-    </details>
+    </Accordion>
   );
 }

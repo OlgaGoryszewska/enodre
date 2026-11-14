@@ -44,7 +44,7 @@ interface LeadAgentPanelProps {
     signalSaved: boolean;
   }>;
   onResearch: (id: string) => Promise<ResearchOutcome>;
-  onApprove: (id: string) => Promise<void>;
+  onApprove: (id: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   onReject: (id: string) => Promise<void>;
 }
 
@@ -95,6 +95,7 @@ export function LeadAgentPanel({
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [batchProgress, setBatchProgress] = useState<{ done: number; total: number } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [addedNotice, setAddedNotice] = useState<string | null>(null);
 
   const byStatus = useMemo(() => {
     const groups: Record<Tab, LeadCandidate[]> = { found: [], researched: [], failed: [], approved: [] };
@@ -163,6 +164,12 @@ export function LeadAgentPanel({
     // Stop on account-wide problems (no credits, budget reached) — every
     // other company would fail the same way and use up attempts.
     return ok && !result?.blocked;
+  }
+
+  async function addToPipeline(candidate: LeadCandidate) {
+    const result = await onApprove(candidate.id);
+    if (!result.ok) throw new Error(`${candidate.company}: ${result.error}`);
+    setAddedNotice(`${candidate.company} added to the Leads pipeline.`);
   }
 
   async function withBusy(id: string, action: () => Promise<void>) {
@@ -401,6 +408,7 @@ export function LeadAgentPanel({
             ` · ${Math.round((researchStats.failedRuns / researchStats.runs) * 100)}% of this month's ${researchStats.runs} runs failed`}
         </p>
 
+        {addedNotice && <p className="text-sm text-ink-muted">{addedNotice}</p>}
         {actionError && (
           <div
             role="alert"
@@ -482,9 +490,9 @@ export function LeadAgentPanel({
                     )}
                     <button
                       type="button"
-                      onClick={() => void withBusy(candidate.id, () => onApprove(candidate.id))}
+                      onClick={() => void withBusy(candidate.id, () => addToPipeline(candidate))}
                       disabled={busyIds.has(candidate.id)}
-                      title="Move to Potential customers with all its data, without research"
+                      title="Move to the Leads pipeline with all its data, without research"
                       className={cn(buttonVariants({ variant: "outline" }), "px-4 py-2 text-sm")}
                     >
                       {busyIds.has(candidate.id) ? (
@@ -492,7 +500,7 @@ export function LeadAgentPanel({
                       ) : (
                         <UserPlus className="h-4 w-4" aria-hidden="true" />
                       )}
-                      Add to customers
+                      Add to Leads pipeline
                     </button>
                     <button
                       type="button"
@@ -520,7 +528,7 @@ export function LeadAgentPanel({
                   key={candidate.id}
                   candidate={candidate}
                   busy={busyIds.has(candidate.id)}
-                  onApprove={() => void withBusy(candidate.id, () => onApprove(candidate.id))}
+                  onApprove={() => void withBusy(candidate.id, () => addToPipeline(candidate))}
                   onReject={() => void withBusy(candidate.id, () => onReject(candidate.id))}
                 />
               ))}
@@ -567,13 +575,13 @@ export function LeadAgentPanel({
                   </button>
                   <button
                     type="button"
-                    onClick={() => void withBusy(candidate.id, () => onApprove(candidate.id))}
+                    onClick={() => void withBusy(candidate.id, () => addToPipeline(candidate))}
                     disabled={busyIds.has(candidate.id)}
-                    title="Move to Potential customers with all its data, without research"
+                    title="Move to the Leads pipeline with all its data, without research"
                     className={cn(buttonVariants({ variant: "outline" }), "px-4 py-2 text-sm")}
                   >
                     <UserPlus className="h-4 w-4" aria-hidden="true" />
-                    Add to customers
+                    Add to Leads pipeline
                   </button>
                 </div>
               </div>

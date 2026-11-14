@@ -5,12 +5,11 @@ import * as cheerio from "cheerio";
 export type LinkedInEmailJob = {
   title: string;
   company: string | null;
+  location: string | null;
   url: string;
 };
 
 const MAX_JOBS = 5;
-// Collect more candidates than we need, since some will get dropped by the
-// freshness check below.
 const MAX_CANDIDATES = 15;
 // LinkedIn sends job-alert digests from a few different addresses depending
 // on the alert type (saved search, "jobs for you", single-posting alert) —
@@ -18,15 +17,8 @@ const MAX_CANDIDATES = 15;
 const SENDERS = ["jobalerts-noreply@linkedin.com", "jobs-noreply@linkedin.com", "jobs-listings@linkedin.com"];
 // How far back to look for alert emails — wide enough to catch a day's
 // digest even across a slow mail day, narrow enough to stay "recent".
-const LOOKBACK_DAYS = 3;
-const MAX_EMAILS_TO_SCAN = 10;
-// Reject postings older than this — LinkedIn's alert emails can include
-// jobs the platform itself surfaced days ago but that have since filled;
-// this is a machine-checked freshness signal, not the model's judgment.
-const MAX_POSTING_AGE_DAYS = 14;
-
-const BROWSER_USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
+const LOOKBACK_DAYS = 7;
+const MAX_EMAILS_TO_SCAN = 40;
 
 function extractJobsFromHtml(html: string): LinkedInEmailJob[] {
   const $ = cheerio.load(html);
@@ -47,11 +39,13 @@ function extractJobsFromHtml(html: string): LinkedInEmailJob[] {
     if (!title) return;
 
     const meta = $(el).closest("table").find("p").first().text().replace(/\s+/g, " ").trim();
-    const company = meta.split("·")[0]?.trim() || null;
+    const [companyPart, locationPart] = meta.split("·");
+    const company = companyPart?.trim() || null;
 
     jobs.set(jobId, {
       title,
       company,
+      location: locationPart?.trim() || null,
       url: `https://www.linkedin.com/jobs/view/${jobId}/`,
     });
   });
@@ -59,49 +53,11 @@ function extractJobsFromHtml(html: string): LinkedInEmailJob[] {
   return [...jobs.values()];
 }
 
-// Parses LinkedIn's own "posted-time-ago__text" field from the job's public
-// page (e.g. "3 days ago", "2 weeks ago", "1 year ago") — confirmed live
-// against both a fresh and a year-old posting. Anthropic's web_fetch tool
-// can't reach these pages at all (LinkedIn returns url_not_allowed for it
-// specifically), but a plain fetch with a normal browser User-Agent works.
-async function isRecentPosting(url: string): Promise<boolean> {
-  try {
-    const res = await fetch(url, {
-      headers: { "User-Agent": BROWSER_USER_AGENT },
-      redirect: "follow",
-    });
-    if (!res.ok) return false;
-
-    const html = await res.text();
-    const match = html.match(/posted-time-ago__text[^>]*>\s*([\s\S]*?)\s*<\/span>/);
-    if (!match) return false;
-
-    const postedText = match[1].trim().toLowerCase();
-    if (/^\d+\s*hours?\s*ago$/.test(postedText)) return true;
-    const daysMatch = postedText.match(/^(\d+)\s*days?\s*ago$/);
-    if (daysMatch) return Number(daysMatch[1]) <= MAX_POSTING_AGE_DAYS;
-    const weeksMatch = postedText.match(/^(\d+)\s*weeks?\s*ago$/);
-    if (weeksMatch) return Number(weeksMatch[1]) * 7 <= MAX_POSTING_AGE_DAYS;
-
-    // "X months ago", "X years ago", or anything unparseable — treat as
-    // stale/unverifiable rather than risk showing an expired listing.
-    return false;
-  } catch (error) {
-    console.error(`Failed to check freshness for ${url}:`, error);
-    return false;
-  }
-}
-
-// Pulls real, current job postings straight from LinkedIn's own alert
-// emails — the platform blocks the AI web-search tool from fetching its job
-// pages, so an AI-driven search can never verify a LinkedIn listing is
-// genuine and current. Reading what LinkedIn itself already sent sidesteps
-// the fabrication problem entirely; the freshness check above then filters
-// out postings LinkedIn's own alerts included but that are likely stale.
+// Job postings from the alert emails LinkedIn sends you — Gmail only. LinkedIn
+// itself is never contacted; the email lookback window keeps them recent.
 export async function fetchLinkedInEmailJobs(options: { maxJobs?: number } = {}): Promise<LinkedInEmailJob[]> {
   const maxJobs = options.maxJobs ?? MAX_JOBS;
-  // Check a few more than needed, since some fail the freshness check.
-  const maxCandidates = Math.max(MAX_CANDIDATES, maxJobs * 2);
+  const maxCandidates = Math.max(MAX_CANDIDATES, maxJobs);
   const user = process.env.GMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD;
   if (!user || !pass) {
@@ -156,17 +112,7 @@ export async function fetchLinkedInEmailJobs(options: { maxJobs?: number } = {})
       lock.release();
     }
 
-    // Check freshness in parallel — sequential checks against up to
-    // MAX_CANDIDATES live LinkedIn pages was slow enough to time out.
-    const freshChecks = await Promise.all(
-      candidates.map(async (job) => ({ job, isFresh: await isRecentPosting(job.url) }))
-    );
-    const fresh = freshChecks
-      .filter((result) => result.isFresh)
-      .map((result) => result.job)
-      .slice(0, maxJobs);
-
-    return fresh;
+    return candidates.slice(0, maxJobs);
   } catch (error) {
     console.error("Failed to read LinkedIn job alert emails:", error);
     return [];

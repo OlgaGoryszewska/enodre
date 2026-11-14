@@ -26,13 +26,13 @@ function Bar({ value, target }: { value: number; target: number }) {
 }
 
 /** GTM performance, this week's activity and the week-4 gate — all from real records. */
-export function GtmPerformance({ performance }: { performance: Performance }) {
+export function GtmPerformance({ performance, bare = false }: { performance: Performance; bare?: boolean }) {
   const { funnel, revenueNok, weekly, weekStart, gate, systems } = performance;
 
   return (
-    <div className="mt-10 grid gap-6 lg:grid-cols-2">
+    <div className={bare ? "grid gap-6 lg:grid-cols-2" : "mt-10 grid gap-6 lg:grid-cols-2"}>
       <div className="rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
-        <h2 className="text-lg font-semibold tracking-tight">GTM performance</h2>
+        {!bare && <h2 className="text-lg font-semibold tracking-tight">GTM performance</h2>}
         <p className="mt-1 text-sm text-ink-muted">
           All time. Only real events count — a draft isn&apos;t a sent message, a booked call isn&apos;t a held one. The
           percentage is the conversion from the stage above.

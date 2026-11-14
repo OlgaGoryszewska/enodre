@@ -30,6 +30,8 @@ import {
 } from "@/lib/customer-sticky-note";
 
 interface StickyNotesBoardProps {
+  /** Inside an accordion, which brings its own card and title. */
+  bare?: boolean;
   customerId: string;
   initialNotes: StickyNote[];
 }
@@ -37,7 +39,7 @@ interface StickyNotesBoardProps {
 const CASCADE_STEP = 28;
 const CASCADE_WRAP = 8;
 
-export function StickyNotesBoard({ customerId, initialNotes }: StickyNotesBoardProps) {
+export function StickyNotesBoard({ customerId, initialNotes, bare = false }: StickyNotesBoardProps) {
   const [notes, setNotes] = useState(initialNotes);
   const [adding, setAdding] = useState(false);
   const [frontId, setFrontId] = useState<string | null>(null);
@@ -132,12 +134,14 @@ export function StickyNotesBoard({ customerId, initialNotes }: StickyNotesBoardP
   }
 
   return (
-    <div className="mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Sticky notes</h2>
-          <p className="mt-1 text-sm text-ink-muted">Drag notes around, jot down anything about them</p>
-        </div>
+    <div className={bare ? undefined : "mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8"}>
+      <div className={cn("flex items-center gap-4", bare ? "justify-end" : "justify-between")}>
+        {!bare && (
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Sticky notes</h2>
+            <p className="mt-1 text-sm text-ink-muted">Drag notes around, jot down anything about them</p>
+          </div>
+        )}
         <button
           type="button"
           onClick={handleAddNote}

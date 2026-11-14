@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { TodayWidget } from "@/components/admin/TodayWidget";
 import { JobAgentReportCard, type JobAgentReportRun } from "@/components/admin/JobAgentReportCard";
+import { LatestReplies, type LatestReply } from "@/components/admin/LatestReplies";
+import { isGulfAddress } from "@/lib/email-replies";
 import { KanbanBoard } from "@/components/admin/KanbanBoard";
 import { MediaListCard } from "@/components/admin/MediaListCard";
 import { InspiringPeopleCard } from "@/components/admin/InspiringPeopleCard";
@@ -57,6 +59,13 @@ export default async function AdminDashboardPage() {
     .order("created_at", { ascending: false })
     .limit(1);
   const lastJobAgentRun = ((jobAgentRuns ?? [])[0] ?? null) as JobAgentReportRun | null;
+  // Replies from people we wrote to (email_replies.sql); no table yet = empty card.
+  const latestReplies = await supabase
+    .from("email_replies")
+    .select("id, kind, from_email, from_name, subject, received_at, snippet, lead_id, company_key, company")
+    .eq("is_auto", false)
+    .order("received_at", { ascending: false })
+    .limit(8);
 
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -158,6 +167,12 @@ export default async function AdminDashboardPage() {
             journal={todayJournal}
             calories={todayCalories}
             workout={todayWorkout}
+          />
+        </div>
+
+        <div className="mt-10">
+          <LatestReplies
+            replies={((latestReplies.data ?? []) as LatestReply[]).filter((reply) => !isGulfAddress(reply.from_email))}
           />
         </div>
 

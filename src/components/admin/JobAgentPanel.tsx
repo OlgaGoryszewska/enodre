@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Bot, Check, Copy, ExternalLink, Eye, FileUp, Loader2, RotateCcw, X } from "lucide-react";
+import { Accordion } from "@/components/admin/Accordion";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TARGET_CITIES } from "@/lib/job-matching";
@@ -195,12 +196,14 @@ export function JobAgentPanel({
   }
 
   return (
-    <div className="rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
+    <Accordion
+      icon={<Bot className="h-4 w-4" aria-hidden="true" />}
+      title="Job agent"
+      subtitle={`${postings.filter((job) => job.status === "new").length} new jobs · ${applied.length} applied`}
+      keepMounted
+    >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-2xl">
-          <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-            <Bot className="h-5 w-5 text-accent" aria-hidden="true" /> Job agent
-          </h2>
           <p className="mt-1 text-sm text-ink-muted">
             Every morning: new developer/UX ads in Oslo, Warsaw, Colombo, Dubai, Riyadh, Spain and remote, scored
             against your CV (up to 50 a day), each with a cover letter. It emails your CV where an ad asks for that,
@@ -469,9 +472,20 @@ export function JobAgentPanel({
                           href={job.url}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={() => {
+                            // Ready to paste into the form's cover letter field.
+                            if (job.cover_letter) {
+                              void navigator.clipboard
+                                .writeText(job.cover_letter)
+                                .then(() => setCopied(job.id))
+                                .catch(() => undefined);
+                            }
+                          }}
+                          title={job.cover_letter ? "Opens the ad and copies the cover letter" : undefined}
                           className={cn(buttonVariants({ variant: "primary" }), "bg-foreground px-3 py-1.5 text-xs")}
                         >
-                          Apply <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                          {copied === job.id && openLetter !== job.id ? "Letter copied" : "Apply"}{" "}
+                          <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                         </a>
                         <button
                           type="button"
@@ -646,6 +660,6 @@ export function JobAgentPanel({
           </ul>
         )}
       </details>
-    </div>
+    </Accordion>
   );
 }

@@ -1,4 +1,17 @@
 {
   "framework": "nextjs",
-  "crons": [{ "path": "/api/cron/job-agent", "schedule": "0 5 * * *" }]
+  "crons": [
+    {
+      "path": "/api/cron/replies",
+      "schedule": "40 4 * * *"
+    },
+    {
+      "path": "/api/cron/job-agent",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/pmu-agent",
+      "schedule": "30 5 * * *"
+    }
+  ]
 }

@@ -7,8 +7,8 @@
 export const AUTOPILOT = {
   /** New companies emailed per day (Oslo date). */
   newPerDay: 50,
-  /** Follow-ups per run — a safety stop, not a target. */
-  followUpsPerRun: 20,
+  /** Follow-ups per run — a safety stop; about what fits in the time budget. */
+  followUpsPerRun: 60,
   /** How far back the hiring search looks. */
   findDays: 30 as const,
   /** Queue candidates turned into leads per run (each needs an email search). */
@@ -55,12 +55,9 @@ export function nextAutoStep(lead: LeadState, sent: SentState[], emailIsGeneric:
   if (!emailIsGeneric) return { skip: "Personal address — needs a company address (§15)" };
 
   const first = sent.find((message) => FIRST_CONTACT.includes(message.kind));
-  if (!first) {
-    if (lead.status !== "new" || lead.first_contacted_on) return { skip: "Contacted outside the app" };
-    return { kind: "first_message" };
-  }
-  // Follow up by email only when the first contact was an email.
-  if (first.channel !== "email") return { skip: "First contact wasn't by email" };
+  if (!first && lead.status === "new" && !lead.first_contacted_on) return { kind: "first_message" };
+  // Contacted any way (email, LinkedIn, phone, or marked by hand): the
+  // follow-up goes to the company address.
   const due = lead.next_follow_up_on ?? null;
   if (!due) return { skip: "No follow-up planned" };
   if (due > today) return { skip: `Follow-up due ${due}` };
@@ -72,4 +69,50 @@ export function nextAutoStep(lead: LeadState, sent: SentState[], emailIsGeneric:
 /** May this message go out unseen? Only with no quality notes at all. */
 export function passesAutopilotBar(issues: { level: string }[]) {
   return issues.length === 0;
+}
+
+export type FollowUpStage = { label: string; tone: "due" | "waiting" | "done"; due: boolean; sent: boolean };
+
+/**
+ * Where a contacted lead is in the follow-up sequence, for the pipeline's
+ * status column. Null before first contact and once the sequence has stopped
+ * (they replied, declined, or it's closed). `dueOn` = the lead's follow-up date.
+ */
+export function followUpStage(
+  lead: Pick<LeadState, "status" | "responded" | "do_not_contact" | "first_contacted_on">,
+  sentKinds: string[],
+  dueOn: string | null,
+  today: string,
+  formatDay: (date: string) => string = (date) => date
+): FollowUpStage | null {
+  if (lead.responded || lead.do_not_contact || CLOSED.includes(lead.status)) return null;
+  const contacted = Boolean(lead.first_contacted_on) || sentKinds.some((kind) => FIRST_CONTACT.includes(kind));
+  if (!contacted) return null;
+  const followUpSent = sentKinds.includes("follow_up");
+  if (sentKinds.includes("final_follow_up")) {
+    return { label: "Final follow-up sent", tone: "done", due: false, sent: true };
+  }
+  const next = followUpSent ? "Final follow-up" : "Follow-up";
+  if (!dueOn) {
+    return {
+      label: followUpSent ? "Follow-up sent" : "No follow-up planned",
+      tone: "done",
+      due: false,
+      sent: followUpSent,
+    };
+  }
+  if (dueOn <= today) {
+    return {
+      label: dueOn === today ? `${next} due today` : `${next} overdue · ${formatDay(dueOn)}`,
+      tone: "due",
+      due: true,
+      sent: followUpSent,
+    };
+  }
+  return {
+    label: `${followUpSent ? "Follow-up sent · final" : "Follow-up"} due ${formatDay(dueOn)}`,
+    tone: "waiting",
+    due: false,
+    sent: followUpSent,
+  };
 }

@@ -30,6 +30,7 @@ import {
 } from "@/lib/potential-customer";
 import {
   CONNECTION_NOTE_MAX,
+  COMPOSE_LEAD_EVENT,
   EMAILABLE_KINDS,
   leadLanguage,
   MESSAGE_CHANNEL_VALUES,
@@ -54,7 +55,6 @@ import type { GenerateDraftResult, GenerateOpenerResult } from "@/app/admin/mark
 import type { FindEmailResult } from "@/app/admin/marketing/outreach-actions";
 
 // The Leads table dispatches this to open the composer on a lead.
-export const COMPOSE_LEAD_EVENT = "enodre:compose-lead";
 
 export interface MessageComposerProps {
   leads: PotentialCustomer[];

@@ -1,6 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { adLanguage, applicationEmail, cityOf, coverLetter, notEnglishFriendly, scoreJob } from "./job-matching.ts";
+import {
+  adLanguage,
+  applicationEmail,
+  careerApplication,
+  careerVariant,
+  cityOf,
+  coverLetter,
+  notEnglishFriendly,
+  scoreJob,
+} from "./job-matching.ts";
 
 test("scores a matching ad high and an unrelated one out", () => {
   const good = scoreJob({
@@ -87,7 +96,7 @@ test("HealthTech/BeautyTech roles count only at a health or beauty company", () 
   assert.equal(scoreJob({ title: "Senior Product Manager", text: "Healthtech" }).rejected, "Senior or lead role");
   const letter = coverLetter({ title: "Implementation Specialist", company: "Pabau", matched: [], language: "en" });
   assert.ok(letter.includes("13 years") && letter.includes("at Pabau"));
-  assert.ok(!letter.includes("Public Health"));
+  assert.ok(letter.includes("Public Health") && letter.includes("collaborating with medical and aesthetic clinics"));
 });
 
 test("staff perks don't make a company a health company", () => {
@@ -96,4 +105,57 @@ test("staff perks don't make a company a health company", () => {
     text: "Logistics SaaS. We offer private health insurance.",
   });
   assert.equal(perk.rejected, "Not a health or beauty company");
+});
+
+test("tracker emails are an introduction, adapted to the company type", () => {
+  const consentz = careerApplication({
+    kind: "company",
+    name: "Consentz",
+    coverage: "UK",
+    industry: "BeautyTech",
+    specialisation: "BeautyTech: Aesthetic clinic software",
+  });
+  assert.ok(consentz.body.includes("I'm reaching out to Consentz"));
+  assert.ok(consentz.body.includes("medical aesthetics and technology"));
+  assert.ok(consentz.body.includes("point me towards the person responsible"));
+  assert.ok(consentz.body.includes("Public Health") && !/junior/i.test(consentz.body));
+  const no = careerApplication({
+    kind: "company",
+    name: "Dignio",
+    coverage: "Oslo, Europe",
+    industry: "HealthTech",
+    specialisation: "HealthTech: Remote patient monitoring",
+  });
+  assert.ok(no.body.startsWith("Hei,") && no.body.includes("helse og teknologi"));
+  assert.ok(careerApplication({ kind: "recruiter", name: "Ana Ruiz", coverage: null }).body.startsWith("Hi Ana,"));
+  assert.equal(careerVariant({ industry: "BeautyTech", specialisation: "Booking app for beauty" }), "beauty");
+  assert.equal(careerVariant({ industry: "HealthTech", specialisation: "AI imaging biomarkers (MRI/CT)" }), "device");
+  assert.equal(careerVariant({ industry: "HealthTech", specialisation: "AI symptom checking" }), "ai");
+});
+
+test("cover letters tell the personal story and adapt to the role", () => {
+  const letter = coverLetter({ title: "React Developer", company: "Accenture", matched: ["React"], language: "en" });
+  assert.ok(letter.includes("The project I'm proudest of is FuelFlo"));
+  assert.ok(letter.includes("At Accenture, I'd contribute reliable, well-tested React code"));
+  assert.ok(!letter.includes("Warsaw"));
+  const design = coverLetter({ title: "UX Designer", company: "Y", matched: ["Figma"], language: "no" });
+  assert.ok(design.includes("brukertestet design"));
+});
+
+test("open applications say why this kind of company", async () => {
+  const { openApplication } = await import("./job-matching.ts");
+  assert.match(openApplication("Scienta", "62.100").body, /dere utvikler programvare/);
+  assert.match(openApplication("Kantega", "62.200").body, /kundeprosjekter/);
+  assert.match(openApplication("Frend", "73.110").body, /byrå trenger/);
+  assert.match(openApplication("Blank", "74.120").body, /jobber med design/);
+  assert.match(openApplication("Acme").body, /i tilfelle dere trenger/);
+});
+
+test("LinkedIn notes fit LinkedIn's 300 characters", async () => {
+  const { linkedinNote } = await import("./job-matching.ts");
+  const recruiter = linkedinNote({ kind: "recruiter", name: "Anna Nowak" });
+  assert.match(recruiter, /^Hi Anna,/);
+  for (const note of [recruiter, linkedinNote({ kind: "company", name: "A very long company name ".repeat(10) })]) {
+    assert.ok(note.length <= 300, String(note.length));
+  }
 });

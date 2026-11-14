@@ -4,6 +4,8 @@ import type { JobLead } from "@/lib/job-lead";
 
 interface RecentJobsWidgetProps {
   linkedinJobs: JobLead[];
+  /** Inside an accordion, which brings its own card and title. */
+  bare?: boolean;
 }
 
 function formatDate(value: string) {
@@ -12,17 +14,19 @@ function formatDate(value: string) {
 
 // Read-only recap, server-rendered — no interactivity needed here, editing
 // still happens on the LinkedIn page itself.
-export function RecentJobsWidget({ linkedinJobs }: RecentJobsWidgetProps) {
+export function RecentJobsWidget({ linkedinJobs, bare = false }: RecentJobsWidgetProps) {
   const jobs = [...linkedinJobs].sort((a, b) => b.created_at.localeCompare(a.created_at));
 
   return (
-    <div className="rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">New job leads</h2>
-          <p className="mt-1 text-sm text-ink-muted">Added in the last 7 days</p>
+    <div className={bare ? undefined : "rounded-2xl border border-black/10 bg-card p-6 sm:p-8"}>
+      {!bare && (
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">New job leads</h2>
+            <p className="mt-1 text-sm text-ink-muted">Added in the last 7 days</p>
+          </div>
         </div>
-      </div>
+      )}
 
       {jobs.length === 0 ? (
         <p className="mt-5 text-sm text-ink-muted">Nothing new this week.</p>

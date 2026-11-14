@@ -28,6 +28,14 @@
   --accent: #3b47e0;
 }
 
+/* The PMU jobs page is pink. Same contrast rules as above: #b0125b is
+   6.4:1 on white and 5.9:1 on the pink background. */
+:root:has(.pmu-theme) {
+  --accent: #b0125b;
+  --admin-background: #fdf1f6;
+  --border: rgba(176, 18, 91, 0.16);
+}
+
 /* Admin on phones: iOS Safari zooms the page when a focused field's text is
    under 16px. Admin forms use 11–15px, so bump them to 16px on small screens. */
 @media (max-width: 639px) {

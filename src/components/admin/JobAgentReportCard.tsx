@@ -10,7 +10,19 @@ export type JobAgentReportRun = {
 };
 
 /** The job agent's latest report, on the main dashboard. */
-export function JobAgentReportCard({ run }: { run: JobAgentReportRun | null }) {
+export function JobAgentReportCard({
+  run,
+  totals,
+  showLink = true,
+  bare = false,
+}: {
+  run: JobAgentReportRun | null;
+  /** Running totals across all searches, shown under the last run's figures. */
+  totals?: { label: string; value: number }[];
+  showLink?: boolean;
+  /** Inside an accordion, which brings its own card and title. */
+  bare?: boolean;
+}) {
   const stats = run?.stats ?? {};
   const figures = [
     { label: "New matches", value: stats.saved ?? 0 },
@@ -20,15 +32,30 @@ export function JobAgentReportCard({ run }: { run: JobAgentReportRun | null }) {
   const problems = stats.problems ?? [];
 
   return (
-    <div className="rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-          <Bot className="h-5 w-5 text-accent" aria-hidden="true" /> Job agent report
-        </h2>
-        <Link href="/admin/linkedin" className="text-sm font-semibold text-ink-muted hover:text-foreground">
-          Open Find jobs →
-        </Link>
-      </div>
+    <div className={bare ? undefined : "rounded-2xl border border-black/10 bg-card p-6 sm:p-8"}>
+      {!bare && (
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+            <Bot className="h-5 w-5 text-accent" aria-hidden="true" /> Job agent report
+          </h2>
+          {showLink && (
+            <Link href="/admin/linkedin" className="text-sm font-semibold text-ink-muted hover:text-foreground">
+              Open Find jobs →
+            </Link>
+          )}
+        </div>
+      )}
+
+      {totals && (
+        <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {totals.map((total) => (
+            <div key={total.label} className="rounded-xl border border-black/10 bg-background p-3">
+              <dt className="text-xs text-ink-muted">{total.label}</dt>
+              <dd className="mt-1 text-2xl font-semibold tabular-nums">{total.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
 
       {!run ? (
         <p className="mt-3 text-sm text-ink-muted">
@@ -40,7 +67,8 @@ export function JobAgentReportCard({ run }: { run: JobAgentReportRun | null }) {
             {new Date(run.created_at).toLocaleString("en-GB", { timeZone: "Europe/Oslo" })} ·{" "}
             {run.trigger === "cron" ? "daily run" : "run by hand"}
           </p>
-          <dl className="mt-4 grid grid-cols-3 gap-3">
+          <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-ink-muted">Last search</p>
+          <dl className="mt-2 grid grid-cols-3 gap-3">
             {figures.map((figure) => (
               <div key={figure.label} className="rounded-xl bg-black/[0.03] p-3">
                 <dt className="text-xs text-ink-muted">{figure.label}</dt>

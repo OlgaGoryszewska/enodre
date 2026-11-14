@@ -218,7 +218,6 @@ export function MarketingKanbanBoard({ initialTasks }: MarketingKanbanBoardProps
 
   return (
     <>
-      <h2 className="text-lg font-semibold tracking-tight">Marketing kanban</h2>
       <DndContext
         id="marketing-kanban-board"
         sensors={sensors}

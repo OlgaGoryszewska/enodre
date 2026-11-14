@@ -16,7 +16,7 @@ import {
   verifiedFacts,
   type LeadMessage,
 } from "@/lib/outreach-templates";
-import type { PotentialCustomer } from "@/lib/potential-customer";
+import { followUpDate, type PotentialCustomer } from "@/lib/potential-customer";
 import { approveLeadCandidate, findHiringCompanies } from "@/app/admin/marketing/lead-agent-actions";
 import { approveMessage, findLeadEmail, sendLeadEmail } from "@/app/admin/marketing/outreach-actions";
 
@@ -139,14 +139,18 @@ export async function runOutreach(input: z.input<typeof inputSchema>): Promise<A
   // 3. New leads without an email: the register, their website, or a likely
   // domain that names them. Runs in Preview too — saving a company address
   // sends nothing, and the preview then shows what would really go out.
-  if (mode === "all") {
-    const { data, error } = await supabase
+  {
+    // Follow-ups: the leads due today that have no address yet.
+    const base = supabase
       .from("potential_customers")
       .select("id, name, company")
-      .eq("status", "new")
       .is("email", null)
       .order("created_at", { ascending: true })
       .limit(AUTOPILOT.emailSearchesPerRun);
+    const { data, error } =
+      mode === "all"
+        ? await base.eq("status", "new")
+        : await base.lte("next_follow_up_on", osloToday()).eq("responded", false);
     if (error) throw error;
     const queue = [...(data ?? [])];
     while (queue.length > 0) {
@@ -206,6 +210,11 @@ export async function runOutreach(input: z.input<typeof inputSchema>): Promise<A
   let newLeft = Math.max(0, AUTOPILOT.newPerDay - newSentToday);
   let followUpsLeft: number = AUTOPILOT.followUpsPerRun;
 
+  const followUpIsDue = (lead: PotentialCustomer) => {
+    const due = followUpDate(lead);
+    return Boolean(due && due <= today);
+  };
+
   type Planned = { lead: PotentialCustomer; kind: AutoKind };
   const planned: Planned[] = [];
   for (const lead of leads) {
@@ -215,15 +224,14 @@ export async function runOutreach(input: z.input<typeof inputSchema>): Promise<A
       isCompanyAddress(lead.email, { company: lead.company, person: lead.name !== lead.company ? lead.name : null })
     );
     const step = nextAutoStep(lead, own.filter(isSent), companyAddress, today);
-    const inSequence = own.some((message) => isSent(message) && FIRST_CONTACT.includes(message.kind));
     if ("kind" in step) {
       if (mode === "follow_ups" && step.kind === "first_message") continue;
       planned.push({ lead, kind: step.kind });
     } else if (
-      lead.email &&
-      (mode === "all" || inSequence) &&
-      !step.skip.startsWith("Follow-up due") &&
-      step.skip !== "Sequence finished"
+      mode === "follow_ups"
+        ? // Everything Today's priorities lists as due gets a reason here ("No email" came from the search above).
+          followUpIsDue(lead) && step.skip !== "No email"
+        : lead.email && !step.skip.startsWith("Follow-up due") && step.skip !== "Sequence finished"
     ) {
       items.push({
         company: lead.company || lead.name,

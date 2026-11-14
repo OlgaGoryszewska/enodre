@@ -6,7 +6,7 @@
 
 // Local parts that mean "the company", not a person.
 const GENERIC_LOCAL =
-  /^(post|postmottak|mottak|firmapost|kontakt|kontor|contact|info|hei|hallo|hello|hi|salg|sales|office|mail|epost|admin|support|kundeservice|kunde|service|booking|bestilling|ordre|tilbud|faktura|jobb|team|studio)$/i;
+  /^(post|postmottak|mottak|firmapost|kontakt|kontor|contact|info|hei|hallo|hello|hi|salg|sales|office|mail|epost|admin|support|kundeservice|kunde|service|booking|bestilling|ordre|tilbud|faktura|jobb|jobs|careers|career|recruitment|recruiting|talent|people|hr|team|studio)$/i;
 // Addresses that aren't for business contact.
 const IGNORED_LOCAL =
   /^(noreply|no-reply|donotreply|privacy|personvern|gdpr|abuse|postmaster|webmaster|example|name|navn|din|your)$/i;

@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { useRef, useState } from "react";
 import { FileText, Loader2, Paperclip, Trash2, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -11,6 +12,8 @@ const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 const SIGNED_URL_TTL_SECONDS = 60 * 60; // just for the optimistic preview
 
 interface CustomerFilesSectionProps {
+  /** Inside an accordion, which brings its own card and title. */
+  bare?: boolean;
   customerId: string;
   initialFiles: CustomerFileWithUrl[];
 }
@@ -72,7 +75,7 @@ function FileNoteInput({
   );
 }
 
-export function CustomerFilesSection({ customerId, initialFiles }: CustomerFilesSectionProps) {
+export function CustomerFilesSection({ customerId, initialFiles, bare = false }: CustomerFilesSectionProps) {
   const [files, setFiles] = useState(initialFiles);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -139,12 +142,14 @@ export function CustomerFilesSection({ customerId, initialFiles }: CustomerFiles
   const otherFiles = files.filter((file) => !file.mime_type?.startsWith("image/"));
 
   return (
-    <div className="mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Files</h2>
-          <p className="mt-1 text-sm text-ink-muted">Attach images or documents for this person</p>
-        </div>
+    <div className={bare ? undefined : "mt-10 rounded-2xl border border-black/10 bg-card p-6 sm:p-8"}>
+      <div className={cn("flex items-center gap-4", bare ? "justify-end" : "justify-between")}>
+        {!bare && (
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Files</h2>
+            <p className="mt-1 text-sm text-ink-muted">Attach images or documents for this person</p>
+          </div>
+        )}
         <button
           type="button"
           onClick={() => inputRef.current?.click()}

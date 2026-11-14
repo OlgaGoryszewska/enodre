@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runJobAgent } from "@/lib/job-agent";
+import { getGmailMailer } from "@/lib/mailer";
 
 // Vercel Cron calls this every morning (vercel.json). Vercel sends
 // "Authorization: Bearer <CRON_SECRET>" when CRON_SECRET is set — anything
@@ -23,6 +24,18 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Job agent run failed:", error);
+    // A failed run writes no report, so say so in the inbox instead of staying silent.
+    const mailer = getGmailMailer();
+    await mailer?.transporter
+      .sendMail({
+        from: `"Job agent" <${mailer.address}>`,
+        to: process.env.JOB_AGENT_REPORT_TO || mailer.address,
+        subject: "Job agent: this morning's run failed",
+        text: `The run stopped before it finished, so there is no report today.\n\n${
+          error instanceof Error ? error.message : "Unknown error"
+        }\n\nApplications sent before it stopped are on Find jobs, under Sent applications.`,
+      })
+      .catch((mailError) => console.error("Failure email failed too:", mailError));
     return NextResponse.json({ ok: false, error: "Job agent failed — see the logs." }, { status: 500 });
   }
 }
