@@ -38,8 +38,13 @@ test("messages never misstate a title", () => {
   }
 });
 
-test("clinic messages lead with the medical work", () => {
-  assert.match(pmuShortMessage(target(), {}), /areola, brow restoration and scalp pigmentation/);
+test("clinic messages mention the medical work and offer freelance", () => {
+  const text = pmuShortMessage(target(), {});
+  assert.match(text, /brow restoration after hair loss, areola pigmentation/);
+  assert.match(text, /freelance on set days or a permanent role/);
+  assert.doesNotMatch(text, /full-time|relocate|you offer medical|renting|room/);
+  assert.match(text, /short call/);
+  assert.match(pmuEmail(target(), {}).body, /short call/);
 });
 
 test("contact links", () => {
@@ -77,4 +82,16 @@ test("Spanish and Portuguese messages offer Norwegian and English, and never men
     assert.match(text, /English, Norwegian and Polish/);
     assert.doesNotMatch(text, /DHA|Dubai|visa/i);
   }
+});
+
+test("greetings: the clinic's name, or the doctor herself", () => {
+  assert.match(
+    pmuShortMessage(target({ name: "Dra. Rosana Villalba – Medicina Estética" }), {}),
+    /^Hello Dra\. Rosana Villalba,/
+  );
+  assert.match(
+    pmuShortMessage(target({ name: "Zen Smile Spa – Dr. Carolyn Carbasse" }), {}),
+    /^Hello Zen Smile Spa team,/
+  );
+  assert.match(pmuShortMessage(target({ name: "Clínica Miramar" }), {}), /^Hello Clínica Miramar team,/);
 });

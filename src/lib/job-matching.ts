@@ -151,7 +151,7 @@ export function applicationEmail(text: string): string | null {
 
 const BACKGROUND_LINE = {
   no: "Før det eide og drev jeg en klinikk for medisinsk mikropigmentering i 13 år, i samarbeid med medisinske og estetiske klinikker, og jeg har en bachelorgrad i folkehelse. Derfor forstår jeg både forretningen og menneskene som bruker produktene.",
-  en: "Before that I owned and ran a medical micropigmentation clinic for 13 years, collaborating with medical and aesthetic clinics, and I hold a bachelor's degree in Public Health. So I understand both the business and the people using the products.",
+  en: "Before that I owned and ran a medical micropigmentation clinic for 13 years, collaborating with medical and aesthetic clinics, and I hold a bachelor's degree in Public Health, specialising in cosmetology and wellness. So I understand both the business and the people using the products.",
 };
 
 // Short version, for open applications.
@@ -174,7 +174,7 @@ const FUELFLO_STORY = {
 
 const CLINIC_STORY = {
   no: "Før teknologien eide og drev jeg en klinikk for medisinsk mikropigmentering i 13 år, og samarbeidet med medisinske og estetiske klinikker. Jeg var i kontakt med kunder hver eneste dag, og det ga meg ferdigheter jeg fortsatt bruker: å lytte nøye, forklare ting tydelig, avklare forventninger og holde roen når ting blir kompliserte. Med en bachelorgrad i folkehelse i bunnen var det også dette som førte meg til UX og frontend-utvikling hos Noroff, for folk bryr seg ikke om hvor smart et system er, de bryr seg om det gjør dagen deres enklere.",
-  en: "Before tech, I spent 13 years owning and running a medical micropigmentation clinic and collaborating with medical and aesthetic clinics, in contact with clients every single day. That career gave me skills I still use all the time: listening carefully, explaining things clearly, managing expectations, and staying calm when things get complicated. Together with my bachelor's degree in Public Health, it's also what pulled me into UX and frontend development at Noroff, because people don't care how clever a system is, they care whether it makes their day easier.",
+  en: "Before tech, I spent 13 years owning and running a medical micropigmentation clinic and collaborating with medical and aesthetic clinics, in contact with clients every single day. That career gave me skills I still use all the time: listening carefully, explaining things clearly, managing expectations, and staying calm when things get complicated. Together with my bachelor's degree in Public Health (specialising in cosmetology and wellness), it's also what pulled me into UX and frontend development at Noroff, because people don't care how clever a system is, they care whether it makes their day easier.",
 };
 
 const TEAM_STORY = {
@@ -398,7 +398,7 @@ export function careerApplication(contact: {
       company
         ? `I'm reaching out to ${contact.name} because your work sits at the intersection of two fields I know well: ${copy.field}.`
         : "I'm reaching out because I combine two fields I know well: health and aesthetics, and technology.",
-      `For 13 years, I owned and ran a medical micropigmentation clinic in Norway and collaborated with medical and aesthetic clinics, ${copy.background}. I also hold a bachelor's degree in Public Health.`,
+      `For 13 years, I owned and ran a medical micropigmentation clinic in Norway and collaborated with medical and aesthetic clinics, ${copy.background}. I also hold a bachelor's degree in Public Health, specialising in cosmetology and wellness.`,
       "Over the past three years, I've moved into technology and digital product development, combining UX design and frontend development. I've also independently designed and built FuelFlo, a software platform for managing complex operational processes.",
       `I'm now looking to bring these two worlds together by ${copy.goal}. I'd be particularly interested in opportunities across product, implementation, customer success or digital solutions.`,
       "I speak fluent Norwegian and Polish, as well as advanced English.",

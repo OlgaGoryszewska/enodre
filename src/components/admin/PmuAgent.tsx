@@ -112,6 +112,16 @@ const STATUS_STYLES: Record<PmuStatus, string> = {
   not_relevant: "bg-black/5 text-ink-muted",
 };
 
+// The status filter: groups of stages, in the order a conversation goes.
+const STATUS_FILTERS: { key: string; label: string; statuses: PmuStatus[] | null }[] = [
+  { key: "all", label: "All", statuses: null },
+  { key: "to_contact", label: "Not contacted", statuses: ["to_contact"] },
+  { key: "waiting", label: "Waiting for reply", statuses: ["contacted", "followed_up"] },
+  { key: "talking", label: "Replied / in talks", statuses: ["replied", "interview", "trial"] },
+  { key: "offers", label: "Offers", statuses: ["offer", "accepted"] },
+  { key: "closed", label: "Declined / not now", statuses: ["not_now", "declined", "not_relevant"] },
+];
+
 /**
  * The search box: every word must appear somewhere in the place's name, town,
  * country, services, contacts or notes. Accents don't matter ("javea" finds Jávea).
@@ -254,6 +264,8 @@ export function PmuAgent({
   const [searchResult, setSearchResult] = useState<{ preview: boolean; report: string } | null>(null);
   const [onlyNew, setOnlyNew] = useState(false);
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const statusGroup = STATUS_FILTERS.find((item) => item.key === statusFilter)?.statuses ?? null;
 
   async function search(preview: boolean) {
     setSearching(preview ? "preview" : "run");
@@ -277,15 +289,19 @@ export function PmuAgent({
           (item) =>
             (country === "All" || item.country === country) &&
             (kind === "all" || item.kind === kind) &&
-            (!hideClosed || (item.status !== "declined" && item.status !== "not_relevant")) &&
+            (statusGroup
+              ? statusGroup.includes(item.status)
+              : !hideClosed || (item.status !== "declined" && item.status !== "not_relevant")) &&
             (!onlyNew || isNew(item)) &&
             matchesQuery(item, query)
         )
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- targets is derived from allTargets and removedNow
-    [allTargets, removedNow, showRemoved, country, kind, hideClosed, onlyNew, query]
+    [allTargets, removedNow, showRemoved, country, kind, hideClosed, onlyNew, query, statusGroup]
   );
   const newCount = targets.filter(isNew).length;
+  // The daily search's finds this week, best fit first.
+  const found = byPay(targets.filter(isNew));
   const isFavourite = (target: PmuTarget) => favouriteNow[target.id] ?? Boolean(target.favourite);
   const favourites = shown.filter(isFavourite);
   const others = shown.filter((target) => !isFavourite(target));
@@ -410,7 +426,7 @@ export function PmuAgent({
         {target.services && <p className="mt-2 text-sm">{target.services}</p>}
 
         <div className="mt-3 flex flex-wrap gap-2">
-          {whatsapp && (
+          {whatsapp ? (
             <a
               href={whatsapp}
               target="_blank"
@@ -419,6 +435,21 @@ export function PmuAgent({
               className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-[#1B8A3A] px-4 text-sm font-semibold text-white"
             >
               <MessageCircle className="h-4 w-4" aria-hidden="true" /> WhatsApp
+            </a>
+          ) : (
+            // No number yet: search for it, with the message copied, and open the card to save it.
+            <a
+              href={`https://www.google.com/search?q=${encodeURIComponent(`"${target.name}" ${target.city} WhatsApp`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                void navigator.clipboard.writeText(short).catch(() => undefined);
+                setOpenId(target.id);
+              }}
+              title="No number saved yet: searches for it and copies the message. Paste the number in the card to get the WhatsApp link."
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-[#1B8A3A]/40 px-4 text-sm font-semibold text-[#1B8A3A]"
+            >
+              <MessageCircle className="h-4 w-4" aria-hidden="true" /> Find WhatsApp
             </a>
           )}
           {instagram && (
@@ -622,17 +653,20 @@ export function PmuAgent({
         subtitle={
           runs[0]
             ? `Last search ${dateTime(runs[0].created_at)} · ${newCount} new places this week · ${freshAds.length} job ads`
-            : "Every morning: new places that offer PMU, and PMU job ads"
+            : "Every morning: medical aesthetic clinics without PMU yet, and PMU job ads"
         }
         defaultOpen
         keepMounted
       >
         <p className="text-sm text-ink-muted">
-          Every morning the agent looks for <strong>new places</strong> offering PMU in Marbella, Málaga, Palma de
-          Mallorca, Madrid, Barcelona, Valencia, Alicante, Lisbon, Porto and the Algarve, and adds the 10 most valuable:
-          busy teams, premium prices, medical settings, and places with PMU on the menu but no PMU artist. It also
-          collects <strong>PMU job ads</strong> from NAV, SHA Wellness Clinic&apos;s careers page, and the job alert
-          emails in your Gmail.
+          Every morning the agent looks for <strong>medical aesthetic clinics that don&apos;t offer PMU yet</strong> in
+          Marbella, Málaga, Palma de Mallorca, Madrid, Barcelona, Valencia, Alicante, Lisbon, Porto and the Algarve,
+          plus Moraira, Jávea, Altea, Albir, Calpe, Dénia, Estepona, Puerto Banús, Cascais, Vilamoura and Quinta do
+          Lago. It searches Fresha and Google Maps for clinics doing injectables (which need a doctor), keeps premium
+          ones (on Google, 4.5★ or more from at least 40 reviews), reads each website to check PMU isn&apos;t offered
+          yet, and adds the 12 best fits. Salons, nail and hair places, PMU studios and clinics that already have PMU
+          are skipped. It also collects <strong>PMU job ads</strong> from NAV, SHA Wellness Clinic&apos;s careers page,
+          and the job alert emails in your Gmail.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <button
@@ -667,6 +701,43 @@ export function PmuAgent({
             {searchResult.report}
           </pre>
         )}
+
+        <div className="mt-6">
+          <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
+            Found this week ({found.length})
+          </p>
+          {found.length === 0 ? (
+            <p className="mt-2 text-sm text-ink-muted">
+              Nothing new yet. New clinics appear here and in the list below, marked New.
+            </p>
+          ) : (
+            <ul className="mt-2 grid gap-2">
+              {found.map((target) => (
+                <li key={target.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenId(target.id);
+                      document.getElementById(`pmu-${target.id}`)?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="w-full rounded-xl border border-black/10 bg-card px-3 py-2 text-left hover:border-accent/40"
+                  >
+                    <span className="flex flex-wrap items-baseline gap-x-2">
+                      <span className="text-sm font-semibold">{target.name}</span>
+                      <span className="text-xs text-ink-muted">
+                        {target.city} · {target.source === "google" ? "Google Maps" : "Fresha"}
+                      </span>
+                      <span className="ml-auto text-xs tracking-widest text-accent" title="Fit, 1–5">
+                        {payDots(target.pay_score)}
+                      </span>
+                    </span>
+                    {target.pay_note && <span className="mt-0.5 block text-xs text-ink-muted">{target.pay_note}</span>}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
         <div className="mt-6">
           <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
@@ -775,14 +846,14 @@ export function PmuAgent({
           </li>
           <li>
             <strong>Working:</strong> as an employee, or self-employed (autónomo in Spain, trabalhador independente in
-            Portugal) renting a room. Ask which one each clinic offers.
+            Portugal) working freelance for the clinic. Ask which one each clinic offers.
           </li>
         </ul>
       </Accordion>
 
       <Accordion
         icon={<Store className="h-4 w-4" aria-hidden="true" />}
-        title={`Clinics, studios & recruiters (${targets.length})`}
+        title={`Clinics (${targets.length})`}
         subtitle="Best pay first. Open one to see the message and contact buttons."
         defaultOpen
         keepMounted
@@ -810,6 +881,30 @@ export function PmuAgent({
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
           )}
+        </div>
+        <div className="mb-3 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filter by status">
+          {STATUS_FILTERS.map((item) => {
+            const n = item.statuses
+              ? targets.filter((target) => item.statuses!.includes(target.status)).length
+              : targets.length;
+            const active = statusFilter === item.key;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setStatusFilter(item.key)}
+                aria-pressed={active}
+                className={cn(
+                  "min-h-10 shrink-0 rounded-full border px-4 text-sm font-semibold",
+                  active
+                    ? "border-[#1B8A3A] bg-[#1B8A3A] text-white"
+                    : "border-black/10 bg-card text-foreground hover:border-[#1B8A3A]/50"
+                )}
+              >
+                {item.label} <span className={active ? "text-white/80" : "text-ink-muted"}>{n}</span>
+              </button>
+            );
+          })}
         </div>
         {query.trim() && (
           <p className="mb-2 text-xs text-ink-muted">

@@ -85,8 +85,180 @@ export const SCOUT_CITIES: ScoutCity[] = [
   { slug: "pt-lisbon", city: "Lisbon", country: "Portugal", currency: "EUR", market: 2 },
   { slug: "pt-porto", city: "Porto", country: "Portugal", currency: "EUR", market: 2 },
   { slug: "pt-faro", city: "Faro (Algarve)", country: "Portugal", currency: "EUR", market: 2 },
+  // Around them, where Fresha has a page: the Costa Blanca, the coast west of Marbella, Cascais, Quinta do Lago.
+  { slug: "es-rural-valencian-community/jávea", city: "Jávea", country: "Spain", currency: "EUR", market: 3 },
+  { slug: "es-rural-valencian-community/altea", city: "Altea", country: "Spain", currency: "EUR", market: 3 },
+  { slug: "es-benidorm", city: "Benidorm", country: "Spain", currency: "EUR", market: 2 },
+  { slug: "es-rural-andalusia/estepona", city: "Estepona", country: "Spain", currency: "EUR", market: 3 },
+  { slug: "pt-lisbon/cascais", city: "Cascais", country: "Portugal", currency: "EUR", market: 3 },
+  {
+    slug: "pt-rural-faro-district/almancil",
+    city: "Almancil (Quinta do Lago)",
+    country: "Portugal",
+    currency: "EUR",
+    market: 3,
+  },
 ];
-export const SCOUT_TREATMENTS = ["permanent-makeup-tattooing", "microblading"];
+
+// --- Google Maps (Places API) ---------------------------------------------
+// Premium medical aesthetic clinics in each area, including the small towns
+// Fresha barely covers. A few areas per run, in turn, to stay in the free tier.
+
+export type GoogleArea = { area: string; city: string; country: string; market: number; query: string };
+
+const es = (area: string, city = area, market = 3): GoogleArea => ({
+  area,
+  city,
+  country: "Spain",
+  market,
+  query: `clínica medicina estética ${area}`,
+});
+const pt = (area: string, city = area, market = 3): GoogleArea => ({
+  area,
+  city,
+  country: "Portugal",
+  market,
+  query: `clínica medicina estética ${area} Portugal`,
+});
+
+export const GOOGLE_AREAS: GoogleArea[] = [
+  // Costa Blanca: Scandinavian and British clients, and the towns you asked for first.
+  es("Moraira"),
+  es("Jávea"),
+  es("Altea"),
+  es("Albir"),
+  es("Calpe"),
+  es("Dénia"),
+  es("Benidorm", "Benidorm", 2),
+  // Marbella and around.
+  es("Marbella"),
+  es("Puerto Banús", "Marbella"),
+  es("Estepona"),
+  es("Benahavís"),
+  es("Fuengirola", "Fuengirola", 2),
+  // Mallorca.
+  es("Palma de Mallorca"),
+  es("Puerto Portals", "Palma de Mallorca"),
+  es("Andratx", "Palma de Mallorca"),
+  // The premium parts of the big cities.
+  es("barrio de Salamanca Madrid", "Madrid"),
+  es("Pozuelo de Alarcón", "Madrid"),
+  es("Sant Gervasi Barcelona", "Barcelona"),
+  es("Sitges", "Barcelona"),
+  es("Valencia", "Valencia", 2),
+  // Portugal.
+  pt("Lisboa", "Lisbon", 2),
+  pt("Cascais"),
+  pt("Porto", "Porto", 2),
+  pt("Vilamoura"),
+  pt("Quinta do Lago", "Almancil (Quinta do Lago)"),
+  pt("Albufeira", "Albufeira", 2),
+];
+
+/** Which areas a run searches: `count` of them, moving on each day. */
+export function googleAreasFor(day: number, count: number, areas = GOOGLE_AREAS) {
+  const start = (day * count) % areas.length;
+  return Array.from({ length: Math.min(count, areas.length) }, (_, i) => areas[(start + i) % areas.length]);
+}
+
+export type GooglePlace = {
+  id: string;
+  name: string;
+  address: string | null;
+  rating: number | null;
+  reviews: number;
+  website: string | null;
+  phone: string | null;
+  mapsUrl: string | null;
+  types: string[];
+  open: boolean;
+};
+
+/** A Places API (New) searchText result, flattened. */
+export function parseGooglePlaces(json: unknown): GooglePlace[] {
+  const places = (json as { places?: Record<string, unknown>[] })?.places ?? [];
+  return places.map((place) => ({
+    id: String(place.id ?? ""),
+    name: String((place.displayName as { text?: string } | undefined)?.text ?? "").trim(),
+    address: typeof place.formattedAddress === "string" ? place.formattedAddress : null,
+    rating: typeof place.rating === "number" ? place.rating : null,
+    reviews: typeof place.userRatingCount === "number" ? place.userRatingCount : 0,
+    website: typeof place.websiteUri === "string" ? place.websiteUri : null,
+    phone: typeof place.internationalPhoneNumber === "string" ? place.internationalPhoneNumber : null,
+    mapsUrl: typeof place.googleMapsUri === "string" ? place.googleMapsUri : null,
+    types: Array.isArray(place.types) ? place.types.map(String) : [],
+    open: (place.businessStatus ?? "OPERATIONAL") === "OPERATIONAL",
+  }));
+}
+
+const MEDICAL_TYPES = new Set([
+  "doctor",
+  "medical_clinic",
+  "skin_care_clinic",
+  "dermatologist",
+  "plastic_surgeon",
+  "health",
+]);
+const SALON_TYPES = new Set([
+  "hair_salon",
+  "hair_care",
+  "nail_salon",
+  "barber_shop",
+  "beauty_salon",
+  "spa",
+  "dentist",
+  "dental_clinic",
+]);
+
+/** Premium: well rated by many people. Below this a clinic is too small or uneven. */
+export const GOOGLE_PREMIUM = { rating: 4.5, reviews: 40 };
+
+/**
+ * A Google place as a fit, 1–5, or null to skip it: open, a medical aesthetic
+ * clinic (by name or Google's type, never a salon or dentist), and premium.
+ */
+export function judgeGooglePlace(place: GooglePlace, area: GoogleArea) {
+  if (!place.open || !place.name) return null;
+  const medicalType = place.types.some((type) => MEDICAL_TYPES.has(type));
+  const salonOnly = place.types.some((type) => SALON_TYPES.has(type)) && !medicalType;
+  const byName = isAestheticClinic(place.name);
+  if (NOT_AESTHETIC.test(place.name) || PMU_NAME.test(place.name) || NAIL_OR_HAIR.test(place.name)) return null;
+  // Medical aesthetic only: the name says aesthetic, and the place is medical by its name or Google's type.
+  if (!AESTHETIC_WORD.test(place.name)) return null;
+  if (!byName && (salonOnly || !medicalType)) return null;
+  if ((place.rating ?? 0) < GOOGLE_PREMIUM.rating || place.reviews < GOOGLE_PREMIUM.reviews) return null;
+  let score = area.market;
+  const reasons = [`Google ${place.rating?.toFixed(1)}★ from ${place.reviews} reviews`];
+  if (byName && MEDICAL.test(place.name)) {
+    score += 1;
+    reasons.push("medical aesthetic clinic");
+  } else if (medicalType) {
+    reasons.push("medical clinic on Google");
+  }
+  if (place.reviews >= 150 && (place.rating ?? 0) >= 4.7) {
+    score += 1;
+    reasons.push("top rated and busy");
+  }
+  return { score: Math.max(1, Math.min(5, score)), reasons };
+}
+
+/** Whether a clinic's own website already offers PMU or microblading. */
+export function websiteOffersPmu(html: string) {
+  const text = html
+    .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ");
+  // Nail "semipermanente" isn't PMU; the named techniques are.
+  return /(micropigment|microblad|maquillaje permanente|maquilhagem permanente|permanent make-?up|dermopigment|microshading|powder brows|lip blush|cejas pelo a pelo)/i.test(
+    text
+  );
+}
+// Injectables need a doctor in Spain and Portugal, so places listed for them are
+// medical aesthetic clinics: the ones that can add PMU, and medical PMU, to their menu.
+export const SCOUT_TREATMENTS = ["anti-wrinkle-injections", "dermal-fillers", "lip-fillers"];
+// Fresha's pages per city: the injectables treatments, then its aesthetics and
+// medspa listings, which are the only pages it has for the small coastal towns.
+export const SCOUT_PAGES = [...SCOUT_TREATMENTS.map((treatment) => `tt/${treatment}`), "bt/aesthetics", "bt/medspas"];
 
 export type FreshaVenue = {
   url: string;
@@ -160,7 +332,13 @@ export type FreshaDetails = {
   /** The highest price of a PMU treatment on the menu, in the local currency. */
   pmuPrice: number | null;
   pmuServices: string[];
+  /** The highest price of any treatment on the menu. */
+  topPrice: number | null;
 };
+
+// "Semipermanente" on a nail or lash menu is gel polish or a lash lift, not PMU.
+const NOT_PMU_SERVICE =
+  /(laser|l[áa]ser|depil|manicur|pedicur|u[ñn]as|unhas|nail|esmalt|gel\b|lash|pesta[ñn]|cílios|cilios|tinte|tint\b)/i;
 
 /** Phone, team, PMU staff and PMU prices from a venue's own Fresha page. */
 export function parseFreshaVenue(html: string): FreshaDetails {
@@ -172,6 +350,7 @@ export function parseFreshaVenue(html: string): FreshaDetails {
     (person) => STRONG.test(person.jobTitle ?? "") || /brow/i.test(person.jobTitle ?? "")
   ).length;
   const services: { name: string; price: number | null }[] = [];
+  const allPrices: number[] = [];
   const walk = (value: unknown) => {
     if (!value || typeof value !== "object") return;
     if (Array.isArray(value)) return value.forEach(walk);
@@ -183,7 +362,8 @@ export function parseFreshaVenue(html: string): FreshaDetails {
       const name = offered.name ?? (typeof item.name === "string" ? item.name : "");
       const category = typeof item.category === "string" ? item.category : "";
       const price = Number(item.highPrice ?? item.price ?? item.lowPrice);
-      if (STRONG.test(name) || STRONG.test(category)) {
+      if (Number.isFinite(price) && price > 0) allPrices.push(price);
+      if ((STRONG.test(name) || STRONG.test(category)) && !NOT_PMU_SERVICE.test(`${name} ${category}`)) {
         services.push({
           name: (STRONG.test(name) ? name : category).trim(),
           price: Number.isFinite(price) && price > 0 ? price : null,
@@ -201,15 +381,35 @@ export function parseFreshaVenue(html: string): FreshaDetails {
     pmuArtists,
     pmuPrice: prices.length ? Math.max(...prices) : null,
     pmuServices: [...new Set(services.map((service) => service.name))].slice(0, 6),
+    topPrice: allPrices.length ? Math.max(...allPrices) : null,
   };
 }
 
 const NAIL_OR_HAIR =
   /(nail|esmalt|manicur|uñas|unhas|peluquer|cabeleireir|hair (salon|studio)|barber|barbear|barbería|barberia)/i;
-const MEDICAL = /(clinic|klinik|medical|medic|derma|aesthetic|esthetic|surgery|cosmetic center|hospital|doctor|dr\.)/i;
+// Medical aesthetic clinics only: a bare "aesthetic" or "beauty" is usually a salon.
+const MEDICAL =
+  /(clinic|cl[ií]nica|klinik|medical|m[eé]dic|medispa|derma|surgery|cirug|cirurg|hospital|doctor|\bdr\.?\s|\bdra\.?\s|medicina est[eé]tica|medicine)/i;
 const STUDIO = /(brow|pmu|ink|micro|lash|permanent|beauty bar|studio)/i;
 
+// A name that says PMU, brows or lashes: a PMU studio, even if it calls itself a clinic.
+const PMU_NAME = /(micropigment|microblad|\bpmu\b|permanent|\bbrows?\b|\blash|pesta[ñn]|cejas)/i;
+
+// A name that says aesthetic medicine, skin, surgery or anti-ageing.
+const AESTHETIC_WORD =
+  /(est[eé]tic|esthetic|aesthetic|derma|cirug|cirurg|pl[aá]stic|antienvejec|anti-?ag|rejuven|l[aá]ser|capilar|longevit|skin)/i;
+
+// Medical, but not aesthetic: dentists (who also do Botox), labs, nutrition, physio, opticians, vets.
+const NOT_AESTHETIC =
+  /(pilates|yoga|massag|fitness|gym|depila|m[ée]decine g[ée]n[ée]rale|medicina general|medicina familiar|dent|odonto|sorriso|smile|an[áa]lises|an[áa]lisis|laborat|nutri|fisio|physio|osteo|[óo]ptic|podolog|veterin|psicolog)/i;
+
+/** A medical aesthetic clinic by its name: what the daily search keeps. */
+export function isAestheticClinic(name: string) {
+  return placeKind(name) === "clinic" && !NOT_AESTHETIC.test(name);
+}
+
 export function placeKind(name: string): "clinic" | "studio" | "salon" {
+  if (PMU_NAME.test(name)) return "studio";
   if (MEDICAL.test(name)) return "clinic";
   if (STUDIO.test(name)) return "studio";
   return "salon";
@@ -222,33 +422,35 @@ export function whatsappNumber(phone: string | null) {
   return null;
 }
 
-// Premium PMU price, by currency (roughly the top third of each market).
-const PREMIUM: Record<string, number> = { GBP: 400, EUR: 350 };
+// A premium menu, by currency: the dearest treatment (fillers, lifts, lasers) at least this.
+const PREMIUM: Record<string, number> = { GBP: 400, EUR: 400 };
 
 /**
- * How valuable a place is likely to be, 1–5: the market's pay, then a busy
- * team, premium prices, a medical setting, and a gap in PMU staff.
+ * How good a fit a medical aesthetic clinic is, 1–5: the market's pay, then a
+ * medical name, premium prices and a busy team. Clinics with PMU already on
+ * the menu score lower: the best fit is a clinic that doesn't offer it yet.
  */
 export function placeValue(city: ScoutCity, venue: FreshaVenue, details: FreshaDetails | null) {
   let score = city.market;
   const reasons: string[] = [];
   if (MEDICAL.test(venue.name)) {
     score += 1;
-    reasons.push("medical setting");
+    reasons.push("medical aesthetic clinic");
   }
-  if (details?.pmuPrice && details.pmuPrice >= (PREMIUM[city.currency] ?? Infinity)) {
+  if (details?.topPrice && details.topPrice >= (PREMIUM[city.currency] ?? Infinity)) {
     score += 1;
-    reasons.push(`premium PMU (${city.currency} ${details.pmuPrice})`);
+    reasons.push(`premium prices (up to ${city.currency} ${Math.round(details.topPrice)})`);
   }
   if ((details?.teamSize ?? 0) >= 10 || venue.reviews >= 500) {
     score += 1;
     reasons.push(details?.teamSize ? `team of ${details.teamSize}` : `${venue.reviews} reviews`);
   }
-  if (details && details.pmuServices.length > 0 && details.pmuArtists === 0) {
-    reasons.push("offers PMU without a dedicated PMU artist listed");
-  }
   if (details && details.pmuServices.length === 0) {
-    reasons.push("PMU isn't on its online menu yet: pitch launching it");
+    reasons.push("no PMU on its menu yet: pitch adding it");
+  }
+  if (details && details.pmuServices.length > 0) {
+    score -= 1;
+    reasons.push("already offers PMU");
   }
   // Nail bars and hair salons rarely hire a senior PMU artist.
   if (NAIL_OR_HAIR.test(venue.name)) {

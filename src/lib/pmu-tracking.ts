@@ -217,14 +217,14 @@ export function followUpMessage(
   portfolio = PMU_PORTFOLIO.instagram
 ) {
   const when = firstSent ? ` on ${monthDay(firstSent)}` : "";
-  const medical = "brow restoration, scalp micropigmentation and areola pigmentation";
+  const medical = "brow restoration after hair loss, areola pigmentation and scar camouflage";
   if (step === "follow_up_1") {
-    return `Hello ${target.name} team, this is Olga Goryszewska. I sent you an email${when} about joining you as a senior PMU artist (14 years, 4,000+ clients, including medical work: ${medical}). My healed results are here: ${portfolio}. Would a short call this week suit you? Olga, +47 483 38 779`;
+    return `Hello ${target.name} team, this is Olga Goryszewska. I wrote to you${when} about working with you as a PMU and medical micropigmentation artist, freelance or in a permanent role (14 years of experience, including medical work: ${medical}). My healed results are here: ${portfolio}. Would you be open to a short call this week or next? Olga, +47 483 38 779`;
   }
   if (step === "follow_up_2") {
-    return `Hello again from Olga Goryszewska. One more thought: besides cosmetic brows and lips, I can set up the whole PMU service for you, from treatment protocols and touch-up schedules to before-and-after content, as I did in my own studio for 13 years. I'd be glad to show you healed results on a short video call. Would that be useful?`;
+    return `Hello again, Olga Goryszewska here. One more thought: besides natural brows, lips and eyeliner, I can set up the whole PMU service for you, from treatment protocols and touch-up schedules to pricing and before-and-after content, as I did in my own studio for 13 years. Could we schedule a short call? I'd be glad to show you healed results, at a time that suits you.`;
   }
-  return `Hello, Olga Goryszewska here. I don't want to fill your inbox, so this is my last message for now. If a senior PMU or medical micropigmentation artist would help ${target.name} later, I'd love to hear from you: olga.goryszewska@gmail.com or +47 483 38 779. Thank you, and all the best.`;
+  return `Hello, Olga Goryszewska here. I don't want to fill your inbox, so this is my last message for now. If a PMU or medical micropigmentation artist could help ${target.name} later, freelance or permanent, I'd love to hear from you: olga.goryszewska@gmail.com or +47 483 38 779 (WhatsApp). Thank you, and all the best.`;
 }
 
 export type Overview = {

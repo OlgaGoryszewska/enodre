@@ -5,12 +5,17 @@ import { getGmailMailer } from "@/lib/mailer";
 import { findNavBeautyJobs } from "@/lib/nav-jobs";
 import {
   SCOUT_CITIES,
-  SCOUT_TREATMENTS,
+  SCOUT_PAGES,
   brandKey,
   extractAlertLinks,
   mentionsPmu,
   parseFreshaListing,
   parseFreshaVenue,
+  isAestheticClinic,
+  googleAreasFor,
+  judgeGooglePlace,
+  parseGooglePlaces,
+  websiteOffersPmu,
   placeKind,
   placeValue,
   scorePmuAd,
@@ -19,15 +24,20 @@ import {
   type ScoutCity,
 } from "@/lib/pmu-scout";
 
-// Server-only. The PMU agent's daily search: new places that offer PMU (from
-// Fresha's public city pages), and PMU job ads (NAV, your Gmail job alerts,
+// Server-only. The PMU agent's daily search: premium medical aesthetic clinics
+// without PMU yet (Fresha's public city pages, and Google Maps when
+// GOOGLE_PLACES_API_KEY is set), and PMU job ads (NAV, your Gmail job alerts,
 // careers pages). Nothing is sent: places and ads land on the PMU jobs page.
 
 export const PMU_AGENT = {
   /** New places added per run, best value first. */
-  placesPerRun: 10,
+  placesPerRun: 12,
   /** Venue pages read per run to judge value (one request each). */
-  venuesChecked: 30,
+  venuesChecked: 40,
+  /** Google Maps areas searched per run, in turn (one request each). */
+  googleAreasPerRun: 6,
+  /** Clinic websites read per run to check they don't offer PMU yet. */
+  websitesChecked: 30,
   navDays: 7,
   alertDays: 3,
   timeBudgetMs: 200_000,
@@ -72,6 +82,9 @@ async function fetchText(url: string) {
 }
 
 export type PmuRunStats = {
+  /** Google places looked at, and why the search skipped Google, if it did. */
+  googleChecked?: number;
+  googleNote?: string;
   places: { name: string; city: string; value: number; reasons: string[] }[];
   ads: { title: string; company: string | null; source: string; score: number; url: string }[];
   skippedAds: number;
@@ -91,9 +104,9 @@ type NewPlace = {
   pay_score: number;
   pay_note: string;
   fit: "high" | "medium";
-  source: "fresha";
+  source: "fresha" | "google";
   source_url: string;
-  fresha_url: string;
+  fresha_url: string | null;
   reviews: number;
   team_size: number | null;
   discovered_at: string;
@@ -113,18 +126,23 @@ type NewAd = {
 };
 
 async function findPlaces(
-  known: { names: Set<string>; urls: Set<string> },
+  known: { names: Set<string>; urls: Set<string>; sites: Set<string> },
   stats: PmuRunStats,
   timeLeft: () => boolean
 ): Promise<NewPlace[]> {
+  // Google Maps runs alongside Fresha: different sites.
+  const fromGoogle = findGooglePlaces(known, stats, timeLeft).catch((error) => {
+    stats.problems.push(`Google Maps: ${error instanceof Error ? error.message : "failed"}`);
+    return [] as (NewPlace & { order: number })[];
+  });
   const candidates: { city: ScoutCity; venue: FreshaVenue }[] = [];
   const seen = new Set<string>();
   for (const city of SCOUT_CITIES) {
-    for (const treatment of SCOUT_TREATMENTS) {
+    for (const page of SCOUT_PAGES) {
       if (!timeLeft()) break;
       try {
         const venues = parseFreshaListing(
-          await fetchText(`https://www.fresha.com/lp/en/tt/${treatment}/in/${city.slug}`)
+          await fetchText(`https://www.fresha.com/lp/en/${page}/in/${encodeURI(city.slug)}`)
         );
         for (const venue of venues) {
           const brand = `${brandKey(venue.name)}|${city.city}`;
@@ -132,6 +150,8 @@ async function findPlaces(
           const site = venue.website ? `site:${venue.website.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}` : null;
           const insta = venue.instagram ? `ig:${venue.instagram.toLowerCase()}` : null;
           const keys = [brand, site, insta].filter((key): key is string => Boolean(key));
+          // Only medical aesthetic clinics; salons and PMU studios are skipped.
+          if (!isAestheticClinic(venue.name)) continue;
           if (known.urls.has(venue.url) || known.names.has(brand) || keys.some((key) => seen.has(key))) continue;
           for (const key of keys) seen.add(key);
           candidates.push({ city, venue });
@@ -161,6 +181,8 @@ async function findPlaces(
       .then(parseFreshaVenue)
       .catch(() => null);
     stats.checkedVenues++;
+    // The fit is a clinic without PMU yet; one that already has it doesn't need you.
+    if (details && details.pmuServices.length > 0) continue;
     const value = placeValue(city, venue, details);
     const name = venue.name.split(/\s[|]\s/)[0].trim();
     judged.push({
@@ -171,9 +193,9 @@ async function findPlaces(
       website: venue.website,
       instagram: venue.instagram,
       whatsapp: whatsappNumber(details?.phone ?? null),
-      services: details?.pmuServices.length
-        ? `${details.pmuServices.join(", ")}${details.pmuPrice ? ` (up to ${city.currency} ${Math.round(details.pmuPrice)})` : ""}`
-        : venue.street,
+      services: `Injectables and aesthetic treatments on Fresha${
+        details?.topPrice ? ` (up to ${city.currency} ${Math.round(details.topPrice)})` : ""
+      }; no PMU on the menu yet`,
       pay_score: value.score,
       pay_note: value.reasons.join("; ") || "Found on Fresha",
       fit: value.score >= 4 ? "high" : "medium",
@@ -194,13 +216,131 @@ async function findPlaces(
     });
     await pause(300);
   }
-  return judged
-    .sort((a, b) => b.order - a.order)
-    .slice(0, PMU_AGENT.placesPerRun)
-    .map(({ order: _order, ...place }) => {
-      void _order;
-      return place;
+  // One row per clinic: Fresha and Google can find the same one (same website).
+  const sites = new Set<string>();
+  const all = [...judged, ...(await fromGoogle)].filter((place) => {
+    const site = siteKey(place.website);
+    if (site && (known.sites.has(site) || sites.has(site))) return false;
+    if (site) sites.add(site);
+    return true;
+  });
+  return (
+    all
+      // Only good fits: below 3/5 is a small general practice, not worth a message.
+      .filter((place) => place.pay_score >= 3)
+      .sort((a, b) => b.order - a.order)
+      .slice(0, PMU_AGENT.placesPerRun)
+      .map(({ order: _order, ...place }) => {
+        void _order;
+        return place;
+      })
+  );
+}
+
+const siteKey = (url: string | null) =>
+  url
+    ? url
+        .replace(/^https?:\/\/(www\.)?/i, "")
+        .split(/[/?#]/)[0]
+        .toLowerCase()
+    : null;
+
+// Google Places API (New): text search, only the fields we use.
+async function searchGoogle(query: string, key: string) {
+  const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": key,
+      "X-Goog-FieldMask":
+        "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.websiteUri,places.internationalPhoneNumber,places.googleMapsUri,places.types,places.businessStatus",
+    },
+    body: JSON.stringify({ textQuery: query, pageSize: 20, languageCode: "es" }),
+    cache: "no-store",
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!response.ok) throw new Error(`Google ${response.status}: ${(await response.text()).slice(0, 120)}`);
+  return parseGooglePlaces(await response.json());
+}
+
+/** Premium medical aesthetic clinics on Google Maps whose websites don't offer PMU yet. */
+async function findGooglePlaces(
+  known: { names: Set<string>; urls: Set<string>; sites: Set<string> },
+  stats: PmuRunStats,
+  timeLeft: () => boolean
+): Promise<(NewPlace & { order: number })[]> {
+  const key = process.env.GOOGLE_PLACES_API_KEY;
+  if (!key) {
+    stats.googleNote = "Google Maps is off: add GOOGLE_PLACES_API_KEY to search it too.";
+    return [];
+  }
+  const day = Math.floor(Date.now() / 86_400_000);
+  const candidates: {
+    area: ReturnType<typeof googleAreasFor>[number];
+    place: Awaited<ReturnType<typeof searchGoogle>>[number];
+    value: { score: number; reasons: string[] };
+  }[] = [];
+  const seen = new Set<string>();
+  stats.googleChecked = 0;
+  for (const area of googleAreasFor(day, PMU_AGENT.googleAreasPerRun)) {
+    if (!timeLeft()) break;
+    let places;
+    try {
+      places = await searchGoogle(area.query, key);
+    } catch (error) {
+      stats.problems.push(`Google (${area.area}): ${error instanceof Error ? error.message : "failed"}`);
+      continue;
+    }
+    for (const place of places) {
+      stats.googleChecked++;
+      const site = siteKey(place.website);
+      const brand = `${brandKey(place.name)}|${area.city}`;
+      if (seen.has(place.id) || known.names.has(brand) || (place.mapsUrl && known.urls.has(place.mapsUrl))) continue;
+      if (site && (known.sites.has(site) || seen.has(site))) continue;
+      seen.add(place.id);
+      if (site) seen.add(site);
+      const value = judgeGooglePlace(place, area);
+      if (value) candidates.push({ area, place, value });
+    }
+  }
+  // Best first; then read each website and drop the ones that already offer PMU.
+  candidates.sort((a, b) => b.value.score - a.value.score || b.place.reviews - a.place.reviews);
+  const kept: (NewPlace & { order: number })[] = [];
+  for (const { area, place, value } of candidates.slice(0, PMU_AGENT.websitesChecked)) {
+    if (!timeLeft()) break;
+    if (place.website) {
+      const html = await fetchText(place.website).catch(() => null);
+      if (html && websiteOffersPmu(html)) continue;
+      if (html === null) value.reasons.push("website didn't open: check PMU yourself");
+      else value.reasons.push("no PMU on its website: pitch adding it");
+    } else {
+      value.reasons.push("no website: check PMU on Google Maps");
+    }
+    kept.push({
+      kind: "clinic",
+      name: place.name,
+      city: area.city,
+      country: area.country,
+      website: place.website,
+      instagram: null,
+      whatsapp: whatsappNumber(place.phone),
+      services: `Medical aesthetic clinic on Google Maps (${place.rating?.toFixed(1)}★, ${place.reviews} reviews)`,
+      pay_score: value.score,
+      pay_note: value.reasons.join("; "),
+      fit: value.score >= 4 ? "high" : "medium",
+      source: "google",
+      source_url: place.mapsUrl ?? place.website ?? "",
+      fresha_url: null,
+      reviews: place.reviews,
+      team_size: null,
+      discovered_at: new Date().toISOString(),
+      notes: [place.address, place.phone && !whatsappNumber(place.phone) ? `Phone ${place.phone}.` : null]
+        .filter(Boolean)
+        .join(" "),
+      order: value.score * 100_000 + Math.min(place.reviews, 99_999),
     });
+  }
+  return kept;
 }
 
 async function adsFromNav(): Promise<NewAd[]> {
@@ -304,7 +444,10 @@ export function buildPmuReport(stats: PmuRunStats, preview = false) {
   const lines = [
     preview ? "PMU agent preview — nothing was saved." : "PMU agent report",
     "",
-    `New places: ${stats.places.length} (from ${stats.checkedVenues} checked on Fresha)`,
+    `New places: ${stats.places.length} (from ${stats.checkedVenues} checked on Fresha${
+      stats.googleChecked ? ` and ${stats.googleChecked} on Google Maps` : ""
+    })`,
+    ...(stats.googleNote ? [stats.googleNote] : []),
     ...stats.places.map(
       (place) =>
         `- ${place.name}, ${place.city} · pay ${place.value}/5${place.reasons.length ? ` · ${place.reasons.join("; ")}` : ""}`
@@ -331,13 +474,14 @@ export async function runPmuAgent(
   const stats: PmuRunStats = { places: [], ads: [], skippedAds: 0, checkedVenues: 0, problems: [] };
 
   const [targets, postings] = await Promise.all([
-    supabase.from("pmu_targets").select("name, city, fresha_url"),
+    supabase.from("pmu_targets").select("name, city, fresha_url, source_url, website"),
     supabase.from("pmu_postings").select("source, external_id"),
   ]);
   if (targets.error) throw new Error("Run supabase/pmu_agent.sql first.");
   const known = {
     names: new Set((targets.data ?? []).map((row) => `${brandKey(row.name)}|${row.city}`)),
-    urls: new Set((targets.data ?? []).map((row) => row.fresha_url).filter(Boolean) as string[]),
+    urls: new Set((targets.data ?? []).flatMap((row) => [row.fresha_url, row.source_url]).filter(Boolean) as string[]),
+    sites: new Set((targets.data ?? []).map((row) => siteKey(row.website)).filter(Boolean) as string[]),
   };
   const knownAds = new Set((postings.data ?? []).map((row) => `${row.source}|${row.external_id}`));
 
@@ -387,7 +531,10 @@ export async function runPmuAgent(
     name: place.name,
     city: place.city,
     value: place.pay_score,
-    reasons: place.pay_note.split("; ").filter((reason) => reason !== "Found on Fresha"),
+    reasons: [
+      place.source === "google" ? "Google Maps" : "Fresha",
+      ...place.pay_note.split("; ").filter((reason) => reason !== "Found on Fresha"),
+    ],
   }));
   stats.ads = [...ads.values()]
     .sort((a, b) => b.score - a.score)

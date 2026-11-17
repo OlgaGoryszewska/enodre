@@ -350,3 +350,134 @@ delete from public.pmu_profile where key like 'licence\_%';
 
 -- Your favourites (Nov 2026): shown first, in the green section.
 alter table public.pmu_targets add column if not exists favourite boolean not null default false;
+
+-- ---------------------------------------------------------------------------
+-- Spain and Portugal outreach (14 Nov 2026): tailored emails with the portfolio
+-- sent from Gmail. Only places still "To contact" change; each email is logged
+-- once in the place's history.
+
+update public.pmu_targets set email = coalesce(public.pmu_targets.email, v.email),
+  status = case when public.pmu_targets.status = 'to_contact' then 'contacted' else public.pmu_targets.status end,
+  last_contacted_on = coalesce(public.pmu_targets.last_contacted_on, date '2026-11-14'),
+  updated_at = now()
+from (values
+  ('Clínica Moraira', 'Moraira', 'info@clinicamoraira.com'),
+  ('Policlínica CUME', 'Jávea', 'esteticacume@gmail.com'),
+  ('Arques Clinic Marbella', 'Marbella', 'info@arquesclinic.com'),
+  ('Elegant Clinic Banús', 'Marbella', 'info@elegantclinicbanus.com'),
+  ('Vit&Drip Center Marbella', 'Marbella', 'info@vitdripcenter.com'),
+  ('NH Clínicas', 'Fuengirola', 'info@nhclinicas.com'),
+  ('Planas Salud Medicina Estética', 'Palma de Mallorca', 'info@planassaludestetica.com'),
+  ('Medical Oasis', 'Palma de Mallorca', 'info@medicaloasis.es'),
+  ('Derma Clinic Palma', 'Palma de Mallorca', 'mallorcaderma@gmx.net'),
+  ('Belau Medical Aesthetic Clinic', 'Palma de Mallorca', 'info@belau.es'),
+  ('Family Medical Centre & Antiaging Clinic', 'Quinta do Lago (Algarve)', 'info@family-medical-centre.pt'),
+  ('Timeless Beauty Algarve', 'Vilamoura', 'reception@timelessbeautyalgarve.com'),
+  ('MyMoment', 'Lisbon', 'info@mymoment.pt'),
+  ('CLINIQ', 'Lisbon / Porto', 'geral@cliniq.pt'),
+  ('Personal Derma', 'Lisbon', 'geral@personalderma.pt'),
+  ('Clínica do Pigmento', 'Lisbon', 'geral.lisboa@clinicadopigmento.pt'),
+  ('Style Studio Sverige', 'Gothenburg', 'info@stylestudio.nu')
+) as v(name, city, email)
+where public.pmu_targets.name = v.name and public.pmu_targets.city = v.city
+  and not exists (select 1 from public.pmu_activity a where a.target_id = public.pmu_targets.id and a.kind = 'email_sent');
+
+insert into public.pmu_activity (target_id, kind, at, note)
+select t.id, 'email_sent', timestamptz '2026-11-14 12:00:00+01', 'To ' || t.email || ', with portfolio'
+from public.pmu_targets t
+where (t.name, t.city) in (
+  ('Clínica Moraira', 'Moraira'), ('Policlínica CUME', 'Jávea'), ('Arques Clinic Marbella', 'Marbella'),
+  ('Elegant Clinic Banús', 'Marbella'), ('Vit&Drip Center Marbella', 'Marbella'), ('NH Clínicas', 'Fuengirola'),
+  ('Planas Salud Medicina Estética', 'Palma de Mallorca'), ('Medical Oasis', 'Palma de Mallorca'),
+  ('Derma Clinic Palma', 'Palma de Mallorca'), ('Belau Medical Aesthetic Clinic', 'Palma de Mallorca'),
+  ('Family Medical Centre & Antiaging Clinic', 'Quinta do Lago (Algarve)'), ('Timeless Beauty Algarve', 'Vilamoura'),
+  ('MyMoment', 'Lisbon'), ('CLINIQ', 'Lisbon / Porto'), ('Personal Derma', 'Lisbon'),
+  ('Clínica do Pigmento', 'Lisbon'), ('Style Studio Sverige', 'Gothenburg'))
+  and not exists (select 1 from public.pmu_activity a where a.target_id = t.id and a.kind = 'email_sent');
+
+-- WhatsApp numbers found on the clinics' own websites (16 Nov 2026): their
+-- WhatsApp links, or a mobile number where there was none. Never overwrites
+-- a number you saved yourself.
+update public.pmu_targets set whatsapp = v.whatsapp, updated_at = now()
+from (values
+  ('Timeless Beauty Algarve', 'Vilamoura', '+351910884695'),
+  ('Vit&Drip Center Marbella', 'Marbella', '+34619228412'),
+  ('Medical Oasis', 'Palma de Mallorca', '+34609274198'),
+  ('Clínica do Pigmento', 'Lisbon', '+351910525759'),
+  ('MyMoment', 'Lisbon', '+351938949463'),
+  ('CLINIQ', 'Lisbon / Porto', '+351968799815'),
+  ('Arques Clinic Marbella', 'Marbella', '+34662388888'),
+  ('Up Clinic', 'Lisbon / Algarve', '+351961676599'),
+  ('Elegant Clinic Banús', 'Marbella', '+34682175150'),
+  ('Imperial Clinic', 'Jávea', '+34616267008'),
+  ('Derma Clinic Palma', 'Palma de Mallorca', '+34627086092'),
+  ('Personal Derma', 'Lisbon', '+351910333055'),
+  ('Belau Medical Aesthetic Clinic', 'Palma de Mallorca', '+34692213500'),
+  ('NH Clínicas', 'Fuengirola', '+34648913825'),
+  ('Planas Salud Medicina Estética', 'Palma de Mallorca', '+34625031247'),
+  ('Family Medical Centre & Antiaging Clinic', 'Quinta do Lago (Algarve)', '+351968482532')
+) as v(name, city, whatsapp)
+where public.pmu_targets.name = v.name and public.pmu_targets.city = v.city and public.pmu_targets.whatsapp is null;
+
+-- Medical aesthetic clinics only (16 Nov 2026): studios, salons, academies and
+-- recruiters are removed from the list. Hidden, not deleted, so their history
+-- stays and "Show removed" brings one back.
+update public.pmu_targets set hidden = true, updated_at = now()
+where kind <> 'clinic' and not hidden;
+
+-- More emails (17 Nov 2026): Up Clinic from here, and the one you sent Derma
+-- Clinic Spain yourself on 13 Nov. Logged once; later progress is kept.
+update public.pmu_targets set email = coalesce(public.pmu_targets.email, v.email),
+  status = case when public.pmu_targets.status = 'to_contact' then 'contacted' else public.pmu_targets.status end,
+  last_contacted_on = coalesce(public.pmu_targets.last_contacted_on, v.on_day),
+  updated_at = now()
+from (values
+  ('Up Clinic', 'Lisbon / Algarve', 'info@upclinic.pt', date '2026-11-17'),
+  ('Derma Clinic Spain', 'Albir', 'info@dermaclinicspain.com', date '2026-11-13')
+) as v(name, city, email, on_day)
+where public.pmu_targets.name = v.name and public.pmu_targets.city = v.city
+  and not exists (select 1 from public.pmu_activity a where a.target_id = public.pmu_targets.id and a.kind = 'email_sent');
+
+insert into public.pmu_activity (target_id, kind, at, note)
+select t.id, 'email_sent', v.at, 'To ' || t.email || ', with portfolio'
+from (values
+  ('Up Clinic', 'Lisbon / Algarve', timestamptz '2026-11-17 12:00:00+01'),
+  ('Derma Clinic Spain', 'Albir', timestamptz '2026-11-13 12:00:00+01')
+) as v(name, city, at)
+join public.pmu_targets t on t.name = v.name and t.city = v.city
+where not exists (select 1 from public.pmu_activity a where a.target_id = t.id and a.kind = 'email_sent');
+
+-- MoMa's mobile, from its Jávea listing (17 Nov 2026).
+update public.pmu_targets set whatsapp = '+34636872302', updated_at = now()
+where name = 'MoMa Estética Avanzada & Clínica Anti-edad' and city = 'Jávea' and whatsapp is null;
+
+-- Clinics that already offer PMU or microblading (17 Nov 2026): they don't need
+-- you, so they're removed from the list, including the daily search's finds
+-- from before it looked for clinics without PMU. Hidden, not deleted.
+update public.pmu_targets set hidden = true, updated_at = now()
+where not hidden
+  and (concat_ws(' ', name, services) ~* '(micropigment|microblad|permanent make|maquillaje permanente|maquilhagem permanente|dermopigment|lip blush|powder brow|combi brow|nano ?brow|microshad)'
+       or pay_note ~* '(offers PMU without|premium PMU|already offers PMU)');
+
+-- The daily search's finds (18 Nov 2026). mySkin emailed from here; Calma's
+-- WhatsApp saved. Removed: places that already offer PMU (Centro Médico
+-- Canillas, Bella Laser Clinic), a laser hair-removal chain (Dermasana), a
+-- hair salon (MIJAS NATURAL), and NH Belleza, part of NH Clínicas (emailed 14 Nov).
+update public.pmu_targets set email = coalesce(email, 'office@myskin-mallorca.com'),
+  status = case when status = 'to_contact' then 'contacted' else status end,
+  last_contacted_on = coalesce(last_contacted_on, date '2026-11-18'), updated_at = now()
+where name ilike 'mySkin Dermatology%' and city = 'Palma de Mallorca'
+  and not exists (select 1 from public.pmu_activity a where a.target_id = pmu_targets.id and a.kind = 'email_sent');
+
+insert into public.pmu_activity (target_id, kind, at, note)
+select t.id, 'email_sent', timestamptz '2026-11-18 12:00:00+01', 'To office@myskin-mallorca.com, with portfolio (corrections after laser removal, medical PMU)'
+from public.pmu_targets t
+where t.name ilike 'mySkin Dermatology%' and t.city = 'Palma de Mallorca'
+  and not exists (select 1 from public.pmu_activity a where a.target_id = t.id and a.kind = 'email_sent');
+
+update public.pmu_targets set whatsapp = '+351928053614', instagram = coalesce(instagram, 'calma.clinicacademy'), updated_at = now()
+where name ilike 'Calma Clinic%' and whatsapp is null;
+
+update public.pmu_targets set hidden = true, updated_at = now()
+where not hidden and (name ilike 'Centro M_dico Canillas%' or name ilike 'Bella Laser Clinic%' or name ilike 'Dermasana%'
+  or name ilike 'MIJAS NATURAL%' or name ilike 'NH Belleza%');

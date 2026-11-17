@@ -45,7 +45,7 @@ export const FIXED_DETAILS: { label: string; value: string }[] = [
   {
     label: "Education",
     value:
-      "Bachelor's degree in Public Health; Frontend Development (Noroff, 2022–2024, grade A); UX Design (Noroff, 2021–2022, grade A)",
+      "Bachelor's degree in Public Health, specialising in cosmetology and wellness; Frontend Development (Noroff, 2022–2024, grade A); UX Design (Noroff, 2021–2022, grade A)",
   },
   {
     label: "Clinic background",

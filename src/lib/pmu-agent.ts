@@ -92,34 +92,45 @@ export const PMU_PORTFOLIO = {
   facebook: "https://www.facebook.com/VippeExtensionsBergen/photos",
 };
 
-const greeting = (target: PmuTarget) => `Hello ${target.name} team,`;
+// "Clínica X – Dr. Y" greets the clinic; a doctor's own practice greets the doctor.
+function greeting(target: PmuTarget) {
+  const name = target.name.split(/\s[–-]\s/)[0].trim();
+  return /^dra?\.\s/i.test(name) ? `Hello ${name},` : `Hello ${name} team,`;
+}
 
-const lipsAndBrows = "brows, lips and eyeliner, plus scalp and areola micropigmentation";
+// How she can work with them: freelance first, so it reads as an offer, not a job hunt.
+const WAYS_TO_WORK =
+  "I'm flexible on how we work together: freelance on set days or a permanent role, whatever suits you best.";
 
 function reason(target: PmuTarget) {
   switch (target.kind) {
     case "clinic":
-      return "I'm writing because you offer medical micropigmentation, and that's the work I'm proudest of: areola, brow restoration and scalp pigmentation for clients after hair loss and cancer treatment, which I did for six years at TBL Medical, a medical aesthetics clinic in Norway.";
+      return "I'd love to work with a clinic like yours. Natural semi-permanent brows, lips and eyeliner sit well alongside aesthetic treatments, and I also do the medical side: brow restoration after hair loss, areola pigmentation after breast surgery, and scar camouflage.";
     case "academy":
-      return "I'm writing because you train artists as well as treat clients, and after 14 years and more than 4,000 clients I'd love to do both.";
+      return "I'd love to treat clients with you and help train new artists.";
     case "agency":
-      return "I'm looking for a senior permanent makeup or micropigmentation role, ideally in a medical clinic or a premium studio, and I'm happy to relocate.";
+      return "I'm looking for PMU work with a medical aesthetic clinic or a premium studio, freelance or employed.";
     default:
-      return "I'm writing because your PMU menu is exactly the work I do every day, and I'd love to bring my experience to your team.";
+      return "Your PMU menu is exactly the work I do every day, and I'd love to help you with it.";
   }
 }
 
-/** A short first message for WhatsApp or Instagram. */
+const languages = (target: PmuTarget) =>
+  target.country === "Spain" || target.country === "Portugal"
+    ? "I speak English, Norwegian and Polish, which helps with international clients."
+    : null;
+
+/** A short first message for WhatsApp or Instagram: friendly, no hard ask. */
 export function pmuShortMessage(target: PmuTarget, profile: PmuProfile) {
   return [
     greeting(target),
-    `I'm Olga Goryszewska, a senior PMU artist with 14 years and 4,000+ clients: ${lipsAndBrows}. ${reason(target)}`,
-    `Healed results: ${profile.portfolio_instagram || PMU_PORTFOLIO.instagram}`,
-    target.country === "Spain" || target.country === "Portugal"
-      ? "I speak English, Norwegian and Polish, so I can look after your British and Scandinavian clients in their own language."
-      : null,
-    `Are you hiring, or open to a short call? I can start from ${profile.available_from || "December 2026"}, full-time, and I'm happy to relocate.`,
-    "Olga",
+    "I'm Olga, a PMU and medical micropigmentation artist with 14 years of experience, six of them at TBL Medical, a medical aesthetics clinic in Norway.",
+    reason(target),
+    WAYS_TO_WORK,
+    languages(target),
+    `Some of my healed results: ${profile.portfolio_instagram || PMU_PORTFOLIO.instagram}`,
+    "Would you be open to a short call? I'm happy to fit around your schedule.",
+    "Best wishes,\nOlga",
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -127,24 +138,25 @@ export function pmuShortMessage(target: PmuTarget, profile: PmuProfile) {
 
 /** The longer version, for email or a careers form. */
 export function pmuEmail(target: PmuTarget, profile: PmuProfile) {
-  const medical =
+  const background =
     target.kind === "clinic"
-      ? "In the clinic I worked within medical standards for consultation, hygiene and aftercare, and I'm comfortable working alongside doctors."
-      : "I ran my own studio in Bergen for 13 years, so I also know the business side: treatment protocols, touch-up schedules, before-and-after content and repeat bookings.";
+      ? "For six years I worked at TBL Medical, a medical aesthetics clinic in Bergen, alongside doctors and to medical standards for consultation, hygiene and aftercare. I also ran my own studio for 13 years, so I can set the whole service up: treatment protocols, touch-up schedules, pricing and before-and-after content."
+      : "I ran my own studio in Bergen for 13 years and worked six years at TBL Medical, a medical aesthetics clinic, so I know both the treatments and the business side: protocols, touch-ups, pricing and repeat bookings.";
   return {
-    subject: "Senior PMU artist – brows, lips, medical micropigmentation",
+    subject: `PMU and medical micropigmentation – working with ${target.name}`,
     body: [
       greeting(target),
-      `I'm Olga Goryszewska, a senior semi-permanent makeup artist with 14 years of experience and more than 4,000 clients. ${reason(target)}`,
-      `I specialise in natural results that heal evenly: soft powder and combi brows, microblading, lip blush and powder lips, eyeliner, and scalp, scar and areola micropigmentation. I trained with PhiBrows, Biotek and the Natural Permanent Makeup Academy, and I hold a bachelor's degree in Public Health.`,
-      medical,
-      "I speak English, Norwegian and Polish, so I can look after British and Scandinavian clients in their own language.",
-      `My portfolio of healed results is on Instagram (${profile.portfolio_instagram || PMU_PORTFOLIO.instagram}) and Facebook (${
-        profile.portfolio_facebook || PMU_PORTFOLIO.facebook
-      }). My CV is attached.`,
-      `I can start from ${profile.available_from || "December 2026"}, full-time, and I'm happy to relocate. Would you be open to a short call?`,
+      `I'm Olga Goryszewska, a semi-permanent makeup and medical micropigmentation artist with 14 years of experience and more than 4,000 clients. ${reason(target)}`,
+      background,
+      "I trained with PhiBrows, Biotek and the Natural Permanent Makeup Academy, and I hold a bachelor's degree in Public Health, specialising in cosmetology and wellness.",
+      WAYS_TO_WORK,
+      languages(target),
+      `My healed results are on Instagram (${profile.portfolio_instagram || PMU_PORTFOLIO.instagram}), and my portfolio is attached.`,
+      "Would you be open to a short call? I'm happy to fit around your schedule, and I can also visit the clinic.",
       "Best regards,\nOlga Goryszewska\n+47 483 38 779 (WhatsApp) · olga.goryszewska@gmail.com",
-    ].join("\n\n"),
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
   };
 }
 
@@ -181,12 +193,12 @@ export const PAY_GUIDE: { market: string; pay: string; note: string }[] = [
   {
     market: "Norway, self-employed",
     pay: "NOK 4,000–6,000 per treatment",
-    note: "Room in an approved clinic; likely the best earnings",
+    note: "Freelance in an approved clinic; likely the best earnings",
   },
   {
     market: "Spain, salaried",
     pay: "€1,500–2,500 gross / month",
-    note: "Few openings; a room or partnership in a premium clinic usually pays more",
+    note: "Few openings; freelance or a partnership in a premium clinic usually pays more",
   },
   {
     market: "Spain, premium coast (Marbella, Mallorca, Costa Blanca)",
@@ -205,7 +217,7 @@ export const PAY_GUIDE: { market: string; pay: string; note: string }[] = [
 export const NEGOTIATION_CHECKLIST = [
   "Basic salary, and the commission percentage on each treatment",
   "A guaranteed minimum for the first months while you build clients",
-  "Contract type: employed, self-employed (autónomo / trabalhador independente) or room rental",
+  "Contract type: employed, self-employed (autónomo / trabalhador independente)",
   "Who pays for the regional hygiene and sanitation course and the clinic's permit",
   "Health insurance",
   "Housing or housing allowance, and transport",

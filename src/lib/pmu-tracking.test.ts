@@ -80,6 +80,10 @@ test("follow-ups name the date and the medical work", () => {
   assert.match(followUpMessage(target(), "follow_up_1", "2026-11-13"), /on 13 November/);
   assert.match(followUpMessage(target(), "follow_up_1", null), /areola/);
   assert.match(followUpMessage(target(), "last", null), /last message/);
+  for (const step of ["follow_up_1", "follow_up_2"] as const) {
+    assert.match(followUpMessage(target(), step, null), /short call/);
+    assert.doesNotMatch(followUpMessage(target(), step, null), /room|full-time|relocate/);
+  }
 });
 
 test("overview: stages, channels that get answers, and what's due", () => {
